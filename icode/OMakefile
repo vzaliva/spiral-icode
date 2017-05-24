@@ -30,7 +30,7 @@ OCamlProgram($(PROGRAM), $(FILES))
 .DEFAULT: $(EXE)
 
 run: $(EXE)
-	./$(EXE) ../artefacts/transform1.i
+	./$(EXE) ../samples/transform1.i
 
 clean:
   rm -f \
