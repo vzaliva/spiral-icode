@@ -40,9 +40,11 @@ rule main = parse
 | "creturn" { CRETURN }
 
 (* type names *)
-| "TInt"    { TINT  }
-| "TReal"   { TREAL }
-| "TBool"   { TBOOL }
+| "TInt"       { TINT  }
+| "TReal   "   { TREAL }
+| "T_Real(32)" { TFLOAT  }
+| "T_Real(64)" { TDOUBLE }
+| "TBool"      { TBOOL }
 
 (* string literals *)
 | '"'

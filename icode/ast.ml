@@ -3,6 +3,8 @@
 type itype =
   | VoidType
   | RealType
+  | FloatType (* IEEE 32-bit float *)
+  | DoubleType (* IEEE 64-bit float *)
   | IntType
   | BoolType
   | OtherType of string
@@ -40,6 +42,8 @@ open Format
 let rec pr_itype ppf = function
   | VoidType -> fprintf ppf "@[TVoid@]"
   | RealType -> fprintf ppf "@[TReal@]"
+  | FloatType -> fprintf ppf "@[Float@]"
+  | DoubleType -> fprintf ppf "@[Double@]"
   | IntType -> fprintf ppf "@[TInt@]"
   | BoolType -> fprintf ppf "@[TBool@]"
   | OtherType n -> fprintf ppf "@[%s@]" n

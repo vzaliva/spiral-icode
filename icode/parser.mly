@@ -12,7 +12,7 @@
 %token LBRACKET RBRACKET
 
 %token DECL CHAIN DATA ASSIGN LOOP FUNC NTH SKIP IF CRETURN EOF
-%token TVOID TINT TREAL TBOOL
+%token TVOID TINT TREAL TDOUBLE TFLOAT TBOOL
 
 %token <string> IDENTIFIER
 
@@ -43,11 +43,13 @@ i_lvalue:
   ;
 
 i_type:
-  | TINT   {IntType}
-  | TREAL  {RealType}
-  | TBOOL  {BoolType}
-  | TVOID  {VoidType}
-  | n=IDENTIFIER {OtherType n}
+  | TINT     { IntType    }
+  | TREAL    { RealType   }
+  | TFLOAT   { FloatType  }
+  | TDOUBLE  { DoubleType }
+  | TBOOL    { BoolType   }
+  | TVOID    { VoidType   }
+  | n=IDENTIFIER { OtherType n }
   ;
 
 i_stmt:
