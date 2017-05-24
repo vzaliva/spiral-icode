@@ -35,6 +35,7 @@ rule main = parse
 | "loop"    { LOOP    }
 | "func"    { FUNC    }
 | "nth"     { NTH     }
+| "V"       { V       }
 | "skip"    { SKIP    }
 | "if"      { IF      }
 | "creturn" { CRETURN }
