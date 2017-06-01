@@ -26,6 +26,7 @@ rule main = parse
 | ')'  { RPAREN   }
 | '['  { LBRACKET }
 | ']'  { RBRACKET }
+| ":=" { DEF      }
 
 (* some reserved words below *)    
 | "decl"    { DECL    }
@@ -39,6 +40,8 @@ rule main = parse
 | "skip"    { SKIP    }
 | "if"      { IF      }
 | "creturn" { CRETURN }
+| "let"     { LET     }
+| "var"     { VAR     }
 
 (* type names *)
 | "TInt"       { TINT  }

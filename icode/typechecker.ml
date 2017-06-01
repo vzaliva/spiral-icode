@@ -4,6 +4,7 @@ open Ast
 
 exception Error of string
 
+(*
 let rec collect_vars = function
   | Function (_, _, args, stmt) -> args @ collect_vars stmt
   | Decl (vars, astmt) -> vars @ collect_vars astmt
@@ -42,3 +43,4 @@ let rec fix_operator_types = function
   | Loop (v, f, t, stmt) -> Loop (var_enforce_int v, f, t, fix_operator_types stmt)
   | If (rv, then_stmt, else_stmt) -> If (rv, fix_operator_types then_stmt, fix_operator_types else_stmt)
   | _ as x -> x
+ *)

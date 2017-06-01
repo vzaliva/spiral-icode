@@ -10,24 +10,38 @@
 %token TWODOT
 %token LPAREN RPAREN
 %token LBRACKET RBRACKET
+%token DEF
 
+%token LET VAR
 %token V DECL CHAIN DATA ASSIGN LOOP FUNC NTH SKIP IF CRETURN EOF
 %token TVOID TINT TREAL TDOUBLE TFLOAT TBOOL
 
 %token <string> IDENTIFIER
 
-%start <Ast.istmt> i_program
+%start <Ast.iprogram> i_program
 
 %%
 
-i_program:
-    | f=i_stmt EOF { Chain [f] }
-    | EOF { Chain [] }
-    ;
+i_type:
+  | TINT     { IntType    }
+  | TREAL    { RealType   }
+  | TFLOAT   { FloatType  }
+  | TDOUBLE  { DoubleType }
+  | TBOOL    { BoolType   }
+  | TVOID    { VoidType   }
+  | n=IDENTIFIER { OtherType n }
+  ;
 
 i_var:
-   | i=IDENTIFIER { Var (i,UnknownType) } (* will be extended by type annotatoins later *)
+   | i=IDENTIFIER DEF VAR LPAREN STRING COMMA t=i_type RPAREN { (i,t) }
    ;
+
+i_program:
+    | LET LPAREN v=separated_list(COMMA, i_var) COMMA b=i_stmt RPAREN EOF
+      { Program (v,b) }
+    | f=i_stmt EOF { Program ([], f) }
+    | EOF { Program ([], Skip) }
+    ;
 
 i_fconst:
   | V LPAREN f=FLOAT RPAREN { FConst f }
@@ -50,24 +64,14 @@ i_lvalue:
   | NTH LPAREN a=i_lvalue COMMA i=i_rvalue RPAREN { NthLvalue (a,i) }
   ;
 
-i_type:
-  | TINT     { IntType    }
-  | TREAL    { RealType   }
-  | TFLOAT   { FloatType  }
-  | TDOUBLE  { DoubleType }
-  | TBOOL    { BoolType   }
-  | TVOID    { VoidType   }
-  | n=IDENTIFIER { OtherType n }
-  ;
-
 i_stmt:
   | SKIP {Skip}
-  | FUNC LPAREN t=i_type COMMA n=STRING COMMA LBRACKET a=separated_list(COMMA, i_var) RBRACKET COMMA b=i_stmt RPAREN {Function (n,t,a,b)}
-  | DECL LPAREN LBRACKET a=separated_list(COMMA, i_var) RBRACKET COMMA b=i_stmt RPAREN {Decl (a,b)}
+  | FUNC LPAREN t=i_type COMMA n=STRING COMMA LBRACKET a=separated_list(COMMA, IDENTIFIER) RBRACKET COMMA b=i_stmt RPAREN {Function (n,t,a,b)}
+  | DECL LPAREN LBRACKET a=separated_list(COMMA, IDENTIFIER) RBRACKET COMMA b=i_stmt RPAREN {Decl (a,b)}
   | CHAIN LPAREN c=separated_list(COMMA, i_stmt) RPAREN {Chain c}
-  | DATA n=i_var COMMA v=separated_list(COMMA, i_rvalue) COMMA b=i_stmt LPAREN RPAREN {Data (n,v,b)}
+  | DATA LPAREN n=IDENTIFIER COMMA v=separated_list(COMMA, i_rvalue) COMMA b=i_stmt RPAREN {Data (n,v,b)}
   | ASSIGN LPAREN n=i_lvalue COMMA e=i_rvalue RPAREN {Assign (n,e)}
   | CRETURN LPAREN i=i_rvalue RPAREN { Return i }
   | IF LPAREN v=i_rvalue COMMA t=i_stmt COMMA e=i_stmt RPAREN { If (v,t,e) }
-  | LOOP LPAREN v=i_var COMMA LBRACKET f=INT TWODOT t=INT RBRACKET COMMA b=i_stmt RPAREN  { Loop (v,f,t,b) }
+  | LOOP LPAREN v=IDENTIFIER COMMA LBRACKET f=INT TWODOT t=INT RBRACKET COMMA b=i_stmt RPAREN  { Loop (v,f,t,b) }
   ;

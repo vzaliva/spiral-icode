@@ -1,5 +1,6 @@
 (* I-code AST *)
 
+
 type itype =
   | VoidType
   | RealType
@@ -12,7 +13,7 @@ type itype =
   | ArrayType of itype*(int option)
   | PtrType of itype
 
-type ivar = Var of string*itype
+type ivar = string
 
 type rvalue =
   | FunCall of string*(rvalue list)
@@ -36,6 +37,7 @@ type istmt =
   | If of rvalue*istmt*istmt
   | Return of rvalue
 
+type iprogram = Program of ((string*itype) list)*istmt
 
 open Format
 
@@ -53,7 +55,3 @@ let rec pr_itype ppf = function
                                | None -> "?"
                                | Some d -> string_of_int d)
   | PtrType t -> fprintf ppf "@[%a@]" pr_itype t
-
-
-let pr_ivar ppf = function
-  | Var (n,t) -> fprintf ppf "@[%s:%a@]" n pr_itype t

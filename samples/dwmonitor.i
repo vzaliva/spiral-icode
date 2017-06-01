@@ -11,6 +11,7 @@ q4 := var("q4", T_Real(64)),
 q3 := var("q3", T_Real(64)),
 D := var("D", TPtr(T_Real(64)).aligned([ 16, 0 ])),
 X := var("X", TPtr(T_Real(64)).aligned([ 16, 0 ])),
+    
 func(TInt, "transform", [ X, D ], 
    decl([ q3, q4, s1, s4, s5, s6, s7, s8, w1 ],
       chain(

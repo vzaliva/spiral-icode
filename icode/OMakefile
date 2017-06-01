@@ -30,7 +30,7 @@ OCamlProgram($(PROGRAM), $(FILES))
 .DEFAULT: $(EXE)
 
 run: $(EXE)
-	./$(EXE) ../samples/transform1.i
+	./$(EXE) ../samples/dwmonitor.i
 
 clean:
   rm -f \
