@@ -32,6 +32,7 @@ rule main = parse
 (* some reserved words below *)    
 | "decl"    { DECL    }
 | "chain"   { CHAIN   }
+| "ivenv"   { IVENV   }
 | "data"    { DATA    }
 | "assign"  { ASSIGN  }
 | "loop"    { LOOP    }

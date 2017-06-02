@@ -13,7 +13,7 @@
 %token DEF
 
 %token LET VAR ALIGNED
-%token V DECL CHAIN DATA ASSIGN LOOP FUNC NTH SKIP IF CRETURN EOF
+%token V DECL CHAIN IVENV DATA ASSIGN LOOP FUNC NTH SKIP IF CRETURN EOF
 %token TVOID TINT TREAL TDOUBLE TFLOAT TBOOL TPTR TVECT
 
 %token <string> IDENTIFIER
@@ -67,12 +67,16 @@ i_lvalue:
   ;
 
 i_rvalue_comma: v=i_rvalue COMMA { v }
-    
+
+i_chain_kw:
+           | CHAIN  {}
+           | IVENV  {}
+
 i_stmt:
   | SKIP {Skip}
   | FUNC LPAREN t=i_type COMMA n=STRING COMMA LBRACKET a=separated_list(COMMA, IDENTIFIER) RBRACKET COMMA b=i_stmt RPAREN {Function (n,t,a,b)}
   | DECL LPAREN LBRACKET a=separated_list(COMMA, IDENTIFIER) RBRACKET COMMA b=i_stmt RPAREN {Decl (a,b)}
-  | CHAIN LPAREN c=separated_list(COMMA, i_stmt) RPAREN {Chain c}
+  | i_chain_kw LPAREN c=separated_list(COMMA, i_stmt) RPAREN {Chain c}
   | DATA LPAREN n=IDENTIFIER COMMA v=list(i_rvalue_comma) b=i_stmt RPAREN {Data (n,v,b)}
   | ASSIGN LPAREN n=i_lvalue COMMA e=i_rvalue RPAREN {Assign (n,e)}
   | CRETURN LPAREN i=i_rvalue RPAREN { Return i }
