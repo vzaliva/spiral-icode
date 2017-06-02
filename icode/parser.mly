@@ -56,8 +56,6 @@ i_iconst:
   | V LPAREN i=INT RPAREN { i }
   ;
 
-  ;
-
 i_rvalue:
   | n=IDENTIFIER LPAREN a=separated_list(COMMA, i_rvalue) RPAREN {FunCall (n,a)}
   | v=IDENTIFIER {VarRValue v}
