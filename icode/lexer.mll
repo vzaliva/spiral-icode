@@ -50,6 +50,15 @@ rule main = parse
 
 (* type names *)
 | "TInt"       { TINT    }
+| "T_Int(8)"   { TINT8   }
+| "T_Int(16)"  { TINT16  }
+| "T_Int(32)"  { TINT32  }
+| "T_Int(64)"  { TINT64  }
+| "TUnt"       { TUINT    }
+| "T_UInt(8)"  { TUINT8   }
+| "T_UInt(16)" { TUINT16  }
+| "T_UInt(32)" { TUINT32  }
+| "T_UInt(64)" { TUINT64  }
 | "TReal"      { TREAL   }
 | "T_Real(32)" { TFLOAT  }
 | "T_Real(64)" { TDOUBLE }

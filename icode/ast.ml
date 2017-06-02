@@ -3,10 +3,19 @@
 
 type itype =
   | VoidType
-  | RealType
+  | RealType (* generic Real type *)
   | FloatType (* IEEE 32-bit float *)
   | DoubleType (* IEEE 64-bit float *)
-  | IntType
+  | IntType (* generic int *)
+  | Int8Type
+  | Int16Type
+  | Int32Type
+  | Int64Type
+  | UIntType (* generic unsigned int *)
+  | UInt8Type
+  | UInt16Type
+  | UInt32Type
+  | UInt64Type
   | BoolType
   | OtherType of string
   | UnknownType

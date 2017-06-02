@@ -14,7 +14,10 @@
 
 %token LET VAR ALIGNED
 %token V DECL CHAIN IVENV DATA ASSIGN LOOP FUNC NTH SKIP IF CRETURN EOF
-%token TVOID TINT TREAL TDOUBLE TFLOAT TBOOL TPTR TVECT
+%token TVOID TREAL TDOUBLE TFLOAT TBOOL TPTR TVECT
+%token TINT TINT8 TINT16 TINT32 TINT64
+%token TUINT TUINT8 TUINT16 TUINT32 TUINT64
+
 %token REALEPS TCAST VPARAM
 
 %token <string> IDENTIFIER
@@ -25,6 +28,15 @@
 
 i_type:
   | TINT     { IntType    }
+  | TINT8    { Int8Type   }
+  | TINT16   { Int16Type  }
+  | TINT32   { Int32Type  }
+  | TINT64   { Int64Type  }
+  | TUINT    { UIntType   }
+  | TUINT8   { UInt8Type  }
+  | TUINT16  { UInt16Type }
+  | TUINT32  { UInt32Type }
+  | TUINT64  { UInt64Type }
   | TREAL    { RealType   }
   | TFLOAT   { FloatType  }
   | TDOUBLE  { DoubleType }
