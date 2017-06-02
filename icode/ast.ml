@@ -22,6 +22,8 @@ type rvalue =
   | IConst of int
   | FConstVec of (float list)
   | IConstVec of (int list)
+  | FloatEPS
+  | DoubleEPS
   | NthRvalue of rvalue*rvalue (* 'int' type for index will be checked later *)
 
 type lvalue =

@@ -10,13 +10,14 @@ let identchar =
     ['A'-'Z' 'a'-'z' '_' '\192'-'\214' '\216'-'\246' '\248'-'\255' '\'' '0'-'9']
 
 rule main = parse
+
 (* ignore whitespace *)
 | [' ' '\t' '\n'] { main lexbuf }
 
 (* numeric literals *)
-| ['0'-'9']*'.'['0'-'9']+ as f
+| '-'?['0'-'9']*'.'['0'-'9']+ as f
     { FLOAT (float_of_string f) }
-| ['0'-'9']+ as i
+| '-'?['0'-'9']+ as i
     { INT (int_of_string i) }
 
 (* special characters *)
@@ -54,6 +55,10 @@ rule main = parse
 | "TBool"      { TBOOL   }
 | "TPtr"       { TPTR    }
 | "TVect"      { TVECT   }
+
+
+(* Special functions *)
+| "RealEPS" { REALEPS }
 
 (* string literals *)
 | '"'

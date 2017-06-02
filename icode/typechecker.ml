@@ -4,6 +4,12 @@ open Ast
 
 exception Error of string
 
+(* (string*itype) list -> Map *)
+
+(* let build_var_dict l = *)
+
+
+
 (*
 let rec collect_vars = function
   | Function (_, _, args, stmt) -> args @ collect_vars stmt
