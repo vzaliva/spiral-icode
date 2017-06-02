@@ -18,7 +18,7 @@
 %token TINT TINT8 TINT16 TINT32 TINT64
 %token TUINT TUINT8 TUINT16 TUINT32 TUINT64
 
-%token REALEPS TCAST VPARAM
+%token REALEPS TCAST VPARAM VHEX
 
 %token <string> IDENTIFIER
 
@@ -79,10 +79,12 @@ i_rvalue:
               { IConstVec l }
   | VPARAM LPAREN LBRACKET l=separated_nonempty_list(COMMA, UINT) RBRACKET RPAREN
               { VParam (VParamList l) }
+  | VHEX LPAREN LBRACKET l=separated_nonempty_list(COMMA, STRING) RBRACKET RPAREN
+              { IConstVec [] } (* TODO *)             
   | f=i_fconst { FConst f }
   | i=i_iconst { IConst i }
   | NTH LPAREN a=i_rvalue COMMA i=i_rvalue RPAREN { NthRvalue (a,i) }
-  | TCAST LPAREN t=i_type COMMA v=i_rvalue { Cast (t,v) }
+  | TCAST LPAREN t=i_type COMMA v=i_rvalue RPAREN { Cast (t,v) }
   | n=IDENTIFIER LPAREN a=separated_list(COMMA, i_rvalue) RPAREN {FunCall (n,a)}
   | v=IDENTIFIER {VarRValue v}
   ;

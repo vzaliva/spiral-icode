@@ -46,7 +46,8 @@ rule main = parse
 | "let"     { LET     }
 | "var"     { VAR     }
 | "aligned" { ALIGNED }
-| "vparam"  { VPARAM   }
+| "vparam"  { VPARAM  }
+| "vhex"    { VHEX    }
 
 (* type names *)
 | "TInt"       { TINT    }
