@@ -47,7 +47,9 @@ i_program:
     ;
 
 i_fconst:
-  | V LPAREN f=FLOAT RPAREN { f }
+  | V LPAREN f=FLOAT RPAREN { FPLiteral f }
+  | REALEPS LPAREN TFLOAT RPAREN { FloatEPS }
+  | REALEPS LPAREN TDOUBLE RPAREN { DoubleEPS }
   ;
 
 i_iconst:
@@ -57,8 +59,6 @@ i_iconst:
   ;
 
 i_rvalue:
-  | REALEPS LPAREN TFLOAT RPAREN { FloatEPS }
-  | REALEPS LPAREN TDOUBLE RPAREN { DoubleEPS }
   | n=IDENTIFIER LPAREN a=separated_list(COMMA, i_rvalue) RPAREN {FunCall (n,a)}
   | v=IDENTIFIER {VarRValue v}
   | V LPAREN LBRACKET l=separated_nonempty_list(COMMA, i_fconst) RBRACKET RPAREN

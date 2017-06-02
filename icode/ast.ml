@@ -15,15 +15,18 @@ type itype =
 
 type ivar = string
 
+type fconst =
+  | FPLiteral of float
+  | FloatEPS
+  | DoubleEPS
+
 type rvalue =
   | FunCall of string*(rvalue list)
   | VarRValue of string
-  | FConst of float
+  | FConst of fconst
   | IConst of int
-  | FConstVec of (float list)
+  | FConstVec of (fconst list)
   | IConstVec of (int list)
-  | FloatEPS
-  | DoubleEPS
   | NthRvalue of rvalue*rvalue (* 'int' type for index will be checked later *)
 
 type lvalue =
