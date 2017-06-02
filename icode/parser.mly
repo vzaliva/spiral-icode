@@ -34,11 +34,11 @@ i_type:
   ;
 
 i_var:
-   | i=IDENTIFIER DEF VAR LPAREN STRING COMMA t=i_type RPAREN { (i,t) }
+   | i=IDENTIFIER DEF VAR LPAREN STRING COMMA t=i_type RPAREN COMMA { (i,t) }
    ;
 
 i_program:
-    | LET LPAREN v=separated_nonempty_list(COMMA, i_var) COMMA b=i_stmt RPAREN EOF
+    | LET LPAREN v=list(i_var) b=i_stmt RPAREN EOF
       { Program (v,b) }
     | f=i_stmt EOF { Program ([], f) }
     | EOF { Program ([], Skip) }
@@ -65,12 +65,14 @@ i_lvalue:
   | NTH LPAREN a=i_lvalue COMMA i=i_rvalue RPAREN { NthLvalue (a,i) }
   ;
 
+i_rvalue_comma: v=i_rvalue COMMA { v }
+    
 i_stmt:
   | SKIP {Skip}
   | FUNC LPAREN t=i_type COMMA n=STRING COMMA LBRACKET a=separated_list(COMMA, IDENTIFIER) RBRACKET COMMA b=i_stmt RPAREN {Function (n,t,a,b)}
   | DECL LPAREN LBRACKET a=separated_list(COMMA, IDENTIFIER) RBRACKET COMMA b=i_stmt RPAREN {Decl (a,b)}
   | CHAIN LPAREN c=separated_list(COMMA, i_stmt) RPAREN {Chain c}
-  | DATA LPAREN n=IDENTIFIER COMMA v=separated_list(COMMA, i_rvalue) COMMA b=i_stmt RPAREN {Data (n,v,b)}
+  | DATA LPAREN n=IDENTIFIER COMMA v=list(i_rvalue_comma) b=i_stmt RPAREN {Data (n,v,b)}
   | ASSIGN LPAREN n=i_lvalue COMMA e=i_rvalue RPAREN {Assign (n,e)}
   | CRETURN LPAREN i=i_rvalue RPAREN { Return i }
   | IF LPAREN v=i_rvalue COMMA t=i_stmt COMMA e=i_stmt RPAREN { If (v,t,e) }

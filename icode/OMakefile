@@ -9,8 +9,8 @@ EXE = $(if $(BYTE_ENABLED), $(PROGRAM).run) \
 OCAMLCFLAGS += -g -thread
 
 MENHIR_ENABLED = true
-MENHIR_FLAGS += --infer --trace -v --graph
-#MENHIR_FLAGS += --infer -v --graph 
+#MENHIR_FLAGS += --infer --trace -v --graph
+MENHIR_FLAGS += --infer -v --graph 
 
 USE_OCAMLFIND = true
 OCAMLFINDFLAGS = 
@@ -31,6 +31,7 @@ OCamlProgram($(PROGRAM), $(FILES))
 
 run: $(EXE)
 	./$(EXE) ../samples/dwmonitor.i
+	./$(EXE) ../samples/dwmonitor_interval.i
 
 clean:
   rm -f \
