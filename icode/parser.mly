@@ -3,10 +3,10 @@
 %}
 
 %token <float> FLOAT
-%token <int> INT
+%token <int> UINT
 %token <string> STRING
 
-%token COMMA
+%token MINUS COMMA
 %token DOT TWODOT
 %token LPAREN RPAREN
 %token LBRACKET RBRACKET
@@ -42,8 +42,8 @@ i_type:
   | TDOUBLE  { DoubleType }
   | TBOOL    { BoolType   }
   | TVOID    { VoidType   }
-  | TPTR LPAREN t=i_type RPAREN DOT ALIGNED LPAREN LBRACKET a=separated_list(COMMA, INT) RBRACKET RPAREN {PtrType (t,a)}
-  | TVECT LPAREN t=i_type COMMA s=INT RPAREN { VecType (t,s) }
+  | TPTR LPAREN t=i_type RPAREN DOT ALIGNED LPAREN LBRACKET a=separated_list(COMMA, UINT) RBRACKET RPAREN {PtrType (t,a)}
+  | TVECT LPAREN t=i_type COMMA s=UINT RPAREN { VecType (t,s) }
   | n=IDENTIFIER { OtherType n }
   ;
 
@@ -64,8 +64,12 @@ i_fconst:
   | REALEPS LPAREN TDOUBLE RPAREN { DoubleEPS }
   ;
 
+i_int:
+  | x=UINT { x }
+  | MINUS x=UINT { -x }
+
 i_iconst:
-  | V LPAREN i=INT RPAREN { i }
+  | V LPAREN i=i_int RPAREN { i }
   ;
 
 i_rvalue:
@@ -73,7 +77,7 @@ i_rvalue:
               { FConstVec l }
   | V LPAREN LBRACKET l=separated_nonempty_list(COMMA, i_iconst) RBRACKET RPAREN
               { IConstVec l }
-  | VPARAM LPAREN LBRACKET l=separated_nonempty_list(COMMA, INT) RBRACKET RPAREN
+  | VPARAM LPAREN LBRACKET l=separated_nonempty_list(COMMA, UINT) RBRACKET RPAREN
               { VParam (VParamList l) }
   | f=i_fconst { FConst f }
   | i=i_iconst { IConst i }
@@ -103,5 +107,5 @@ i_stmt:
   | ASSIGN LPAREN n=i_lvalue COMMA e=i_rvalue RPAREN {Assign (n,e)}
   | CRETURN LPAREN i=i_rvalue RPAREN { Return i }
   | IF LPAREN v=i_rvalue COMMA t=i_stmt COMMA e=i_stmt RPAREN { If (v,t,e) }
-  | LOOP LPAREN v=IDENTIFIER COMMA LBRACKET f=INT TWODOT t=INT RBRACKET COMMA b=i_stmt RPAREN  { Loop (v,f,t,b) }
+  | LOOP LPAREN v=IDENTIFIER COMMA LBRACKET f=i_int TWODOT t=i_int RBRACKET COMMA b=i_stmt RPAREN  { Loop (v,f,t,b) }
   ;

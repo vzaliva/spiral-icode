@@ -17,8 +17,8 @@ rule main = parse
 (* numeric literals *)
 | '-'?['0'-'9']*'.'['0'-'9']+ as f
     { FLOAT (float_of_string f) }
-| '-'?['0'-'9']+ as i
-    { INT (int_of_string i) }
+| ['0'-'9']+ as i
+    { UINT (int_of_string i) }
 
 (* special characters *)
 | ','  { COMMA    }
