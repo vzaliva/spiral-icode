@@ -4,6 +4,19 @@ open Ast
 
 exception Error of string
 
+
+(*
+Checks:
+* No duplicate names in LET
+* Each variable wich is used is referenced in an enclosing DECL
+* Each variable mentioned in at most one DECL
+* Int types for loop indices
+* Unofrmily of decl, TVect, vparam array types
+* Matcing types in ASSIGN
+* Matching types in functoin calls
+* Matching function return type to rvalue type in creturn
+*)
+
 (* (string*itype) list -> Map *)
 
 (* let build_var_dict l = *)
