@@ -11,7 +11,7 @@ type itype =
   | OtherType of string
   | UnknownType
   | ArrayType of itype*(int option)
-  | PtrType of itype
+  | PtrType of itype*(int list) (* type, alignment *)
 
 type ivar = string
 
@@ -54,4 +54,4 @@ let rec pr_itype ppf = function
                                (match s with
                                | None -> "?"
                                | Some d -> string_of_int d)
-  | PtrType t -> fprintf ppf "@[%a@]" pr_itype t
+  | PtrType (t,_) -> fprintf ppf "@[%a@]" pr_itype t

@@ -22,6 +22,7 @@ rule main = parse
 (* special characters *)
 | ','  { COMMA    }
 | ".." { TWODOT   }
+| "."  { DOT      }
 | '('  { LPAREN   }
 | ')'  { RPAREN   }
 | '['  { LBRACKET }
@@ -42,13 +43,15 @@ rule main = parse
 | "creturn" { CRETURN }
 | "let"     { LET     }
 | "var"     { VAR     }
+| "aligned" { ALIGNED }
 
 (* type names *)
-| "TInt"       { TINT  }
-| "TReal   "   { TREAL }
+| "TInt"       { TINT    }
+| "TReal"      { TREAL   }
 | "T_Real(32)" { TFLOAT  }
 | "T_Real(64)" { TDOUBLE }
-| "TBool"      { TBOOL }
+| "TBool"      { TBOOL   }
+| "TPtr"       { TPTR    }
 
 (* string literals *)
 | '"'

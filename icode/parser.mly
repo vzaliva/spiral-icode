@@ -7,14 +7,14 @@
 %token <string> STRING
 
 %token COMMA
-%token TWODOT
+%token DOT TWODOT
 %token LPAREN RPAREN
 %token LBRACKET RBRACKET
 %token DEF
 
-%token LET VAR
+%token LET VAR ALIGNED
 %token V DECL CHAIN DATA ASSIGN LOOP FUNC NTH SKIP IF CRETURN EOF
-%token TVOID TINT TREAL TDOUBLE TFLOAT TBOOL
+%token TVOID TINT TREAL TDOUBLE TFLOAT TBOOL TPTR
 
 %token <string> IDENTIFIER
 
@@ -29,6 +29,7 @@ i_type:
   | TDOUBLE  { DoubleType }
   | TBOOL    { BoolType   }
   | TVOID    { VoidType   }
+  | TPTR LPAREN t=i_type RPAREN DOT ALIGNED LPAREN LBRACKET a=separated_list(COMMA, INT) RBRACKET RPAREN {PtrType (t,a)}
   | n=IDENTIFIER { OtherType n }
   ;
 
@@ -37,7 +38,7 @@ i_var:
    ;
 
 i_program:
-    | LET LPAREN v=separated_list(COMMA, i_var) COMMA b=i_stmt RPAREN EOF
+    | LET LPAREN v=separated_nonempty_list(COMMA, i_var) COMMA b=i_stmt RPAREN EOF
       { Program (v,b) }
     | f=i_stmt EOF { Program ([], f) }
     | EOF { Program ([], Skip) }
