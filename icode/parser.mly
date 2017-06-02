@@ -46,18 +46,24 @@ i_program:
     ;
 
 i_fconst:
-  | V LPAREN f=FLOAT RPAREN { FConst f }
+  | V LPAREN f=FLOAT RPAREN { f }
   ;
 
 i_iconst:
-  | V LPAREN i=INT RPAREN {IConst i}
+  | V LPAREN i=INT RPAREN { i }
   ;
-  
+
+  ;
+
 i_rvalue:
   | n=IDENTIFIER LPAREN a=separated_list(COMMA, i_rvalue) RPAREN {FunCall (n,a)}
   | v=IDENTIFIER {VarRValue v}
-  | f=i_fconst { f }
-  | i=i_iconst { i }
+  | V LPAREN LBRACKET l=separated_nonempty_list(COMMA, i_fconst) RBRACKET RPAREN
+              { FConstVec l }
+  | V LPAREN LBRACKET l=separated_nonempty_list(COMMA, i_iconst) RBRACKET RPAREN
+              { IConstVec l }
+  | f=i_fconst { FConst f }
+  | i=i_iconst { IConst i }
   | NTH LPAREN a=i_rvalue COMMA i=i_rvalue RPAREN { NthRvalue (a,i) }
   ;
 

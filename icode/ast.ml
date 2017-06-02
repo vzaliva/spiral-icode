@@ -20,6 +20,8 @@ type rvalue =
   | VarRValue of string
   | FConst of float
   | IConst of int
+  | FConstVec of (float list)
+  | IConstVec of (int list)
   | NthRvalue of rvalue*rvalue (* 'int' type for index will be checked later *)
 
 type lvalue =
