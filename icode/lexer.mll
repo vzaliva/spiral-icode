@@ -46,6 +46,7 @@ rule main = parse
 | "let"     { LET     }
 | "var"     { VAR     }
 | "aligned" { ALIGNED }
+| "vparam"  { VPARAM   }
 
 (* type names *)
 | "TInt"       { TINT    }
@@ -59,6 +60,7 @@ rule main = parse
 
 (* Special functions *)
 | "RealEPS" { REALEPS }
+| "tcast"   { TCAST   }
 
 (* string literals *)
 | '"'

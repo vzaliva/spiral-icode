@@ -20,6 +20,10 @@ type fconst =
   | FloatEPS
   | DoubleEPS
 
+type vparam =
+  | VParamList of int list
+  | VParamValue of int
+
 type rvalue =
   | FunCall of string*(rvalue list)
   | VarRValue of string
@@ -28,6 +32,8 @@ type rvalue =
   | FConstVec of (fconst list)
   | IConstVec of (int list)
   | NthRvalue of rvalue*rvalue (* 'int' type for index will be checked later *)
+  | Cast of itype*rvalue
+  | VParam of vparam
 
 type lvalue =
   | VarLValue of string

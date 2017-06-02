@@ -15,7 +15,7 @@
 %token LET VAR ALIGNED
 %token V DECL CHAIN IVENV DATA ASSIGN LOOP FUNC NTH SKIP IF CRETURN EOF
 %token TVOID TINT TREAL TDOUBLE TFLOAT TBOOL TPTR TVECT
-%token REALEPS
+%token REALEPS TCAST VPARAM
 
 %token <string> IDENTIFIER
 
@@ -57,15 +57,18 @@ i_iconst:
   ;
 
 i_rvalue:
-  | n=IDENTIFIER LPAREN a=separated_list(COMMA, i_rvalue) RPAREN {FunCall (n,a)}
-  | v=IDENTIFIER {VarRValue v}
   | V LPAREN LBRACKET l=separated_nonempty_list(COMMA, i_fconst) RBRACKET RPAREN
               { FConstVec l }
   | V LPAREN LBRACKET l=separated_nonempty_list(COMMA, i_iconst) RBRACKET RPAREN
               { IConstVec l }
+  | VPARAM LPAREN LBRACKET l=separated_nonempty_list(COMMA, INT) RBRACKET RPAREN
+              { VParam (VParamList l) }
   | f=i_fconst { FConst f }
   | i=i_iconst { IConst i }
   | NTH LPAREN a=i_rvalue COMMA i=i_rvalue RPAREN { NthRvalue (a,i) }
+  | TCAST LPAREN t=i_type COMMA v=i_rvalue { Cast (t,v) }
+  | n=IDENTIFIER LPAREN a=separated_list(COMMA, i_rvalue) RPAREN {FunCall (n,a)}
+  | v=IDENTIFIER {VarRValue v}
   ;
 
 i_lvalue:
