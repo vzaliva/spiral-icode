@@ -14,7 +14,7 @@
 
 %token LET VAR ALIGNED
 %token V DECL CHAIN DATA ASSIGN LOOP FUNC NTH SKIP IF CRETURN EOF
-%token TVOID TINT TREAL TDOUBLE TFLOAT TBOOL TPTR
+%token TVOID TINT TREAL TDOUBLE TFLOAT TBOOL TPTR TVECT
 
 %token <string> IDENTIFIER
 
@@ -30,6 +30,7 @@ i_type:
   | TBOOL    { BoolType   }
   | TVOID    { VoidType   }
   | TPTR LPAREN t=i_type RPAREN DOT ALIGNED LPAREN LBRACKET a=separated_list(COMMA, INT) RBRACKET RPAREN {PtrType (t,a)}
+  | TVECT LPAREN t=i_type COMMA s=INT RPAREN { VecType (t,s) }
   | n=IDENTIFIER { OtherType n }
   ;
 

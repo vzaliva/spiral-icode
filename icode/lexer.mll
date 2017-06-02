@@ -52,6 +52,7 @@ rule main = parse
 | "T_Real(64)" { TDOUBLE }
 | "TBool"      { TBOOL   }
 | "TPtr"       { TPTR    }
+| "TVect"      { TVECT   }
 
 (* string literals *)
 | '"'

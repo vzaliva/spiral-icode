@@ -10,7 +10,7 @@ type itype =
   | BoolType
   | OtherType of string
   | UnknownType
-  | ArrayType of itype*(int option)
+  | VecType of itype*int
   | PtrType of itype*(int list) (* type, alignment *)
 
 type ivar = string
@@ -50,8 +50,5 @@ let rec pr_itype ppf = function
   | BoolType -> fprintf ppf "@[TBool@]"
   | OtherType n -> fprintf ppf "@[%s@]" n
   | UnknownType -> fprintf ppf "@[?@]"
-  | ArrayType (t,s) -> fprintf ppf "@[%a[%s]@]" pr_itype t
-                               (match s with
-                               | None -> "?"
-                               | Some d -> string_of_int d)
+  | VecType (t,s) -> fprintf ppf "@[%a[%d]@]" pr_itype t s
   | PtrType (t,_) -> fprintf ppf "@[%a@]" pr_itype t
