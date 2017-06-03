@@ -13,7 +13,7 @@ let build_var_map l =
    enclosing lexical scoping statemets, which are: DECL, DATA, LOOP,
    FUNC.
 
-   Returns set of all declared variables.
+   Returns: a set of all declared variables.
  *)
 let check_decls =
   let open String.Set.Tree in
@@ -35,12 +35,18 @@ let check_decls =
        decl_only_once (add_var u v) body
     | If (_,bt,bf) ->
        union
-       (decl_only_once u bt)
-       (decl_only_once u bf)
+         (decl_only_once u bt)
+         (decl_only_once u bf)
     | Skip | Assign _ | Return _ -> u
   in
   decl_only_once String.Set.Tree.empty
 
+(* Check that all variabels defined in 'let' appear in at least on
+   declaraion (decl, data, loop. Prints a warning if some are never
+   declared.
+
+    Returns: a set of defined but undeclared variables
+ *)
 let check_never_decl vmap used =
   let open String.Set.Tree in
   let all = String.Map.Tree.keys vmap |> of_list in
@@ -55,7 +61,7 @@ let typecheck vmap stmt =
   ()
 
 
-(*
+    (*
 TODO: Checks:
 * Each variable wich is used is referenced in an enclosing DECL
 * Each variable mentioned in at most one DECL
