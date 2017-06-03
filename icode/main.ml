@@ -1,16 +1,17 @@
 open Typechecker
 open Format
+open Core
 
+(* TODO: argument parsing *)
 let filename = Sys.argv.(1)
 
 let () =
-    let inBuffer = open_in filename in
+    let inBuffer = In_channel.create filename in
     let lineBuffer = Lexing.from_channel inBuffer in
     try
-      let _ = Parser.i_program Lexer.main lineBuffer in
-(*      let ast = fix_operator_types ast in
-      let types = Typechecker.collect_vars ast in
-      pp_print_list ~pp_sep:pp_print_newline Ast.pr_ivar std_formatter types *)
+      let Ast.Program (valist, body) = Parser.i_program Lexer.main lineBuffer in
+      let vmap = Typechecker.build_var_map valist in
+      Typechecker.typecheck vmap body ;
       Printf.fprintf stderr "OK\n"
     with
         | Typechecker.Error msg -> Printf.fprintf stderr "Type check failed: %s%!\n" msg

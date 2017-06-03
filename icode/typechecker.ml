@@ -4,6 +4,13 @@ open Ast
 
 exception Error of string
 
+let build_var_map l =
+  match String.Map.Tree.of_alist l with
+  | `Duplicate_key k -> raise (Error ("duplicate variable " ^ k ^ " in 'let'" ))
+  | `Ok m -> m
+
+let typecheck vmap ast = ()
+
 
 (*
 Checks:
@@ -21,6 +28,10 @@ Checks:
 
 (* let build_var_dict l = *)
 
+
+      (*      let ast = fix_operator_types ast in
+      let types = Typechecker.collect_vars ast in
+      pp_print_list ~pp_sep:pp_print_newline Ast.pr_ivar std_formatter types *)
 
 
 (*
