@@ -6,15 +6,48 @@ exception Error of string
 
 let build_var_map l =
   match String.Map.Tree.of_alist l with
-  | `Duplicate_key k -> raise (Error ("duplicate variable " ^ k ^ " in 'let'" ))
+  | `Duplicate_key k -> raise (Error ("duplicate variable '" ^ k ^ "' in 'let'" ))
   | `Ok m -> m
 
-let typecheck vmap ast = ()
+(* Makes sure each variable wich is used is referenced only once in an
+   enclosing lexical scoping statemets, which are: DECL, DATA, LOOP,
+   FUNC.
+
+   Returns set of all declared variables.
+ *)
+let decl_only_once s =
+  let open String.Set.Tree in
+  let add_var s v =
+    if mem s v then
+      raise (Error ("duplicate declaration of '" ^ v ^ "'" ))
+    else
+      add s v
+  in
+  let add_vars s vl = List.fold ~init:s ~f:add_var vl in
+  let rec decl_only_once u = function
+    | Function (__,_,params,body) ->
+       decl_only_once (add_vars u params) body
+    | Decl (params,body) ->
+       decl_only_once (add_vars u params) body
+    | Chain lbody ->
+       List.fold ~f:decl_only_once ~init:u lbody
+    | Data (v,_,body) ->
+       decl_only_once (add_var u v) body
+    | Loop (v,_,_,body) ->
+       decl_only_once (add_var u v) body
+    | If (_,bt,bf) ->
+       union
+       (decl_only_once u bt)
+       (decl_only_once u bf)
+    | Skip | Assign _ | Return _ -> u
+  in
+  decl_only_once String.Set.Tree.empty
+
+let typecheck vmap stmt = ()
 
 
 (*
 Checks:
-* No duplicate names in LET
 * Each variable wich is used is referenced in an enclosing DECL
 * Each variable mentioned in at most one DECL
 * Int types for loop indices
