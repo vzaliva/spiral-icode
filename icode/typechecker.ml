@@ -53,6 +53,8 @@ and var_in_scope s v =
 
    2. Checks that a vairable used in expressions is in scope.
 
+   3. Checks the range of loop indices
+
    Returns: a set of all declared variables.
  *)
 let typecheck vmap prog =
@@ -72,8 +74,11 @@ let typecheck vmap prog =
     | Data (v,rl,body) ->
        ignore (List.map ~f:(check_vars_in_rvalue u) rl) ;
        typecheck (add_var u v) body
-    | Loop (v,_,_,body) ->
-       typecheck (add_var u v) body
+    | Loop (v,f,t,body) ->
+       if f>t then
+         raise (Error (Printf.sprintf "Invalid loop index range: %d .. %d  " f t ))
+       else
+         typecheck (add_var u v) body
     | If (r,bt,bf) ->
        check_vars_in_rvalue u r ;
        union
@@ -93,7 +98,6 @@ let typecheck vmap prog =
 
     (*
 TODO: Checks:
-* Int types for loop indices
 * Unofrmily of decl, TVect, vparam array types
 * Matcing types in ASSIGN
 * Matching types in functoin calls
