@@ -41,21 +41,26 @@ and var_in_scope s v =
   else ()
 
 (*
-   Peform various type and strcutural correctness checks.
+   Peforms various type and strcutural correctness checks:
 
-   1. Makes sure each variable wich is used is referenced only once in an
+   1. Eeach variable wich is used is referenced only once in an
    enclosing lexical scoping statemets, which are: DECL, DATA, LOOP,
    FUNC.
 
-   2. Check that all variabels defined in 'let' appear in at least on
+   2. Aall variabels defined in 'let' appear in at least on
    declaraion (decl, data, loop. Prints a warning if some are never
    declared.
 
-   2. Checks that a vairable used in expressions is in scope.
+   2. Vairable used in expressions are in scope.
 
-   3. Checks the range of loop indices
+   3. Loop indices are proper non-empty range (TODO: allow empy?)
 
-   Returns: a set of all declared variables.
+  TODO:
+  * Unofrmily of data initializer value types
+  * Matcing types in ASSIGN
+  * Matching types in functoin calls
+  * Matching function return type to rvalue type in creturn
+
  *)
 let typecheck vmap prog =
   let open String.Set.Tree in
@@ -94,13 +99,4 @@ let typecheck vmap prog =
   let used = typecheck String.Set.Tree.empty prog in
   ignore (check_never_decl vmap used)
 
-
-
-    (*
-TODO: Checks:
-* Unofrmily of decl, TVect, vparam array types
-* Matcing types in ASSIGN
-* Matching types in functoin calls
-* Matching function return type to rvalue type in creturn
-*)
 
