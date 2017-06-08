@@ -28,12 +28,15 @@ let rec check_vars_in_rvalue s = function
   | VarRValue v -> var_in_scope s v
   | NthRvalue (r1,r2) ->   (check_vars_in_rvalue s r1) ;
                            (check_vars_in_rvalue s r2)
-  | Cast (_,r) -> check_vars_in_rvalue s r
+  | RCast (_,r) -> check_vars_in_rvalue s r
+  | RDeref r -> check_vars_in_rvalue s r
   | VParam _ | FConstVec _  | IConstVec _ | FConst _  | IConst _  -> ()
 and check_vars_in_lvalue s = function
   | VarLValue v -> var_in_scope s v
   | NthLvalue (l, r) -> (check_vars_in_lvalue s l) ;
                         (check_vars_in_rvalue s r)
+  | LCast (_, v) -> check_vars_in_lvalue s v
+  | LDeref v -> check_vars_in_lvalue s v
 and var_in_scope s v =
   if not (String.Set.Tree.mem s v) then
     raise (Error ("Variable '" ^ v ^ "' is not in scope" ))
@@ -47,11 +50,17 @@ let var_type vmap v =
 let rec lvalue_type vmap lv =
   match lv with
   | VarLValue v -> var_type vmap v
+  | LCast (t,_) -> t
+  | LDeref v ->
+     (match lvalue_type vmap v with
+     | PtrType (t,_) -> t
+     | _ as vt ->
+        raise (Error (Format.asprintf "Dereferencing non-pointer type %a" pr_itype vt)))
   | NthLvalue (v, i) ->
      let vt = lvalue_type vmap v in
      match vt with
      | VecType (t,_) | PtrType (t,_) -> t
-     | _ -> raise (Error "Invalid type in NTH")
+     | _ -> raise (Error (Format.asprintf "Invalid type %a in NTH" pr_itype vt))
 
 (*
    Peforms various type and strcutural correctness checks:
@@ -69,7 +78,7 @@ let rec lvalue_type vmap lv =
    3. Loop indices are proper non-empty range (TODO: allow empy?)
 
   TODO:
-  * 'nth' rvalue type is int
+  * 'nth' index rvalue type is int
   * Unifrmity of data initializer value types
   * Matcing types in ASSIGN
   * Matching types in functoin calls
@@ -105,6 +114,7 @@ let typecheck vmap prog =
          (typecheck u bf)
     | Skip -> u
     | Assign (l,r) ->
+       ignore (lvalue_type vmap l) ; (* for side effects to check if it type checks *)
        check_vars_in_lvalue u l;
        check_vars_in_rvalue u r;
        u

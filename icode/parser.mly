@@ -18,7 +18,7 @@
 %token TINT TINT8 TINT16 TINT32 TINT64
 %token TUINT TUINT8 TUINT16 TUINT32 TUINT64
 
-%token REALEPS TCAST VPARAM VHEX
+%token REALEPS TCAST DEREF VPARAM VHEX
 
 %token <string> IDENTIFIER
 
@@ -84,14 +84,17 @@ i_rvalue:
   | f=i_fconst { FConst f }
   | i=i_iconst { IConst i }
   | NTH LPAREN a=i_rvalue COMMA i=i_rvalue RPAREN { NthRvalue (a,i) }
-  | TCAST LPAREN t=i_type COMMA v=i_rvalue RPAREN { Cast (t,v) }
+  | TCAST LPAREN t=i_type COMMA v=i_rvalue RPAREN { RCast (t,v) }
   | n=IDENTIFIER LPAREN a=separated_list(COMMA, i_rvalue) RPAREN {FunCall (n,a)}
   | v=IDENTIFIER {VarRValue v}
+  | DEREF LPAREN v=i_rvalue RPAREN { RDeref v }
   ;
 
 i_lvalue:
   | v=IDENTIFIER {VarLValue v}
   | NTH LPAREN a=i_lvalue COMMA i=i_rvalue RPAREN { NthLvalue (a,i) }
+  | DEREF LPAREN v=i_lvalue RPAREN { LDeref v }
+  | TCAST LPAREN t=i_type COMMA v=i_lvalue RPAREN { LCast (t,v) }
   ;
 
 i_rvalue_comma: v=i_rvalue COMMA { v }

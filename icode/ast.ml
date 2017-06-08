@@ -41,12 +41,15 @@ type rvalue =
   | FConstVec of (fconst list)
   | IConstVec of (int list)
   | NthRvalue of rvalue*rvalue (* 'int' type for index will be checked later *)
-  | Cast of itype*rvalue
+  | RCast of itype*rvalue
   | VParam of vparam
+  | RDeref of rvalue
 
 type lvalue =
   | VarLValue of string
   | NthLvalue of lvalue*rvalue
+  | LDeref of lvalue
+  | LCast of itype*lvalue
 
 type istmt =
   | Function of string*itype*(ivar list)*istmt
@@ -64,6 +67,15 @@ type iprogram = Program of ((string*itype) list)*istmt
 open Format
 
 let rec pr_itype ppf = function
+  | Int8Type -> fprintf ppf "@[TInt8]"
+  | Int16Type -> fprintf ppf "@[TInt16]"
+  | Int32Type -> fprintf ppf "@[TInt32]"
+  | Int64Type -> fprintf ppf "@[TInt64]"
+  | UIntType -> fprintf ppf "@[TUInt]"
+  | UInt8Type -> fprintf ppf "@[TUInt8]"
+  | UInt16Type -> fprintf ppf "@[TUInt16]"
+  | UInt32Type -> fprintf ppf "@[TUInt32]"
+  | UInt64Type -> fprintf ppf "@[TUInt64]"
   | VoidType -> fprintf ppf "@[TVoid@]"
   | RealType -> fprintf ppf "@[TReal@]"
   | FloatType -> fprintf ppf "@[Float@]"
@@ -74,3 +86,5 @@ let rec pr_itype ppf = function
   | UnknownType -> fprintf ppf "@[?@]"
   | VecType (t,s) -> fprintf ppf "@[%a[%d]@]" pr_itype t s
   | PtrType (t,_) -> fprintf ppf "@[%a@]" pr_itype t
+
+let itype_as_string = Format.asprintf "%a" pr_itype

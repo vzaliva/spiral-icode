@@ -71,6 +71,7 @@ rule main = parse
 (* Special functions *)
 | "RealEPS" { REALEPS }
 | "tcast"   { TCAST   }
+| "deref"   { DEREF   }
 
 (* string literals *)
 | '"'
