@@ -23,7 +23,6 @@ let check_never_decl vmap used =
      Printf.fprintf stderr "Warning: following variables definded in 'let' but never declared: %s\n" (String.concat ~sep:" " (to_list unused)))
   ; unused
 
-
 let rec check_vars_in_rvalue s = function
   | FunCall (_,rl) -> ignore (List.map ~f:(check_vars_in_rvalue s) rl)
   | VarRValue v -> var_in_scope s v
@@ -39,6 +38,20 @@ and var_in_scope s v =
   if not (String.Set.Tree.mem s v) then
     raise (Error ("Variable '" ^ v ^ "' is not in scope" ))
   else ()
+
+let var_type vmap v =
+  match (String.Map.Tree.find vmap v) with
+  | None -> raise (Error ("Unknown variable '" ^ v ^ "'e" ))
+  | Some t -> t
+
+let rec lvalue_type vmap lv =
+  match lv with
+  | VarLValue v -> var_type vmap v
+  | NthLvalue (v, i) ->
+     let vt = lvalue_type vmap v in
+     match vt with
+     | VecType (t,_) | PtrType (t,_) -> t
+     | _ -> raise (Error "Invalid type in NTH")
 
 (*
    Peforms various type and strcutural correctness checks:
@@ -56,7 +69,8 @@ and var_in_scope s v =
    3. Loop indices are proper non-empty range (TODO: allow empy?)
 
   TODO:
-  * Unofrmily of data initializer value types
+  * 'nth' rvalue type is int
+  * Unifrmity of data initializer value types
   * Matcing types in ASSIGN
   * Matching types in functoin calls
   * Matching function return type to rvalue type in creturn
