@@ -61,6 +61,36 @@ let rec lvalue_type vmap = function
      | VecType (t,_) | PtrType (t,_) -> t
      | _ -> raise (Error (Format.asprintf "Invalid type %a in NTH" pr_itype vt))
 
+(* TODO: there is ambiguity. Maybe return list? *)
+let rec rvalue_type vmap lv =
+  let fconst_type = function
+    | FPLiteral _ -> DoubleType (* TODO: could be also float! *)
+    | FloatEPS -> FloatType
+    | DoubleEPS -> DoubleType in
+  let iconst_type _ = IntType (* Could be also UInt *) in
+  let vparam_type = function
+    | VParamList l -> VecType (IntType, List.length l) (* TODO: maybe UNInt and maybe 32/64 *)
+    | VParamValue _ -> IntType
+  in
+  match lv with
+  | FunCall (n,a) -> UnknownType (* TODO *)
+  | VarRValue v -> var_type vmap v
+  | FConst fc -> fconst_type fc
+  | IConst ic -> iconst_type ic
+  | FConstVec fl -> VecType (fconst_type (List.hd_exn fl), List.length fl) (* always non-empty *)
+  | IConstVec il -> VecType (iconst_type (List.hd_exn il), List.length il) (* always non-empty *)
+  | RCast (t,_) -> t
+  | VParam v -> vparam_type v
+  | RDeref v ->
+     (match rvalue_type vmap v with
+      | PtrType (t,_) -> t
+      | _ as vt ->
+         raise (Error (Format.asprintf "Dereferencing non-pointer type %a" pr_itype vt)))
+  | NthRvalue (v, i) ->
+     let vt = rvalue_type vmap v in
+     match vt with
+     | VecType (t,_) | PtrType (t,_) -> t
+     | _ -> raise (Error (Format.asprintf "Invalid type %a in NTH" pr_itype vt))
 
 (*
    Peforms various type and strcutural correctness checks:
@@ -79,9 +109,10 @@ let rec lvalue_type vmap = function
 
   TODO:
   * 'nth' index rvalue type is int
-  * Unifrmity of data initializer value types
+  * Unifrmity of 'data' initializer value types
+  * Uniformity of data in int and float vector intializers
   * Matcing types in ASSIGN
-  * Matching types in functoin calls
+  * Matching argument types in functoin calls
   * Matching function return type to rvalue type in creturn
 
  *)
@@ -114,7 +145,10 @@ let typecheck vmap prog =
          (typecheck u bf)
     | Skip -> u
     | Assign (l,r) ->
-       ignore (lvalue_type vmap l) ; (* for side effects to check if it type checks *)
+       let lt = lvalue_type vmap l in
+       let rt = rvalue_type vmap r in
+       if lt <> rt then
+         raise (Error (Format.asprintf "Incompatible types in assignment %a %a" pr_itype lt pr_itype rt));
        check_vars_in_lvalue u l;
        check_vars_in_rvalue u r;
        u
