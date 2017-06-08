@@ -47,20 +47,20 @@ let var_type vmap v =
   | None -> raise (Error ("Unknown variable '" ^ v ^ "'e" ))
   | Some t -> t
 
-let rec lvalue_type vmap lv =
-  match lv with
+let rec lvalue_type vmap = function
   | VarLValue v -> var_type vmap v
   | LCast (t,_) -> t
   | LDeref v ->
      (match lvalue_type vmap v with
-     | PtrType (t,_) -> t
-     | _ as vt ->
-        raise (Error (Format.asprintf "Dereferencing non-pointer type %a" pr_itype vt)))
+      | PtrType (t,_) -> t
+      | _ as vt ->
+         raise (Error (Format.asprintf "Dereferencing non-pointer type %a" pr_itype vt)))
   | NthLvalue (v, i) ->
      let vt = lvalue_type vmap v in
      match vt with
      | VecType (t,_) | PtrType (t,_) -> t
      | _ -> raise (Error (Format.asprintf "Invalid type %a in NTH" pr_itype vt))
+
 
 (*
    Peforms various type and strcutural correctness checks:
