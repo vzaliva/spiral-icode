@@ -22,7 +22,7 @@ type itype =
   | OtherType of string
   | UnknownType
   | VecType of itype*int
-  | PtrType of itype*(int list) (* type, alignment *) [@@deriving sexp]
+  | PtrType of itype*(int list) (* type, alignment *) [@@deriving compare, sexp]
 
 type ivar = string
 
@@ -70,7 +70,7 @@ type iprogram = Program of ((string*itype) list)*istmt
 
 module IType = struct
   type t = itype
-  let compare = Pervasives.compare
+  let compare = compare_itype
   let sexp_of_t = sexp_of_itype
   let t_of_sexp = itype_of_sexp
 end
