@@ -66,7 +66,7 @@ type istmt =
 
 type iprogram = Program of ((string*itype) list)*istmt
 
-(* For usein Set/Maps *)
+(* -- For use in Set/Maps -- *)
 
 module IType = struct type t = itype [@@deriving compare, sexp] end
 module ITypeSet = Set.Make(IType)

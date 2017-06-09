@@ -64,7 +64,7 @@ let rec lvalue_type vmap = function
 (* There is ambiguity. We return list of potential types *)
 let rec rvalue_type vmap lv =
   let fconst_type = function
-    | FPLiteral _ -> ITypeSet.singleton DoubleType (* TODO: could be also float! *)
+    | FPLiteral _ -> ITypeSet.of_list [DoubleType; FloatType]
     | FloatEPS -> ITypeSet.singleton FloatType
     | DoubleEPS -> ITypeSet.singleton DoubleType in
   let iconst_type _ = ITypeSet.of_list [IntType ; UIntType] in
