@@ -61,36 +61,49 @@ let rec lvalue_type vmap = function
      | VecType (t,_) | PtrType (t,_) -> t
      | _ -> raise (Error (Format.asprintf "Invalid type %a in NTH" pr_itype vt))
 
-(* TODO: there is ambiguity. Maybe return list? *)
+(* There is ambiguity. We return list of potential types *)
 let rec rvalue_type vmap lv =
   let fconst_type = function
-    | FPLiteral _ -> DoubleType (* TODO: could be also float! *)
-    | FloatEPS -> FloatType
-    | DoubleEPS -> DoubleType in
-  let iconst_type _ = IntType (* Could be also UInt *) in
+    | FPLiteral _ -> ITypeSet.singleton DoubleType (* TODO: could be also float! *)
+    | FloatEPS -> ITypeSet.singleton FloatType
+    | DoubleEPS -> ITypeSet.singleton DoubleType in
+  let iconst_type _ = ITypeSet.of_list [IntType ; UIntType] in
   let vparam_type = function
-    | VParamList l -> VecType (IntType, List.length l) (* TODO: maybe UNInt and maybe 32/64 *)
-    | VParamValue _ -> IntType
+    | VParamList l -> ITypeSet.singleton (VecType (UIntType, List.length l))
+    | VParamValue _ -> ITypeSet.singleton UIntType (* bit mask *)
   in
   match lv with
-  | FunCall (n,a) -> UnknownType (* TODO *)
-  | VarRValue v -> var_type vmap v
+  | FunCall (n,a) -> ITypeSet.empty (* TODO *)
+  | VarRValue v -> ITypeSet.singleton (var_type vmap v)
   | FConst fc -> fconst_type fc
   | IConst ic -> iconst_type ic
-  | FConstVec fl -> VecType (fconst_type (List.hd_exn fl), List.length fl) (* always non-empty *)
-  | IConstVec il -> VecType (iconst_type (List.hd_exn il), List.length il) (* always non-empty *)
-  | RCast (t,_) -> t
+  | FConstVec fl ->
+     let flt = List.fold ~f:ITypeSet.union ~init:(ITypeSet.empty)
+                         (List.map ~f:fconst_type fl) in
+     (* TODO: Check that all types in flt are convertible to float *)
+     let fll = List.length fl in
+     ITypeSet.map ~f:(fun t -> VecType (t, fll)) flt
+  | IConstVec il ->
+     let ilt = List.fold ~f:ITypeSet.union ~init:(ITypeSet.empty)
+                         (List.map ~f:iconst_type il) in
+     (* TODO: Check that all types in flt are convertible to int *)
+     let ill = List.length il in
+     ITypeSet.map ~f:(fun t -> VecType (t, ill)) ilt
+  | RCast (t,_) -> ITypeSet.singleton t
   | VParam v -> vparam_type v
-  | RDeref v ->
-     (match rvalue_type vmap v with
-      | PtrType (t,_) -> t
-      | _ as vt ->
-         raise (Error (Format.asprintf "Dereferencing non-pointer type %a" pr_itype vt)))
-  | NthRvalue (v, i) ->
-     let vt = rvalue_type vmap v in
-     match vt with
-     | VecType (t,_) | PtrType (t,_) -> t
-     | _ -> raise (Error (Format.asprintf "Invalid type %a in NTH" pr_itype vt))
+  | RDeref v -> ITypeSet.map
+                  ~f:(fun ti ->
+                    match ti with
+                    | PtrType (t,_) -> t
+                    | _ -> raise (Error (Format.asprintf "Dereferencing non-pointer type %a" pr_itype ti)))
+                  (rvalue_type vmap v)
+
+  | NthRvalue (v, i) -> ITypeSet.map
+                          ~f:(fun ti ->
+                            match ti with
+                            | VecType (t,_) | PtrType (t,_) -> t
+                            | _ -> raise (Error (Format.asprintf "Invalid type %a in NTH" pr_itype ti)))
+                          (rvalue_type vmap v)
 
 (*
    Peforms various type and strcutural correctness checks:
@@ -145,10 +158,13 @@ let typecheck vmap prog =
          (typecheck u bf)
     | Skip -> u
     | Assign (l,r) ->
+       let rts = rvalue_type vmap r in
        let lt = lvalue_type vmap l in
-       let rt = rvalue_type vmap r in
-       if lt <> rt then
-         raise (Error (Format.asprintf "Incompatible types in assignment %a %a" pr_itype lt pr_itype rt));
+       if not (ITypeSet.mem rts lt) then (* TODO: should be <: not `mem` *)
+         raise (Error (Format.asprintf "Incompatible types in assignment %a=[%a]."
+                                       pr_itype lt
+                                       (Format.pp_print_list pr_itype) (ITypeSet.to_list rts)
+               ));
        check_vars_in_lvalue u l;
        check_vars_in_rvalue u r;
        u
