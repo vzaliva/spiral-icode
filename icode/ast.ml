@@ -1,5 +1,7 @@
 (* I-code AST *)
 
+open Core
+open Sexplib
 
 type itype =
   | VoidType
@@ -20,7 +22,7 @@ type itype =
   | OtherType of string
   | UnknownType
   | VecType of itype*int
-  | PtrType of itype*(int list) (* type, alignment *)
+  | PtrType of itype*(int list) (* type, alignment *) [@@deriving sexp]
 
 type ivar = string
 
@@ -64,6 +66,18 @@ type istmt =
 
 type iprogram = Program of ((string*itype) list)*istmt
 
+(* For usein Set/Maps *)
+
+module IType = struct
+  type t = itype
+  let compare = Pervasives.compare
+  let sexp_of_t = sexp_of_itype
+  let t_of_sexp = itype_of_sexp
+end
+
+module ITypeSet = Set.Make(IType)
+
+(* -- Formatting --- *)
 open Format
 
 let rec pr_itype ppf = function

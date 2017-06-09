@@ -15,7 +15,7 @@ MENHIR_FLAGS += --infer -v --graph
 USE_OCAMLFIND = true
 OCAMLFINDFLAGS = 
 
-OCAMLPACKS[] = core
+OCAMLPACKS[] = core ppx_jane sexplib ppx_sexp_conv
 
 FILES = parser lexer ast typechecker main
 
