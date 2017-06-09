@@ -71,6 +71,8 @@ type iprogram = Program of ((string*itype) list)*istmt
 module IType = struct type t = itype [@@deriving compare, sexp] end
 module ITypeSet = Set.Make(IType)
 
+let eq_itype a b = compare_itype a b = 0
+
 (* -- Formatting --- *)
 open Format
 

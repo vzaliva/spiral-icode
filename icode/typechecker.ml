@@ -4,6 +4,52 @@ open Ast
 
 exception Error of string
 
+(* Mapping of generic numeric types to actual machine types. It is hardcoded now, but will be managed via config file or command line options later *)
+let specializeRealType () = FloatType
+let specializeIntType () = Int32Type
+let specializeUIntType () = UInt32Type
+
+let specialize_machine_types = function
+  | IntType -> specializeIntType ()
+  | UIntType -> specializeUIntType ()
+  | RealType -> specializeRealType ()
+  | _ as x -> x
+
+(* If true, 'a' could be casted to 'b' at compile type
+We choose stricter casting rules than in C. In particular:
+* Bool could not be cast to anything
+* Ints could not be cast to floats
+* All pointers must be implicitly casted
+*)
+let rec subtype a b =
+  let a = specialize_machine_types a in
+  let b = specialize_machine_types b in
+  if a = b then true
+  else
+    match a with
+    | VoidType -> false
+    | RealType -> false (* should never occur *)
+    | FloatType -> eq_itype b DoubleType
+    | DoubleType -> false
+    | IntType -> false (* should never occur *)
+    | Int8Type  -> List.mem [ Int16Type ; Int32Type ; Int64Type ] b eq_itype
+    | Int16Type -> List.mem [ Int32Type ; Int64Type ] b eq_itype
+    | Int32Type -> List.mem [ Int64Type ] b eq_itype
+    | Int64Type -> false
+    | UIntType -> false (* should never occur *)
+    | UInt8Type  -> List.mem [ UInt16Type ; UInt32Type ; UInt64Type ] b eq_itype
+    | UInt16Type -> List.mem [ UInt32Type ; UInt64Type ] b eq_itype
+    | UInt32Type -> List.mem [ UInt64Type ] b eq_itype
+    | UInt64Type -> false
+    | BoolType -> false
+    | OtherType _ -> false
+    | UnknownType -> false
+    | VecType (t,l) -> (match b with
+                       | VecType (t1,l1) -> l1 = l && subtype t t1
+                       | _ -> false)
+    | PtrType (t,a) -> false
+
+
 let build_var_map l =
   match String.Map.Tree.of_alist l with
   | `Duplicate_key k -> raise (Error ("duplicate variable '" ^ k ^ "' in 'let'" ))
@@ -61,6 +107,8 @@ let rec lvalue_type vmap = function
      | VecType (t,_) | PtrType (t,_) -> t
      | _ -> raise (Error (Format.asprintf "Invalid type %a in NTH" pr_itype vt))
 
+let func_type n a = ITypeSet.empty (* TODO *)
+
 (* There is ambiguity. We return list of potential types *)
 let rec rvalue_type vmap lv =
   let fconst_type = function
@@ -73,7 +121,7 @@ let rec rvalue_type vmap lv =
     | VParamValue _ -> ITypeSet.singleton UIntType (* bit mask *)
   in
   match lv with
-  | FunCall (n,a) -> ITypeSet.empty (* TODO *)
+  | FunCall (n,a) -> func_type n (List.map ~f:(rvalue_type vmap) a)
   | VarRValue v -> ITypeSet.singleton (var_type vmap v)
   | FConst fc -> fconst_type fc
   | IConst ic -> iconst_type ic
@@ -112,7 +160,7 @@ let rec rvalue_type vmap lv =
    enclosing lexical scoping statemets, which are: DECL, DATA, LOOP,
    FUNC.
 
-   2. Aall variabels defined in 'let' appear in at least on
+   2. All variabels defined in 'let' appear in at least on
    declaraion (decl, data, loop. Prints a warning if some are never
    declared.
 
@@ -120,14 +168,16 @@ let rec rvalue_type vmap lv =
 
    3. Loop indices are proper non-empty range (TODO: allow empy?)
 
+   4. Type in assignment are convertable
+
   TODO:
   * 'nth' index rvalue type is int
   * Unifrmity of 'data' initializer value types
   * Uniformity of data in int and float vector intializers
-  * Matcing types in ASSIGN
   * Matching argument types in functoin calls
   * Matching function return type to rvalue type in creturn
-
+  * Presence of return (may require some branch analysis)
+  * Permitted and non-permitted casts
  *)
 let typecheck vmap prog =
   let open String.Set.Tree in
@@ -160,7 +210,7 @@ let typecheck vmap prog =
     | Assign (l,r) ->
        let rts = rvalue_type vmap r in
        let lt = lvalue_type vmap l in
-       if not (ITypeSet.mem rts lt) then (* TODO: should be <: not `mem` *)
+       if not (ITypeSet.exists ~f:(fun x -> subtype x lt) rts) then
          raise (Error (Format.asprintf "Incompatible types in assignment %a=[%a]."
                                        pr_itype lt
                                        (Format.pp_print_list pr_itype) (ITypeSet.to_list rts)
