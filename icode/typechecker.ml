@@ -1,8 +1,11 @@
 open Core
 
 open Ast
+open Builtins
 
 exception Error of string
+
+open IType
 
 (* Mapping of generic numeric types to actual machine types. It is hardcoded now, but will be managed via config file or command line options later *)
 let specializeRealType () = FloatType
@@ -49,6 +52,19 @@ let rec subtype a b =
                        | _ -> false)
     | PtrType (t,a) -> false
 
+let subtype_l (al: IType.t list) (bl: IType.t list) =
+  let open List in
+  if length al <> length bl then false
+  else
+    fold ~init:true ~f:(fun p (a,b) -> p && (subtype a b)) (zip_exn al bl)
+
+let subtype_pick (asl:ITypeSet.t list) (bl: IType.t list) : bool =
+  let open List in
+  if length asl <> length bl then false
+  else
+    fold ~init:true ~f:(fun p (sa,b) -> p &&
+                                          Set.exists ~f:(fun y -> subtype y b) sa
+                       ) (zip_exn asl bl)
 
 let build_var_map l =
   match String.Map.Tree.of_alist l with
@@ -90,7 +106,7 @@ and var_in_scope s v =
 
 let var_type vmap v =
   match (String.Map.Tree.find vmap v) with
-  | None -> raise (Error ("Unknown variable '" ^ v ^ "'e" ))
+  | None -> raise (Error ("Unknown variable '" ^ v ^ "'" ))
   | Some t -> t
 
 let rec lvalue_type vmap = function
@@ -107,7 +123,15 @@ let rec lvalue_type vmap = function
      | VecType (t,_) | PtrType (t,_) -> t
      | _ -> raise (Error (Format.asprintf "Invalid type %a in NTH" pr_itype vt))
 
-let func_type n a = ITypeSet.empty (* TODO *)
+
+let func_type (n:string) (a:ITypeSet.t list) : ITypeSet.t =
+  let bm = builtins_map in
+  match (String.Map.Tree.find bm n) with
+  | None -> raise (Error ("Unknown function '" ^ n ^ "'" ))
+  | Some sl ->
+     List.filter ~f:(fun (_,ca) -> subtype_pick a ca) sl
+     |> List.map ~f:fst
+     |> ITypeSet.of_list
 
 (* There is ambiguity. We return list of potential types *)
 let rec rvalue_type vmap lv =
@@ -121,8 +145,8 @@ let rec rvalue_type vmap lv =
     | VParamValue _ -> ITypeSet.singleton UIntType (* bit mask *)
   in
   match lv with
-  | FunCall (n,a) -> func_type n (List.map ~f:(rvalue_type vmap) a)
   | VarRValue v -> ITypeSet.singleton (var_type vmap v)
+  | FunCall (n,a) -> func_type n (List.map ~f:(rvalue_type vmap) a)
   | FConst fc -> fconst_type fc
   | IConst ic -> iconst_type ic
   | FConstVec fl ->

@@ -3,26 +3,30 @@
 open Core
 open Sexplib
 
-type itype =
-  | VoidType
-  | RealType (* generic Real type *)
-  | FloatType (* IEEE 32-bit float *)
-  | DoubleType (* IEEE 64-bit float *)
-  | IntType (* generic int *)
-  | Int8Type
-  | Int16Type
-  | Int32Type
-  | Int64Type
-  | UIntType (* generic unsigned int *)
-  | UInt8Type
-  | UInt16Type
-  | UInt32Type
-  | UInt64Type
-  | BoolType
-  | OtherType of string
-  | UnknownType
-  | VecType of itype*int
-  | PtrType of itype*(int list) (* type, alignment *) [@@deriving compare, sexp]
+module IType = struct
+  type t =
+    | VoidType
+    | RealType (* generic Real type *)
+    | FloatType (* IEEE 32-bit float *)
+    | DoubleType (* IEEE 64-bit float *)
+    | IntType (* generic int *)
+    | Int8Type
+    | Int16Type
+    | Int32Type
+    | Int64Type
+    | UIntType (* generic unsigned int *)
+    | UInt8Type
+    | UInt16Type
+    | UInt32Type
+    | UInt64Type
+    | BoolType
+    | OtherType of string
+    | UnknownType
+    | VecType of t*int
+    | PtrType of t*(int list) (* type, alignment *) [@@deriving compare, sexp]
+end
+open IType
+module ITypeSet = Set.Make(IType)
 
 type ivar = string
 
@@ -43,7 +47,7 @@ type rvalue =
   | FConstVec of (fconst list)
   | IConstVec of (int list)
   | NthRvalue of rvalue*rvalue (* 'int' type for index will be checked later *)
-  | RCast of itype*rvalue
+  | RCast of IType.t*rvalue
   | VParam of vparam
   | RDeref of rvalue
 
@@ -51,10 +55,10 @@ type lvalue =
   | VarLValue of string
   | NthLvalue of lvalue*rvalue
   | LDeref of lvalue
-  | LCast of itype*lvalue
+  | LCast of IType.t*lvalue
 
 type istmt =
-  | Function of string*itype*(ivar list)*istmt
+  | Function of string*IType.t*(ivar list)*istmt
   | Skip
   | Decl of (ivar list)*istmt
   | Chain of (istmt list)
@@ -64,14 +68,9 @@ type istmt =
   | If of rvalue*istmt*istmt
   | Return of rvalue
 
-type iprogram = Program of ((string*itype) list)*istmt
+type iprogram = Program of ((string*IType.t) list)*istmt
 
-(* -- For use in Set/Maps -- *)
-
-module IType = struct type t = itype [@@deriving compare, sexp] end
-module ITypeSet = Set.Make(IType)
-
-let eq_itype a b = compare_itype a b = 0
+let eq_itype a b = compare a b = 0
 
 (* -- Formatting --- *)
 open Format

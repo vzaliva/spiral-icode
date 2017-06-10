@@ -44,7 +44,7 @@ i_type:
   | TVOID    { VoidType   }
   | TPTR LPAREN t=i_type RPAREN DOT ALIGNED LPAREN LBRACKET a=separated_list(COMMA, UINT) RBRACKET RPAREN {PtrType (t,a)}
   | TVECT LPAREN t=i_type COMMA s=UINT RPAREN { VecType (t,s) }
-  | n=IDENTIFIER { OtherType n }
+  | n=IDENTIFIER { IType.OtherType n }
   ;
 
 i_var:
