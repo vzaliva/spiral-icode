@@ -124,13 +124,26 @@ let rec lvalue_type vmap = function
      | _ -> raise (Error (Format.asprintf "Invalid type %a in NTH" pr_itype vt))
 
 let func_type n a =
-  let bm = builtins_map in
-  match (String.Map.Tree.find bm n) with
-  | None -> raise (Error ("Unknown function '" ^ n ^ "'" ))
-  | Some sl ->
-     List.filter ~f:(fun (_,ca) -> subtype_pick a ca) sl
-     |> List.map ~f:fst
-     |> ITypeSet.of_list
+  let open List in
+  (* Some built-in functions handling is hardcoded here *)
+  if n = "cond" then
+    if length a <> 3 then
+      raise (Error ("Invalid number of arguments for 'cond'" ))
+    else
+      let a0 = hd_exn a in
+      if not (ITypeSet.mem a0 BoolType) then
+        raise (Error (Format.asprintf "Could not coerce 1st argument of 'cond' to boolean type. Actual types: [%a]." type_list_fmt (ITypeSet.to_list a0)))
+      else
+        ITypeSet.union (nth_exn a 1) (nth_exn a 2)
+  else
+    (* Others handed via general mechanism *)
+    let bm = builtins_map in
+    match (String.Map.Tree.find bm n) with
+    | None -> raise (Error ("Unknown function '" ^ n ^ "'" ))
+    | Some sl ->
+       filter ~f:(fun (_,ca) -> subtype_pick a ca) sl
+       |> map ~f:fst
+       |> ITypeSet.of_list
 
 (* There is ambiguity. We return list of potential types *)
 let rec rvalue_type vmap lv =
@@ -145,7 +158,10 @@ let rec rvalue_type vmap lv =
   in
   match lv with
   | VarRValue v -> ITypeSet.singleton (var_type vmap v)
-  | FunCall (n,a) -> func_type n (List.map ~f:(rvalue_type vmap) a)
+  | FunCall (n,a) ->
+     let ft = func_type n (List.map ~f:(rvalue_type vmap) a) in
+     Format.printf "*** %s returns [%a]\n" n type_list_fmt (ITypeSet.to_list ft);
+     ft
   | FConst fc -> fconst_type fc
   | IConst ic -> iconst_type ic
   | FConstVec fl ->
@@ -236,7 +252,7 @@ let typecheck vmap prog =
        if not (ITypeSet.exists ~f:(fun x -> subtype x lt) rts) then
          raise (Error (Format.asprintf "Incompatible types in assignment %a=[%a]."
                                        pr_itype lt
-                                       (Format.pp_print_list pr_itype) (ITypeSet.to_list rts)
+                                       type_list_fmt (ITypeSet.to_list rts)
                ));
        check_vars_in_lvalue u l;
        check_vars_in_rvalue u r;

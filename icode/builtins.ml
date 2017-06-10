@@ -8,17 +8,17 @@ module FunSig = struct
   type t = (IType.t*(IType.t list)) [@@deriving compare, sexp]
 end
 
-let make_sig_with_same_typed_args_and_ret nargs typelist
+let sig_with_same_typed_args_and_ret nargs typelist
   = List.map ~f:(fun t ->
                (t, List.map ~f:(fun _ -> t) (List.range 0 nargs))) typelist
 
-let make_sig_with_same_typed_args rettype nargs typelist
+let sig_with_same_typed_args rettype nargs typelist
   = List.map ~f:(fun t ->
                (rettype, List.map ~f:(fun _ -> t) (List.range 0 nargs))) typelist
 
 open IType
 
-let numeric_types = [
+let signed_numeric_types = [
     RealType ;
     FloatType ;
     DoubleType ;
@@ -27,21 +27,25 @@ let numeric_types = [
     Int16Type ;
     Int32Type ;
     Int64Type ;
-    UIntType ;
+    UIntType]
+
+let unsigned_numeric_types = [
     UInt8Type ;
     UInt16Type ;
     UInt32Type ;
     UInt64Type ]
 
+let numeric_types = signed_numeric_types @ unsigned_numeric_types
+
 let builtins_map =
   String.Map.Tree.of_alist_exn
     [
-      ("max", make_sig_with_same_typed_args_and_ret 2 numeric_types) ;
-      ("add", make_sig_with_same_typed_args_and_ret 2 numeric_types) ;
-      ("sub", make_sig_with_same_typed_args_and_ret 2 numeric_types) ;
-      ("mul", make_sig_with_same_typed_args_and_ret 2 numeric_types) ;
-      ("div", make_sig_with_same_typed_args_and_ret 2 numeric_types) ;
-      ("abs", make_sig_with_same_typed_args_and_ret 1 numeric_types) ;
-      ("geq", make_sig_with_same_typed_args BoolType 2 numeric_types) (* TODO: extend to non-numeric *) ;
-      ("neg", make_sig_with_same_typed_args_and_ret 1 [BoolType])
+      ("max", sig_with_same_typed_args_and_ret 2 numeric_types) ;
+      ("add", sig_with_same_typed_args_and_ret 2 numeric_types) ;
+      ("sub", sig_with_same_typed_args_and_ret 2 numeric_types) ;
+      ("mul", sig_with_same_typed_args_and_ret 2 numeric_types) ;
+      ("div", sig_with_same_typed_args_and_ret 2 numeric_types) ;
+      ("neg", sig_with_same_typed_args_and_ret 1 signed_numeric_types) ;
+      ("abs", sig_with_same_typed_args_and_ret 1 numeric_types) ;
+      ("geq", sig_with_same_typed_args BoolType 2 numeric_types) (* TODO: extend to non-numeric *) ;
     ]
