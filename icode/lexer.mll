@@ -12,7 +12,7 @@ let identchar =
 rule main = parse
 
 (* ignore whitespace *)
-| [' ' '\t' '\n'] { main lexbuf }
+| [' ' '\t' '\r' '\n'] { main lexbuf }
 
 (* numeric literals *)
 | '-'?['0'-'9']*'.'['0'-'9']+ as f
@@ -77,8 +77,11 @@ rule main = parse
 | '"'
      { let buffer = Buffer.create 10 in
          STRING (stringl buffer lexbuf)
-     }   
- 
+     }
+
+| "/*"
+    { comment lexbuf }
+     
 | ((lowercase | uppercase) (identchar*)) as i
     { IDENTIFIER i }
     
@@ -95,3 +98,11 @@ and stringl buffer = parse
  | '\\' '\\' { Buffer.add_char buffer '\\'; stringl buffer lexbuf }
  | eof { raise End_of_file }
  | _ as char { Buffer.add_char buffer char; stringl buffer lexbuf }
+
+and comment = parse
+| "*/"
+    { main lexbuf }
+| eof
+    { raise (Error "Unterminated comment") }
+| _
+    { comment lexbuf }
