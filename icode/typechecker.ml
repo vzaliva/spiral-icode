@@ -1,10 +1,8 @@
 open Core
 
+exception TypeError of string
+
 open Ast
-open Builtins
-
-exception Error of string
-
 open IType
 
 (* Mapping of generic numeric types to actual machine types. It is hardcoded now, but will be managed via config file or command line options later *)
@@ -66,9 +64,46 @@ let subtype_pick (asl:ITypeSet.t list) (bl: IType.t list) : bool =
                                           Set.exists ~f:(fun y -> subtype y b) sa
                        ) (zip_exn asl bl)
 
+(* function signature: return type and list of argument types *)
+module FunSig = struct
+  type t = (IType.t*(IType.t list)) [@@deriving compare, sexp]
+end
+
+let sig_with_same_typed_args_and_ret nargs typelist
+  = List.map ~f:(fun t ->
+               (t, List.map ~f:(fun _ -> t) (List.range 0 nargs))) typelist
+
+let sig_with_same_typed_args rettype nargs typelist
+  = List.map ~f:(fun t ->
+               (rettype, List.map ~f:(fun _ -> t) (List.range 0 nargs))) typelist
+
+let func_type_cond a =
+  let open List in
+  if length a <> 3 then
+    raise (TypeError ("Invalid number of arguments for 'cond'" ))
+  else
+    let a0 = hd_exn a in
+    if not (ITypeSet.mem a0 BoolType) then
+      raise (TypeError (Format.asprintf "Could not coerce 1st argument of 'cond' to boolean type. Actual types: [%a]." type_list_fmt (ITypeSet.to_list a0)))
+    else
+      ITypeSet.union (nth_exn a 1) (nth_exn a 2)
+
+let builtins_map =
+  String.Map.Tree.of_alist_exn
+    [
+      ("max", sig_with_same_typed_args_and_ret 2 numeric_types) ;
+      ("add", sig_with_same_typed_args_and_ret 2 numeric_types) ;
+      ("sub", sig_with_same_typed_args_and_ret 2 numeric_types) ;
+      ("mul", sig_with_same_typed_args_and_ret 2 numeric_types) ;
+      ("div", sig_with_same_typed_args_and_ret 2 numeric_types) ;
+      ("neg", sig_with_same_typed_args_and_ret 1 signed_numeric_types) ;
+      ("abs", sig_with_same_typed_args_and_ret 1 numeric_types) ;
+      ("geq", sig_with_same_typed_args BoolType 2 numeric_types) (* TODO: extend to non-numeric *) ;
+    ]
+
 let build_var_map l =
   match String.Map.Tree.of_alist l with
-  | `Duplicate_key k -> raise (Error ("duplicate variable '" ^ k ^ "' in 'let'" ))
+  | `Duplicate_key k -> raise (TypeError ("duplicate variable '" ^ k ^ "' in 'let'" ))
   | `Ok m -> m
 
 (* Check that all variabels defined in 'let' appear in at least on
@@ -101,12 +136,12 @@ and check_vars_in_lvalue s = function
   | LDeref v -> check_vars_in_lvalue s v
 and var_in_scope s v =
   if not (String.Set.Tree.mem s v) then
-    raise (Error ("Variable '" ^ v ^ "' is not in scope" ))
+    raise (TypeError ("Variable '" ^ v ^ "' is not in scope" ))
   else ()
 
 let var_type vmap v =
   match (String.Map.Tree.find vmap v) with
-  | None -> raise (Error ("Unknown variable '" ^ v ^ "'" ))
+  | None -> raise (TypeError ("Unknown variable '" ^ v ^ "'" ))
   | Some t -> t
 
 let rec lvalue_type vmap = function
@@ -116,12 +151,12 @@ let rec lvalue_type vmap = function
      (match lvalue_type vmap v with
       | PtrType (t,_) -> t
       | _ as vt ->
-         raise (Error (Format.asprintf "Dereferencing non-pointer type %a" pr_itype vt)))
+         raise (TypeError (Format.asprintf "Dereferencing non-pointer type %a" pr_itype vt)))
   | NthLvalue (v, i) ->
      let vt = lvalue_type vmap v in
      match vt with
      | VecType (t,_) | PtrType (t,_) -> t
-     | _ -> raise (Error (Format.asprintf "Invalid type %a in NTH" pr_itype vt))
+     | _ -> raise (TypeError (Format.asprintf "Invalid type %a in NTH" pr_itype vt))
 
 let func_type n a =
   let open List in
@@ -131,20 +166,12 @@ let func_type n a =
                                                                     (sexp_of_list IType.sexp_of_t) al));
 
   (* Some built-in functions handling is hardcoded here *)
-  if n = "cond" then
-    if length a <> 3 then
-      raise (Error ("Invalid number of arguments for 'cond'" ))
-    else
-      let a0 = hd_exn a in
-      if not (ITypeSet.mem a0 BoolType) then
-        raise (Error (Format.asprintf "Could not coerce 1st argument of 'cond' to boolean type. Actual types: [%a]." type_list_fmt (ITypeSet.to_list a0)))
-      else
-        ITypeSet.union (nth_exn a 1) (nth_exn a 2)
+  if n = "cond" then func_type_cond a
   else
     (* Others handed via general mechanism *)
     let bm = builtins_map in
     match (String.Map.Tree.find bm n) with
-    | None -> raise (Error ("Unknown function '" ^ n ^ "'" ))
+    | None -> raise (TypeError ("Unknown function '" ^ n ^ "'" ))
     | Some sl ->
        filter ~f:(fun (_,ca) -> subtype_pick a ca) sl
        |> map ~f:fst
@@ -187,14 +214,14 @@ let rec rvalue_type vmap lv =
                   ~f:(fun ti ->
                     match ti with
                     | PtrType (t,_) -> t
-                    | _ -> raise (Error (Format.asprintf "Dereferencing non-pointer type %a" pr_itype ti)))
+                    | _ -> raise (TypeError (Format.asprintf "Dereferencing non-pointer type %a" pr_itype ti)))
                   (rvalue_type vmap v)
 
   | NthRvalue (v, i) -> ITypeSet.map
                           ~f:(fun ti ->
                             match ti with
                             | VecType (t,_) | PtrType (t,_) -> t
-                            | _ -> raise (Error (Format.asprintf "Invalid type %a in NTH" pr_itype ti)))
+                            | _ -> raise (TypeError (Format.asprintf "Invalid type %a in NTH" pr_itype ti)))
                           (rvalue_type vmap v)
 
 (*
@@ -226,7 +253,7 @@ let rec rvalue_type vmap lv =
 let typecheck vmap prog =
   let open String.Set.Tree in
   let add_var s v =
-    if mem s v then raise (Error ("duplicate declaration of '" ^ v ^ "'" ))
+    if mem s v then raise (TypeError ("duplicate declaration of '" ^ v ^ "'" ))
     else add s v
   in
   let add_vars s vl = List.fold ~init:s ~f:add_var vl in
@@ -242,7 +269,7 @@ let typecheck vmap prog =
        typecheck (add_var u v) body
     | Loop (v,f,t,body) ->
        if f>t then
-         raise (Error (Printf.sprintf "Invalid loop index range: %d .. %d  " f t ))
+         raise (TypeError (Printf.sprintf "Invalid loop index range: %d .. %d  " f t ))
        else
          typecheck (add_var u v) body
     | If (r,bt,bf) ->
@@ -255,7 +282,7 @@ let typecheck vmap prog =
        let rts = rvalue_type vmap r in
        let lt = lvalue_type vmap l in
        if not (ITypeSet.exists ~f:(fun x -> subtype x lt) rts) then
-         raise (Error (Format.asprintf "Incompatible types in assignment %a=[%a]."
+         raise (TypeError (Format.asprintf "Incompatible types in assignment %a=[%a]."
                                        pr_itype lt
                                        type_list_fmt (ITypeSet.to_list rts)
                ));

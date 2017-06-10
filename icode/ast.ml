@@ -25,6 +25,7 @@ module IType = struct
     | VecType of t*int
     | PtrType of t*(int list) (* type, alignment *) [@@deriving compare, sexp]
 end
+
 open IType
 module ITypeSet = Set.Make(IType)
 
@@ -71,6 +72,26 @@ type istmt =
 type iprogram = Program of ((string*IType.t) list)*istmt
 
 let eq_itype a b = compare a b = 0
+
+let signed_numeric_types = [
+    RealType ;
+    FloatType ;
+    DoubleType ;
+    IntType ;
+    Int8Type ;
+    Int16Type ;
+    Int32Type ;
+    Int64Type ;
+    UIntType]
+
+let unsigned_numeric_types = [
+    UInt8Type ;
+    UInt16Type ;
+    UInt32Type ;
+    UInt64Type ]
+
+let numeric_types = signed_numeric_types @ unsigned_numeric_types
+
 
 (* -- Formatting --- *)
 open Format

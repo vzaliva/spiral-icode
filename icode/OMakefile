@@ -17,7 +17,7 @@ OCAMLFINDFLAGS =
 
 OCAMLPACKS[] = core ppx_jane sexplib ppx_sexp_conv ppx_compare
 
-FILES = parser lexer ast builtins typechecker main
+FILES = parser lexer ast typechecker main
 
 OCamlGeneratedFiles(lexer.ml parser.ml parser.mli)
 
