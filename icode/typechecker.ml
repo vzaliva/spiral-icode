@@ -8,9 +8,9 @@ exception Error of string
 open IType
 
 (* Mapping of generic numeric types to actual machine types. It is hardcoded now, but will be managed via config file or command line options later *)
-let specializeRealType () = FloatType
-let specializeIntType () = Int32Type
-let specializeUIntType () = UInt32Type
+let specializeRealType () = DoubleType
+let specializeIntType () = Int64Type
+let specializeUIntType () = UInt64Type
 
 let specialize_machine_types = function
   | IntType -> specializeIntType ()
