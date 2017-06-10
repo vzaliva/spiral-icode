@@ -48,11 +48,11 @@ let rec subtype a b =
     | OtherType _ -> false
     | UnknownType -> false
     | VecType (t,l) -> (match b with
-                       | VecType (t1,l1) -> l1 = l && subtype t t1
-                       | _ -> false)
+                        | VecType (t1,l1) -> l1 = l && subtype t t1
+                        | _ -> false)
     | PtrType (t,a) -> false
 
-let subtype_l (al: IType.t list) (bl: IType.t list) =
+let subtype_l (al: IType.t list) (bl: IType.t list) : bool =
   let open List in
   if length al <> length bl then false
   else
@@ -123,8 +123,7 @@ let rec lvalue_type vmap = function
      | VecType (t,_) | PtrType (t,_) -> t
      | _ -> raise (Error (Format.asprintf "Invalid type %a in NTH" pr_itype vt))
 
-
-let func_type (n:string) (a:ITypeSet.t list) : ITypeSet.t =
+let func_type n a =
   let bm = builtins_map in
   match (String.Map.Tree.find bm n) with
   | None -> raise (Error ("Unknown function '" ^ n ^ "'" ))
@@ -202,7 +201,7 @@ let rec rvalue_type vmap lv =
   * Matching function return type to rvalue type in creturn
   * Presence of return (may require some branch analysis)
   * Permitted and non-permitted casts
- *)
+  *)
 let typecheck vmap prog =
   let open String.Set.Tree in
   let add_var s v =

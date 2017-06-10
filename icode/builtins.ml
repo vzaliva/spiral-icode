@@ -8,13 +8,9 @@ module FunSig = struct
   type t = (IType.t*(IType.t list)) [@@deriving compare, sexp]
 end
 
-let make_sig_with_same_typed_args_and_ret
-      (nargs: int)
-      (typelist: IType.t list)
-    : FunSig.t list
-  =
-  List.map ~f:(fun t ->
-             (t, List.map ~f:(fun _ -> t) (List.range 0 nargs))) typelist
+let make_sig_with_same_typed_args_and_ret nargs typelist
+  = List.map ~f:(fun t ->
+               (t, List.map ~f:(fun _ -> t) (List.range 0 nargs))) typelist
 
 open IType
 
