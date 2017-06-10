@@ -165,7 +165,7 @@ let rec rvalue_type vmap lv =
   | VarRValue v -> ITypeSet.singleton (var_type vmap v)
   | FunCall (n,a) ->
      let ft = func_type n (List.map ~f:(rvalue_type vmap) a) in
-     Format.printf "*** %s returns [%a]\n" n type_list_fmt (ITypeSet.to_list ft);
+     Printf.fprintf stderr "*** %s type is %s\n" n (Sexp.to_string (sexp_of_list IType.sexp_of_t (ITypeSet.to_list ft)));
      ft
   | FConst fc -> fconst_type fc
   | IConst ic -> iconst_type ic
