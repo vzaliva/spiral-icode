@@ -12,6 +12,10 @@ let make_sig_with_same_typed_args_and_ret nargs typelist
   = List.map ~f:(fun t ->
                (t, List.map ~f:(fun _ -> t) (List.range 0 nargs))) typelist
 
+let make_sig_with_same_typed_args rettype nargs typelist
+  = List.map ~f:(fun t ->
+               (rettype, List.map ~f:(fun _ -> t) (List.range 0 nargs))) typelist
+
 open IType
 
 let numeric_types = [
@@ -37,5 +41,7 @@ let builtins_map =
       ("sub", make_sig_with_same_typed_args_and_ret 2 numeric_types) ;
       ("mul", make_sig_with_same_typed_args_and_ret 2 numeric_types) ;
       ("div", make_sig_with_same_typed_args_and_ret 2 numeric_types) ;
-      ("abs", make_sig_with_same_typed_args_and_ret 1 numeric_types)
+      ("abs", make_sig_with_same_typed_args_and_ret 1 numeric_types) ;
+      ("geq", make_sig_with_same_typed_args BoolType 2 numeric_types) (* TODO: extend to non-numeric *) ;
+      ("neg", make_sig_with_same_typed_args_and_ret 1 [BoolType])
     ]
