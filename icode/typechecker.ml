@@ -125,6 +125,11 @@ let rec lvalue_type vmap = function
 
 let func_type n a =
   let open List in
+  let al = map ~f:ITypeSet.to_list a in
+  Printf.fprintf stderr "*** Resolving function %s %s\n" n (Sexp.to_string
+                                                                 (sexp_of_list
+                                                                    (sexp_of_list IType.sexp_of_t) al));
+
   (* Some built-in functions handling is hardcoded here *)
   if n = "cond" then
     if length a <> 3 then

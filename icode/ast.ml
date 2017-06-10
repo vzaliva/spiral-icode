@@ -98,4 +98,4 @@ let rec pr_itype ppf = function
 
 let itype_as_string = Format.asprintf "%a" pr_itype
 
-let type_list_fmt = Format.pp_print_list ~pp_sep:(fun fmt () -> Format.fprintf fmt ",") pr_itype
+let type_list_fmt = Format.pp_print_list ~pp_sep:(fun fmt () -> Format.fprintf fmt ";") pr_itype
