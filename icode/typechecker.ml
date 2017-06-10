@@ -50,32 +50,35 @@ let rec subtype a b =
                         | _ -> false)
     | PtrType (t,a) -> false
 
-let subtype_l (al: IType.t list) (bl: IType.t list) : bool =
+(* TODO: should be in Std? *)
+let constlist a n =  List.map ~f:(fun _ -> a) (List.range 0 n)
+
+let sig_with_same_typed_args_and_ret nargs typelist al =
   let open List in
-  if length al <> length bl then false
+  if nargs <> List.length al then
+    raise (TypeError ("Invalid number of arguments"))
   else
-    fold ~init:true ~f:(fun p (a,b) -> p && (subtype a b)) (zip_exn al bl)
+    ITypeSet.of_list
+      (List.filter ~f:(fun t ->
+                     List.for_all ~f:(fun a ->
+                                    ITypeSet.exists ~f:(fun x -> subtype x t) a)
+                                  al)
+                   typelist)
 
-let subtype_pick (asl:ITypeSet.t list) (bl: IType.t list) : bool =
+let sig_with_same_typed_args rettype nargs typelist al =
   let open List in
-  if length asl <> length bl then false
+  if nargs <> List.length al then
+    raise (TypeError ("Invalid number of arguments"))
   else
-    fold ~init:true ~f:(fun p (sa,b) -> p &&
-                                          Set.exists ~f:(fun y -> subtype y b) sa
-                       ) (zip_exn asl bl)
-
-(* function signature: return type and list of argument types *)
-module FunSig = struct
-  type t = (IType.t*(IType.t list)) [@@deriving compare, sexp]
-end
-
-let sig_with_same_typed_args_and_ret nargs typelist
-  = List.map ~f:(fun t ->
-               (t, List.map ~f:(fun _ -> t) (List.range 0 nargs))) typelist
-
-let sig_with_same_typed_args rettype nargs typelist
-  = List.map ~f:(fun t ->
-               (rettype, List.map ~f:(fun _ -> t) (List.range 0 nargs))) typelist
+      if (List.exists ~f:(fun t ->
+                        List.for_all ~f:(fun a ->
+                                       ITypeSet.exists ~f:(fun x -> subtype x t) a)
+                                     al)
+                      typelist)
+      then
+        ITypeSet.singleton rettype
+      else
+        ITypeSet.empty
 
 let func_type_cond a =
   let open List in
@@ -91,6 +94,7 @@ let func_type_cond a =
 let builtins_map =
   String.Map.Tree.of_alist_exn
     [
+      ("cond", func_type_cond);
       ("max", sig_with_same_typed_args_and_ret 2 numeric_types) ;
       ("add", sig_with_same_typed_args_and_ret 2 numeric_types) ;
       ("sub", sig_with_same_typed_args_and_ret 2 numeric_types) ;
@@ -165,17 +169,9 @@ let func_type n a =
                                                                  (sexp_of_list
                                                                     (sexp_of_list IType.sexp_of_t) al));
 
-  (* Some built-in functions handling is hardcoded here *)
-  if n = "cond" then func_type_cond a
-  else
-    (* Others handed via general mechanism *)
-    let bm = builtins_map in
-    match (String.Map.Tree.find bm n) with
+  match (String.Map.Tree.find builtins_map n) with
     | None -> raise (TypeError ("Unknown function '" ^ n ^ "'" ))
-    | Some sl ->
-       filter ~f:(fun (_,ca) -> subtype_pick a ca) sl
-       |> map ~f:fst
-       |> ITypeSet.of_list
+    | Some bf -> bf a
 
 (* There is ambiguity. We return list of potential types *)
 let rec rvalue_type vmap lv =
