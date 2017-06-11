@@ -33,9 +33,9 @@ let rec subtype a b =
     | FloatType -> eq_itype b DoubleType
     | DoubleType -> false
     | IntType -> raise (TypeError "Internal compiler error")
-    | Int8Type  -> List.mem [ Int16Type ; Int32Type ; Int64Type ] b eq_itype
-    | Int16Type -> List.mem [ Int32Type ; Int64Type ] b eq_itype
-    | Int32Type -> List.mem [ Int64Type ] b eq_itype
+    | Int8Type  -> List.mem [ FloatType ; DoubleType ; Int16Type ; Int32Type ; Int64Type ] b eq_itype
+    | Int16Type -> List.mem [ FloatType ; DoubleType ; Int32Type ; Int64Type ] b eq_itype
+    | Int32Type -> List.mem [ DoubleType ; Int64Type ] b eq_itype
     | Int64Type -> false
     | UIntType -> raise (TypeError "Internal compiler error")
     | UInt8Type  -> List.mem [ UInt16Type ; UInt32Type ; UInt64Type ] b eq_itype
