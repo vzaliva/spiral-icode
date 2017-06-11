@@ -29,15 +29,15 @@ let rec subtype a b =
   else
     match a with
     | VoidType -> false
-    | RealType -> false (* should never occur *)
+    | RealType -> raise (TypeError "Internal compiler error")
     | FloatType -> eq_itype b DoubleType
     | DoubleType -> false
-    | IntType -> false (* should never occur *)
+    | IntType -> raise (TypeError "Internal compiler error")
     | Int8Type  -> List.mem [ Int16Type ; Int32Type ; Int64Type ] b eq_itype
     | Int16Type -> List.mem [ Int32Type ; Int64Type ] b eq_itype
     | Int32Type -> List.mem [ Int64Type ] b eq_itype
     | Int64Type -> false
-    | UIntType -> false (* should never occur *)
+    | UIntType -> raise (TypeError "Internal compiler error")
     | UInt8Type  -> List.mem [ UInt16Type ; UInt32Type ; UInt64Type ] b eq_itype
     | UInt16Type -> List.mem [ UInt32Type ; UInt64Type ] b eq_itype
     | UInt32Type -> List.mem [ UInt64Type ] b eq_itype
