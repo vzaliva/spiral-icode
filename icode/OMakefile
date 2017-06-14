@@ -30,8 +30,8 @@ OCamlProgram($(PROGRAM), $(FILES))
 .DEFAULT: $(EXE)
 
 run: $(EXE)
-	./$(EXE) ../samples/dwmonitor.i
-	./$(EXE) ../samples/dwmonitor_interval.i
+	./$(EXE) ../samples/dwmonitor.g
+	./$(EXE) ../samples/dwmonitor_interval.g
 
 clean:
   rm -f \
