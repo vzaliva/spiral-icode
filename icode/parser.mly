@@ -1,6 +1,7 @@
 %{
     open Ast
     open IType
+    open Config
 %}
 
 %token <float> FLOAT
@@ -28,17 +29,17 @@
 %%
 
 i_type:
-  | TINT     { IntType    }
+  | TINT     { intType ()    }
   | TINT8    { Int8Type   }
   | TINT16   { Int16Type  }
   | TINT32   { Int32Type  }
   | TINT64   { Int64Type  }
-  | TUINT    { UIntType   }
+  | TUINT    { uIntType ()   }
   | TUINT8   { UInt8Type  }
   | TUINT16  { UInt16Type }
   | TUINT32  { UInt32Type }
   | TUINT64  { UInt64Type }
-  | TREAL    { RealType   }
+  | TREAL    { realType ()   }
   | TFLOAT   { FloatType  }
   | TDOUBLE  { DoubleType }
   | TBOOL    { BoolType   }

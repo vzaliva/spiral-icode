@@ -5,17 +5,6 @@ exception TypeError of string
 open Ast
 open IType
 
-(* Mapping of generic numeric types to actual machine types. It is hardcoded now, but will be managed via config file or command line options later *)
-let specializeRealType () = DoubleType
-let specializeIntType () = Int64Type
-let specializeUIntType () = UInt64Type
-
-let specialize_machine_types = function
-  | IntType -> specializeIntType ()
-  | UIntType -> specializeUIntType ()
-  | RealType -> specializeRealType ()
-  | _ as x -> x
-
 (* If true, 'a' could be casted to 'b' at compile type
 We choose stricter casting rules than in C. In particular:
 * Bool could not be cast to anything
@@ -23,21 +12,16 @@ We choose stricter casting rules than in C. In particular:
 * All pointers must be implicitly casted
 *)
 let rec subtype a b =
-  let a = specialize_machine_types a in
-  let b = specialize_machine_types b in
   if a = b then true
   else
     match a with
     | VoidType -> false
-    | RealType -> raise (TypeError "Internal compiler error")
     | FloatType -> eq_itype b DoubleType
     | DoubleType -> false
-    | IntType -> raise (TypeError "Internal compiler error")
     | Int8Type  -> List.mem [ FloatType ; DoubleType ; Int16Type ; Int32Type ; Int64Type ] b eq_itype
     | Int16Type -> List.mem [ FloatType ; DoubleType ; Int32Type ; Int64Type ] b eq_itype
     | Int32Type -> List.mem [ DoubleType ; Int64Type ] b eq_itype
     | Int64Type -> false
-    | UIntType -> raise (TypeError "Internal compiler error")
     | UInt8Type  -> List.mem [ UInt16Type ; UInt32Type ; UInt64Type ] b eq_itype
     | UInt16Type -> List.mem [ UInt32Type ; UInt64Type ] b eq_itype
     | UInt32Type -> List.mem [ UInt64Type ] b eq_itype
@@ -179,10 +163,10 @@ let rec rvalue_type vmap lv =
     | FPLiteral _ -> ITypeSet.of_list [DoubleType; FloatType]
     | FloatEPS -> ITypeSet.singleton FloatType
     | DoubleEPS -> ITypeSet.singleton DoubleType in
-  let iconst_type _ = ITypeSet.of_list [IntType ; UIntType] in
+  let iconst_type _ = ITypeSet.of_list [Config.intType () ; Config.uIntType ()] in
   let vparam_type = function
-    | VParamList l -> ITypeSet.singleton (VecType (UIntType, List.length l))
-    | VParamValue _ -> ITypeSet.singleton UIntType (* bit mask *)
+    | VParamList l -> ITypeSet.singleton (VecType (Config.uIntType (), List.length l))
+    | VParamValue _ -> ITypeSet.singleton (Config.uIntType ()) (* bit mask *)
   in
   match lv with
   | VarRValue v -> ITypeSet.singleton (var_type vmap v)

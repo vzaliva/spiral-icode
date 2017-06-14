@@ -6,15 +6,12 @@ open Sexplib
 module IType = struct
   type t =
     | VoidType
-    | RealType (* generic Real type *)
     | FloatType (* IEEE 32-bit float *)
     | DoubleType (* IEEE 64-bit float *)
-    | IntType (* generic int *)
     | Int8Type
     | Int16Type
     | Int32Type
     | Int64Type
-    | UIntType (* generic unsigned int *)
     | UInt8Type
     | UInt16Type
     | UInt32Type
@@ -74,15 +71,12 @@ type iprogram = Program of ((string*IType.t) list)*istmt
 let eq_itype a b = compare a b = 0
 
 let signed_numeric_types = [
-    RealType ;
     FloatType ;
     DoubleType ;
-    IntType ;
     Int8Type ;
     Int16Type ;
     Int32Type ;
-    Int64Type ;
-    UIntType]
+    Int64Type]
 
 let unsigned_numeric_types = [
     UInt8Type ;
@@ -101,16 +95,13 @@ let rec pr_itype ppf = function
   | Int16Type -> fprintf ppf "@[TInt16]"
   | Int32Type -> fprintf ppf "@[TInt32]"
   | Int64Type -> fprintf ppf "@[TInt64]"
-  | UIntType -> fprintf ppf "@[TUInt]"
   | UInt8Type -> fprintf ppf "@[TUInt8]"
   | UInt16Type -> fprintf ppf "@[TUInt16]"
   | UInt32Type -> fprintf ppf "@[TUInt32]"
   | UInt64Type -> fprintf ppf "@[TUInt64]"
   | VoidType -> fprintf ppf "@[TVoid@]"
-  | RealType -> fprintf ppf "@[TReal@]"
   | FloatType -> fprintf ppf "@[Float@]"
   | DoubleType -> fprintf ppf "@[Double@]"
-  | IntType -> fprintf ppf "@[TInt@]"
   | BoolType -> fprintf ppf "@[TBool@]"
   | OtherType n -> fprintf ppf "@[%s@]" n
   | UnknownType -> fprintf ppf "@[?@]"
