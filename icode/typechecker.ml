@@ -5,6 +5,23 @@ exception TypeError of string
 open Ast
 open IType
 
+let signed_numeric_types = [
+    FloatType ;
+    DoubleType ;
+    Int8Type ;
+    Int16Type ;
+    Int32Type ;
+    Int64Type]
+
+let unsigned_numeric_types = [
+    UInt8Type ;
+    UInt16Type ;
+    UInt32Type ;
+    UInt64Type ]
+
+let numeric_types = signed_numeric_types @ unsigned_numeric_types
+
+
 (* If true, 'a' could be casted to 'b' at compile type
 We choose stricter casting rules than in C. In particular:
 * Bool could not be cast to anything
@@ -36,7 +53,7 @@ let rec subtype a b =
 (* TODO: should be in Std? *)
 let constlist a n =  List.map ~f:(fun _ -> a) (List.range 0 n)
 
-let sig_with_same_typed_args_and_ret nargs typelist al =
+let numeric_op nargs typelist al =
   let open List in
   if nargs <> List.length al then
     raise (TypeError ("Invalid number of arguments"))
@@ -48,7 +65,7 @@ let sig_with_same_typed_args_and_ret nargs typelist al =
                                   al)
                    typelist)
 
-let sig_with_same_typed_args rettype nargs typelist al =
+let numeric_op_with_rettype rettype nargs typelist al =
   let open List in
   if nargs <> List.length al then
     raise (TypeError ("Invalid number of arguments"))
@@ -78,14 +95,14 @@ let builtins_map =
   String.Map.Tree.of_alist_exn
     [
       ("cond", func_type_cond);
-      ("max", sig_with_same_typed_args_and_ret 2 numeric_types) ;
-      ("add", sig_with_same_typed_args_and_ret 2 numeric_types) ;
-      ("sub", sig_with_same_typed_args_and_ret 2 numeric_types) ;
-      ("mul", sig_with_same_typed_args_and_ret 2 numeric_types) ;
-      ("div", sig_with_same_typed_args_and_ret 2 numeric_types) ;
-      ("neg", sig_with_same_typed_args_and_ret 1 signed_numeric_types) ;
-      ("abs", sig_with_same_typed_args_and_ret 1 numeric_types) ;
-      ("geq", sig_with_same_typed_args BoolType 2 numeric_types) (* TODO: extend to non-numeric *) ;
+      ("max", numeric_op 2 numeric_types) ;
+      ("add", numeric_op 2 numeric_types) ;
+      ("sub", numeric_op 2 numeric_types) ;
+      ("mul", numeric_op 2 numeric_types) ;
+      ("div", numeric_op 2 numeric_types) ;
+      ("neg", numeric_op 1 signed_numeric_types) ;
+      ("abs", numeric_op 1 numeric_types) ;
+      ("geq", numeric_op_with_rettype BoolType 2 numeric_types) (* TODO: extend to non-numeric *) ;
     ]
 
 let build_var_map l =
