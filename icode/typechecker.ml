@@ -44,6 +44,14 @@ let integer_type_rank = function
     | Int64Type | UInt64Type  -> 4
     | VoidType | OtherType _ | VecType _ | PtrType _ -> raise (TypeError "not a numeric type")
 
+let int_sizeof = function
+    | FloatType | DoubleType -> raise (TypeError "not an integer type")
+    | BoolType | Int8Type  | UInt8Type   -> 1
+    | Int16Type | UInt16Type  -> 2
+    | Int32Type | UInt32Type  -> 4
+    | Int64Type | UInt64Type  -> 8
+    | VoidType | OtherType _ | VecType _ | PtrType _ -> raise (TypeError "not a numeric type")
+
 let integer_promotion t =
   if not (is_integer t) then raise (TypeError "not an integer type")
   else
