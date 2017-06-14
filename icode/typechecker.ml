@@ -5,12 +5,20 @@ exception TypeError of string
 open Ast
 open IType
 
-
 let signed_integer_types = ITypeSet.of_list [
     Int8Type ;
     Int16Type ;
     Int32Type ;
     Int64Type]
+
+let unsigned_integer_types = ITypeSet.of_list [
+                                 BoolType ;
+                                 UInt8Type ;
+                                 UInt16Type ;
+                                 UInt32Type ;
+                                 UInt64Type ]
+
+let integer_types = ITypeSet.union signed_integer_types unsigned_integer_types
 
 let signed_numeric_types = ITypeSet.union
                              (ITypeSet.of_list [
@@ -18,14 +26,10 @@ let signed_numeric_types = ITypeSet.union
                                   DoubleType ; ])
                              signed_integer_types
 
-let unsigned_integer_types = ITypeSet.of_list [
-    UInt8Type ;
-    UInt16Type ;
-    UInt32Type ;
-    UInt64Type ]
 
 let numeric_types = ITypeSet.union signed_numeric_types unsigned_integer_types
 
+let is_integer t = ITypeSet.mem integer_types t
 let is_numeric t = ITypeSet.mem numeric_types t
 let is_signed t = ITypeSet.mem signed_numeric_types t
 let is_unsigned t = ITypeSet.mem unsigned_integer_types t
@@ -33,23 +37,21 @@ let is_unsigned t = ITypeSet.mem unsigned_integer_types t
 
 let integer_type_rank = function
     | FloatType | DoubleType -> raise (TypeError "not an integer type")
-    | Int8Type   -> 1
-    | Int16Type  -> 2
-    | Int32Type  -> 3
-    | Int64Type  -> 4
-    | UInt8Type  -> 1
-    | UInt16Type -> 2
-    | UInt32Type -> 3
-    | UInt64Type -> 4
-    | BoolType   -> 0
+    | BoolType                -> 0
+    | Int8Type  | UInt8Type   -> 1
+    | Int16Type | UInt16Type  -> 2
+    | Int32Type | UInt32Type  -> 3
+    | Int64Type | UInt64Type  -> 4
     | VoidType | OtherType _ | VecType _ | PtrType _ -> raise (TypeError "not a numeric type")
 
+let integer_promotion t =
+  if not (is_integer t) then raise (TypeError "not an integer type")
+  else
+    let i = if is_signed t then Config.intType () else Config.uIntType ()  in
+    if integer_type_rank t < integer_type_rank i then i else t
 
-
-(* If true, 'a' could be casted to 'b' at compile type
+(* If true, 'a' could be casted to 'b' at compile type without loss of precision
 We choose stricter casting rules than in C. In particular:
-* Bool could not be cast to anything
-* Ints could not be cast to floats
 * All pointers must be implicitly casted
 *)
 let rec subtype a b =
@@ -61,13 +63,13 @@ let rec subtype a b =
     | DoubleType -> false
     | Int8Type  -> List.mem [ FloatType ; DoubleType ; Int16Type ; Int32Type ; Int64Type ] b eq_itype
     | Int16Type -> List.mem [ FloatType ; DoubleType ; Int32Type ; Int64Type ] b eq_itype
-    | Int32Type -> List.mem [ DoubleType ; Int64Type ] b eq_itype
+    | Int32Type -> List.mem [ FloatType; DoubleType ; Int64Type ] b eq_itype
     | Int64Type -> false
     | UInt8Type  -> List.mem [ UInt16Type ; UInt32Type ; UInt64Type ] b eq_itype
     | UInt16Type -> List.mem [ UInt32Type ; UInt64Type ] b eq_itype
     | UInt32Type -> List.mem [ UInt64Type ] b eq_itype
     | UInt64Type -> false
-    | BoolType -> false
+    | BoolType -> is_numeric b (* could be cast to any numeric type *)
     | OtherType _ -> false
     | VecType (t,l) -> (match b with
                         | VecType (t1,l1) -> l1 = l && subtype t t1
