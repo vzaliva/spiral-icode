@@ -5,7 +5,7 @@ exception TypeError of string
 open Ast
 open IType
 
-let signed_numeric_types = [
+let signed_numeric_types = ITypeSet.of_list [
     FloatType ;
     DoubleType ;
     Int8Type ;
@@ -13,14 +13,13 @@ let signed_numeric_types = [
     Int32Type ;
     Int64Type]
 
-let unsigned_numeric_types = [
+let unsigned_numeric_types = ITypeSet.of_list [
     UInt8Type ;
     UInt16Type ;
     UInt32Type ;
     UInt64Type ]
 
-let numeric_types = signed_numeric_types @ unsigned_numeric_types
-
+let numeric_types = ITypeSet.union signed_numeric_types unsigned_numeric_types
 
 (* If true, 'a' could be casted to 'b' at compile type
 We choose stricter casting rules than in C. In particular:
@@ -54,31 +53,26 @@ let rec subtype a b =
 let constlist a n =  List.map ~f:(fun _ -> a) (List.range 0 n)
 
 let numeric_op nargs typelist al =
-  let open List in
+  let open ITypeSet in
   if nargs <> List.length al then
     raise (TypeError ("Invalid number of arguments"))
   else
-    ITypeSet.of_list
-      (List.filter ~f:(fun t ->
-                     List.for_all ~f:(fun a ->
-                                    ITypeSet.exists ~f:(fun x -> subtype x t) a)
-                                  al)
-                   typelist)
+    filter ~f:(fun t ->
+             List.for_all ~f:(fun a -> exists ~f:(fun x -> subtype x t) a) al)
+           typelist
 
 let numeric_op_with_rettype rettype nargs typelist al =
-  let open List in
+  let open ITypeSet in
   if nargs <> List.length al then
-    raise (TypeError ("Invalid number of arguments"))
+    raise (TypeError "Invalid number of arguments")
   else
-      if (List.exists ~f:(fun t ->
-                        List.for_all ~f:(fun a ->
-                                       ITypeSet.exists ~f:(fun x -> subtype x t) a)
-                                     al)
-                      typelist)
-      then
-        ITypeSet.singleton rettype
-      else
-        ITypeSet.empty
+    if (exists ~f:(fun t ->
+                 List.for_all ~f:(fun a -> exists ~f:(fun x -> subtype x t) a) al)
+               typelist)
+    then
+      singleton rettype
+    else
+      empty
 
 let func_type_cond a =
   let open List in
