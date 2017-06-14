@@ -5,25 +5,46 @@ exception TypeError of string
 open Ast
 open IType
 
-let signed_numeric_types = ITypeSet.of_list [
-    FloatType ;
-    DoubleType ;
+
+let signed_integer_types = ITypeSet.of_list [
     Int8Type ;
     Int16Type ;
     Int32Type ;
     Int64Type]
 
-let unsigned_numeric_types = ITypeSet.of_list [
+let signed_numeric_types = ITypeSet.union
+                             (ITypeSet.of_list [
+                                  FloatType ;
+                                  DoubleType ; ])
+                             signed_integer_types
+
+let unsigned_integer_types = ITypeSet.of_list [
     UInt8Type ;
     UInt16Type ;
     UInt32Type ;
     UInt64Type ]
 
-let numeric_types = ITypeSet.union signed_numeric_types unsigned_numeric_types
+let numeric_types = ITypeSet.union signed_numeric_types unsigned_integer_types
 
 let is_numeric t = ITypeSet.mem numeric_types t
 let is_signed t = ITypeSet.mem signed_numeric_types t
-let is_unsigned t = ITypeSet.mem unsigned_numeric_types t
+let is_unsigned t = ITypeSet.mem unsigned_integer_types t
+
+
+let integer_type_rank = function
+    | FloatType | DoubleType -> raise (TypeError "not an integer type")
+    | Int8Type   -> 1
+    | Int16Type  -> 2
+    | Int32Type  -> 3
+    | Int64Type  -> 4
+    | UInt8Type  -> 1
+    | UInt16Type -> 2
+    | UInt32Type -> 3
+    | UInt64Type -> 4
+    | BoolType   -> 0
+    | VoidType | OtherType _ | VecType _ | PtrType _ -> raise (TypeError "not a numeric type")
+
+
 
 (* If true, 'a' could be casted to 'b' at compile type
 We choose stricter casting rules than in C. In particular:
