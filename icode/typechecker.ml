@@ -28,7 +28,6 @@ let rec subtype a b =
     | UInt64Type -> false
     | BoolType -> false
     | OtherType _ -> false
-    | UnknownType -> false
     | VecType (t,l) -> (match b with
                         | VecType (t1,l1) -> l1 = l && subtype t t1
                         | _ -> false)

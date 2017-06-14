@@ -18,7 +18,6 @@ module IType = struct
     | UInt64Type
     | BoolType
     | OtherType of string
-    | UnknownType
     | VecType of t*int
     | PtrType of t*(int list) (* type, alignment *) [@@deriving compare, sexp]
 end
@@ -104,7 +103,6 @@ let rec pr_itype ppf = function
   | DoubleType -> fprintf ppf "@[Double@]"
   | BoolType -> fprintf ppf "@[TBool@]"
   | OtherType n -> fprintf ppf "@[%s@]" n
-  | UnknownType -> fprintf ppf "@[?@]"
   | VecType (t,s) -> fprintf ppf "@[%a[%d]@]" pr_itype t s
   | PtrType (t,_) -> fprintf ppf "@[%a@]" pr_itype t
 
