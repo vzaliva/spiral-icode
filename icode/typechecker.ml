@@ -21,6 +21,10 @@ let unsigned_numeric_types = ITypeSet.of_list [
 
 let numeric_types = ITypeSet.union signed_numeric_types unsigned_numeric_types
 
+let is_numeric t = ITypeSet.mem numeric_types t
+let is_signed t = ITypeSet.mem signed_numeric_types t
+let is_unsigned t = ITypeSet.mem unsigned_numeric_types t
+
 (* If true, 'a' could be casted to 'b' at compile type
 We choose stricter casting rules than in C. In particular:
 * Bool could not be cast to anything
