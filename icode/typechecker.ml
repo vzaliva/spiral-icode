@@ -4,59 +4,71 @@ exception TypeError of string
 
 open Ast
 open IType
+open IIntType
 
-let signed_integer_types = ITypeSet.of_list [
-    Int8Type ;
-    Int16Type ;
-    Int32Type ;
-    Int64Type]
+let signed_integer_types = IIntTypeSet.of_list [
+                               Int8Type ;
+                               Int16Type ;
+                               Int32Type ;
+                               Int64Type]
 
-let unsigned_integer_types = ITypeSet.of_list [
+let is_signed_integer = IIntTypeSet.mem signed_integer_types
+
+let unsigned_integer_types = IIntTypeSet.of_list [
                                  BoolType ;
                                  UInt8Type ;
                                  UInt16Type ;
                                  UInt32Type ;
                                  UInt64Type ]
 
-let integer_types = ITypeSet.union signed_integer_types unsigned_integer_types
+
+
+let integer_types = IIntTypeSet.union signed_integer_types unsigned_integer_types
 
 let signed_numeric_types = ITypeSet.union
                              (ITypeSet.of_list [
                                   FloatType ;
                                   DoubleType ; ])
-                             signed_integer_types
+                             (ITypeSet.map ~f:iType_of_IntType signed_integer_types)
 
 
-let numeric_types = ITypeSet.union signed_numeric_types unsigned_integer_types
+let numeric_types = ITypeSet.union signed_numeric_types
+                                   (ITypeSet.map ~f:iType_of_IntType unsigned_integer_types)
 
-let is_integer t = ITypeSet.mem integer_types t
+let is_integer = function
+  | I _ -> true
+  | _ -> false
+
 let is_numeric t = ITypeSet.mem numeric_types t
-let is_signed t = ITypeSet.mem signed_numeric_types t
-let is_unsigned t = ITypeSet.mem unsigned_integer_types t
 
+let is_signed_numeric = function
+  | I t -> IIntTypeSet.mem signed_integer_types t
+  | FloatType -> true
+  | DoubleType -> true
+  | _ ->  raise (TypeError "non-numeric type")
+
+let is_unsigned_numeric = function
+  | I t -> IIntTypeSet.mem unsigned_integer_types t
+  | FloatType -> false
+  | DoubleType -> false
+  | _ ->  raise (TypeError "non-numeric type")
 
 let integer_type_rank = function
-    | FloatType | DoubleType -> raise (TypeError "not an integer type")
     | BoolType                -> 0
     | Int8Type  | UInt8Type   -> 1
     | Int16Type | UInt16Type  -> 2
     | Int32Type | UInt32Type  -> 3
     | Int64Type | UInt64Type  -> 4
-    | VoidType | OtherType _ | VecType _ | PtrType _ -> raise (TypeError "not a numeric type")
 
 let int_sizeof = function
-    | FloatType | DoubleType -> raise (TypeError "not an integer type")
     | BoolType | Int8Type  | UInt8Type   -> 1
     | Int16Type | UInt16Type  -> 2
     | Int32Type | UInt32Type  -> 4
     | Int64Type | UInt64Type  -> 8
-    | VoidType | OtherType _ | VecType _ | PtrType _ -> raise (TypeError "not a numeric type")
 
 let integer_promotion t =
-  if not (is_integer t) then raise (TypeError "not an integer type")
-  else
-    let i = if is_signed t then Config.intType () else Config.uIntType ()  in
-    if integer_type_rank t < integer_type_rank i then i else t
+  let i = if is_signed_integer t then Config.intIntType () else Config.uIntIntType ()  in
+  if integer_type_rank t < integer_type_rank i then i else t
 
 (* If true, 'a' could be casted to 'b' at compile type without loss of precision
 We choose stricter casting rules than in C. In particular:
@@ -69,16 +81,15 @@ let rec subtype a b =
     | VoidType -> false
     | FloatType -> eq_itype b DoubleType
     | DoubleType -> false
-    | Int8Type  -> List.mem [ FloatType ; DoubleType ; Int16Type ; Int32Type ; Int64Type ] b eq_itype
-    | Int16Type -> List.mem [ FloatType ; DoubleType ; Int32Type ; Int64Type ] b eq_itype
-    | Int32Type -> List.mem [ FloatType; DoubleType ; Int64Type ] b eq_itype
-    | Int64Type -> false
-    | UInt8Type  -> List.mem [ UInt16Type ; UInt32Type ; UInt64Type ] b eq_itype
-    | UInt16Type -> List.mem [ UInt32Type ; UInt64Type ] b eq_itype
-    | UInt32Type -> List.mem [ UInt64Type ] b eq_itype
-    | UInt64Type -> false
-    | BoolType -> is_numeric b (* could be cast to any numeric type *)
-    | OtherType _ -> false
+    | I Int8Type  -> List.mem [ FloatType ; DoubleType ; I Int16Type ; I Int32Type ; I Int64Type ] b eq_itype
+    | I Int16Type -> List.mem [ FloatType ; DoubleType ; I Int32Type ; I Int64Type ] b eq_itype
+    | I Int32Type -> List.mem [ FloatType; DoubleType ; I Int64Type ] b eq_itype
+    | I Int64Type -> false
+    | I UInt8Type  -> List.mem [ I UInt16Type ; I UInt32Type ; I UInt64Type ] b eq_itype
+    | I UInt16Type -> List.mem [ I UInt32Type ; I UInt64Type ] b eq_itype
+    | I UInt32Type -> List.mem [ I UInt64Type ] b eq_itype
+    | I UInt64Type -> false
+    | I BoolType -> is_numeric b (* could be cast to any numeric type *)
     | VecType (t,l) -> (match b with
                         | VecType (t1,l1) -> l1 = l && subtype t t1
                         | _ -> false)
@@ -115,7 +126,7 @@ let func_type_cond a =
     raise (TypeError ("Invalid number of arguments for 'cond'" ))
   else
     let a0 = hd_exn a in
-    if not (ITypeSet.mem a0 BoolType) then
+    if not (ITypeSet.mem a0 (I BoolType)) then
       raise (TypeError (Format.asprintf "Could not coerce 1st argument of 'cond' to boolean type. Actual types: [%a]." type_list_fmt (ITypeSet.to_list a0)))
     else
       ITypeSet.union (nth_exn a 1) (nth_exn a 2)
@@ -131,7 +142,7 @@ let builtins_map =
       ("div", numeric_op 2 numeric_types) ;
       ("neg", numeric_op 1 signed_numeric_types) ;
       ("abs", numeric_op 1 numeric_types) ;
-      ("geq", numeric_op_with_rettype BoolType 2 numeric_types) (* TODO: extend to non-numeric *) ;
+      ("geq", numeric_op_with_rettype (I BoolType) 2 numeric_types) (* TODO: extend to non-numeric *) ;
     ]
 
 let build_var_map l =
@@ -208,7 +219,7 @@ let rec rvalue_type vmap lv =
     | FPLiteral _ -> ITypeSet.of_list [DoubleType; FloatType]
     | FloatEPS -> ITypeSet.singleton FloatType
     | DoubleEPS -> ITypeSet.singleton DoubleType in
-  let iconst_type _ = ITypeSet.of_list [Config.intType () ; Config.uIntType ()] in
+  let iconst_type _ = ITypeSet.of_list [ Config.intType () ; Config.uIntType ()] in
   let vparam_type = function
     | VParamList l -> ITypeSet.singleton (VecType (Config.uIntType (), List.length l))
     | VParamValue _ -> ITypeSet.singleton (Config.uIntType ()) (* bit mask *)

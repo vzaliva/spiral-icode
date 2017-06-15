@@ -1,6 +1,7 @@
 %{
     open Ast
     open IType
+    open IIntType
     open Config
 %}
 
@@ -30,23 +31,22 @@
 
 i_type:
   | TINT     { intType ()    }
-  | TINT8    { Int8Type   }
-  | TINT16   { Int16Type  }
-  | TINT32   { Int32Type  }
-  | TINT64   { Int64Type  }
+  | TINT8    { I Int8Type   }
+  | TINT16   { I Int16Type  }
+  | TINT32   { I Int32Type  }
+  | TINT64   { I Int64Type  }
   | TUINT    { uIntType ()   }
-  | TUINT8   { UInt8Type  }
-  | TUINT16  { UInt16Type }
-  | TUINT32  { UInt32Type }
-  | TUINT64  { UInt64Type }
+  | TUINT8   { I UInt8Type  }
+  | TUINT16  { I UInt16Type }
+  | TUINT32  { I UInt32Type }
+  | TUINT64  { I UInt64Type }
   | TREAL    { realType ()   }
   | TFLOAT   { FloatType  }
   | TDOUBLE  { DoubleType }
-  | TBOOL    { BoolType   }
+  | TBOOL    { I BoolType   }
   | TVOID    { VoidType   }
   | TPTR LPAREN t=i_type RPAREN DOT ALIGNED LPAREN LBRACKET a=separated_list(COMMA, UINT) RBRACKET RPAREN {PtrType (t,a)}
   | TVECT LPAREN t=i_type COMMA s=UINT RPAREN { VecType (t,s) }
-  | n=IDENTIFIER { OtherType n }
   ;
 
 i_var:

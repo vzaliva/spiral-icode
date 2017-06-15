@@ -3,11 +3,8 @@
 open Core
 open Sexplib
 
-module IType = struct
+module IIntType = struct
   type t =
-    | VoidType
-    | FloatType (* IEEE 32-bit float *)
-    | DoubleType (* IEEE 64-bit float *)
     | Int8Type
     | Int16Type
     | Int32Type
@@ -16,8 +13,17 @@ module IType = struct
     | UInt16Type
     | UInt32Type
     | UInt64Type
-    | BoolType
-    | OtherType of string
+    | BoolType [@@deriving compare, sexp]
+end
+open IIntType
+module IIntTypeSet = Set.Make(IIntType)
+
+module IType = struct
+  type t =
+    | VoidType
+    | FloatType (* IEEE 32-bit float *)
+    | DoubleType (* IEEE 64-bit float *)
+    | I of IIntType.t
     | VecType of t*int
     | PtrType of t*(int list) (* type, alignment *) [@@deriving compare, sexp]
 end
@@ -69,23 +75,25 @@ type iprogram = Program of ((string*IType.t) list)*istmt
 
 let eq_itype a b = compare a b = 0
 
+let iType_of_IntType t = I t
+
+
 (* -- Formatting --- *)
 open Format
 
 let rec pr_itype ppf = function
-  | Int8Type -> fprintf ppf "@[TInt8]"
-  | Int16Type -> fprintf ppf "@[TInt16]"
-  | Int32Type -> fprintf ppf "@[TInt32]"
-  | Int64Type -> fprintf ppf "@[TInt64]"
-  | UInt8Type -> fprintf ppf "@[TUInt8]"
-  | UInt16Type -> fprintf ppf "@[TUInt16]"
-  | UInt32Type -> fprintf ppf "@[TUInt32]"
-  | UInt64Type -> fprintf ppf "@[TUInt64]"
+  | I Int8Type -> fprintf ppf "@[TInt8]"
+  | I Int16Type -> fprintf ppf "@[TInt16]"
+  | I Int32Type -> fprintf ppf "@[TInt32]"
+  | I Int64Type -> fprintf ppf "@[TInt64]"
+  | I UInt8Type -> fprintf ppf "@[TUInt8]"
+  | I UInt16Type -> fprintf ppf "@[TUInt16]"
+  | I UInt32Type -> fprintf ppf "@[TUInt32]"
+  | I UInt64Type -> fprintf ppf "@[TUInt64]"
+  | I BoolType -> fprintf ppf "@[TBool@]"
   | VoidType -> fprintf ppf "@[TVoid@]"
   | FloatType -> fprintf ppf "@[Float@]"
   | DoubleType -> fprintf ppf "@[Double@]"
-  | BoolType -> fprintf ppf "@[TBool@]"
-  | OtherType n -> fprintf ppf "@[%s@]" n
   | VecType (t,s) -> fprintf ppf "@[%a[%d]@]" pr_itype t s
   | PtrType (t,_) -> fprintf ppf "@[%a@]" pr_itype t
 
