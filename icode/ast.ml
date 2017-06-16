@@ -13,21 +13,27 @@ module IIntType = struct
     | UInt16Type
     | UInt32Type
     | UInt64Type
-    | BoolType [@@deriving compare, sexp]
+    | BoolType [@@deriving compare, sexp, enumerate]
 end
 open IIntType
 module IIntTypeSet = Set.Make(IIntType)
 
+module IArithType = struct
+  type t =
+    | I of IIntType.t
+    | FloatType (* IEEE 32-bit float *)
+    | DoubleType (* IEEE 64-bit float *)  [@@deriving compare, sexp, enumerate]
+end
+open IArithType
+module IArithTypeSet = Set.Make(IArithType)
+
 module IType = struct
   type t =
+    | A of IArithType.t
     | VoidType
-    | FloatType (* IEEE 32-bit float *)
-    | DoubleType (* IEEE 64-bit float *)
-    | I of IIntType.t
     | VecType of t*int
     | PtrType of t*(int list) (* type, alignment *) [@@deriving compare, sexp]
 end
-
 open IType
 module ITypeSet = Set.Make(IType)
 
@@ -73,27 +79,27 @@ type istmt =
 
 type iprogram = Program of ((string*IType.t) list)*istmt
 
-let eq_itype a b = compare a b = 0
-
-let iType_of_IntType t = I t
+let eq_itype (a:IType.t) (b:IType.t) = IType.compare a b = 0
+let eq_int_type (a:IIntType.t) (b:IIntType.t) = IIntType.compare a b = 0
+let iType_of_IntType t = A (I t)
 
 
 (* -- Formatting --- *)
 open Format
 
 let rec pr_itype ppf = function
-  | I Int8Type -> fprintf ppf "@[TInt8]"
-  | I Int16Type -> fprintf ppf "@[TInt16]"
-  | I Int32Type -> fprintf ppf "@[TInt32]"
-  | I Int64Type -> fprintf ppf "@[TInt64]"
-  | I UInt8Type -> fprintf ppf "@[TUInt8]"
-  | I UInt16Type -> fprintf ppf "@[TUInt16]"
-  | I UInt32Type -> fprintf ppf "@[TUInt32]"
-  | I UInt64Type -> fprintf ppf "@[TUInt64]"
-  | I BoolType -> fprintf ppf "@[TBool@]"
+  | A I Int8Type -> fprintf ppf "@[TInt8]"
+  | A I Int16Type -> fprintf ppf "@[TInt16]"
+  | A I Int32Type -> fprintf ppf "@[TInt32]"
+  | A I Int64Type -> fprintf ppf "@[TInt64]"
+  | A I UInt8Type -> fprintf ppf "@[TUInt8]"
+  | A I UInt16Type -> fprintf ppf "@[TUInt16]"
+  | A I UInt32Type -> fprintf ppf "@[TUInt32]"
+  | A I UInt64Type -> fprintf ppf "@[TUInt64]"
+  | A I BoolType -> fprintf ppf "@[TBool@]"
+  | A FloatType -> fprintf ppf "@[Float@]"
+  | A DoubleType -> fprintf ppf "@[Double@]"
   | VoidType -> fprintf ppf "@[TVoid@]"
-  | FloatType -> fprintf ppf "@[Float@]"
-  | DoubleType -> fprintf ppf "@[Double@]"
   | VecType (t,s) -> fprintf ppf "@[%a[%d]@]" pr_itype t s
   | PtrType (t,_) -> fprintf ppf "@[%a@]" pr_itype t
 

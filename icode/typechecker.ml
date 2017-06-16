@@ -5,13 +5,13 @@ exception TypeError of string
 open Ast
 open IType
 open IIntType
+open IArithType
 
 let signed_integer_types = IIntTypeSet.of_list [
                                Int8Type ;
                                Int16Type ;
                                Int32Type ;
                                Int64Type]
-
 let is_signed_integer = IIntTypeSet.mem signed_integer_types
 
 let unsigned_integer_types = IIntTypeSet.of_list [
@@ -20,61 +20,89 @@ let unsigned_integer_types = IIntTypeSet.of_list [
                                  UInt16Type ;
                                  UInt32Type ;
                                  UInt64Type ]
+let is_unsigned_integer = IIntTypeSet.mem unsigned_integer_types
+
+let integer_types = IIntTypeSet.of_list IIntType.all
+
+let signed_arith_types = ITypeSet.union
+                           (ITypeSet.of_list [
+                                A FloatType ;
+                                A DoubleType ; ])
+                           (ITypeSet.map ~f:iType_of_IntType signed_integer_types)
 
 
-
-let integer_types = IIntTypeSet.union signed_integer_types unsigned_integer_types
-
-let signed_numeric_types = ITypeSet.union
-                             (ITypeSet.of_list [
-                                  FloatType ;
-                                  DoubleType ; ])
-                             (ITypeSet.map ~f:iType_of_IntType signed_integer_types)
-
-
-let numeric_types = ITypeSet.union signed_numeric_types
-                                   (ITypeSet.map ~f:iType_of_IntType unsigned_integer_types)
+let arith_types = IArithTypeSet.of_list IArithType.all
 
 let is_integer = function
   | I _ -> true
   | _ -> false
 
-let is_numeric t = ITypeSet.mem numeric_types t
+let is_arith = function
+  | A _ -> true
+  | _ -> false
 
-let is_signed_numeric = function
+let is_signed_arith = function
   | I t -> IIntTypeSet.mem signed_integer_types t
   | FloatType -> true
   | DoubleType -> true
-  | _ ->  raise (TypeError "non-numeric type")
 
-let is_unsigned_numeric = function
+let is_unsigned_arith = function
   | I t -> IIntTypeSet.mem unsigned_integer_types t
   | FloatType -> false
   | DoubleType -> false
-  | _ ->  raise (TypeError "non-numeric type")
 
 let integer_type_rank = function
-    | BoolType                -> 0
-    | Int8Type  | UInt8Type   -> 1
-    | Int16Type | UInt16Type  -> 2
-    | Int32Type | UInt32Type  -> 3
-    | Int64Type | UInt64Type  -> 4
+  | BoolType                -> 0
+  | Int8Type  | UInt8Type   -> 1
+  | Int16Type | UInt16Type  -> 2
+  | Int32Type | UInt32Type  -> 3
+  | Int64Type | UInt64Type  -> 4
 
 let int_sizeof = function
-    | BoolType | Int8Type  | UInt8Type   -> 1
-    | Int16Type | UInt16Type  -> 2
-    | Int32Type | UInt32Type  -> 4
-    | Int64Type | UInt64Type  -> 8
+  | BoolType | Int8Type  | UInt8Type   -> 1
+  | Int16Type | UInt16Type  -> 2
+  | Int32Type | UInt32Type  -> 4
+  | Int64Type | UInt64Type  -> 8
+
+let unsigned_type = function
+  | Int8Type -> UInt8Type
+  | Int16Type -> UInt16Type
+  | Int32Type -> UInt32Type
+  | Int64Type -> UInt64Type
+  | _ as t -> t
 
 let integer_promotion t =
-  let i = if is_signed_integer t then Config.intIntType () else Config.uIntIntType ()  in
+  let i = if is_signed_integer t then Config.intIntType () else Config.uIntIntType () in
   if integer_type_rank t < integer_type_rank i then i else t
+
+(** Usual arithmetic conversions, a.k.a. binary conversions. This function returns the type to which the two operands must be converted. (adopted from http://compcert.inria.fr/doc/html/Cop.html) *)
+let usual_arithmetic_conversion t1 t2 =
+  match t1, t2 with
+  | DoubleType, _ | _, DoubleType -> DoubleType
+  | FloatType, _ | _, FloatType -> FloatType
+  | I i1, I i2 ->
+     let j1 = integer_promotion i1 in
+     let j2 = integer_promotion i2 in
+     if eq_int_type j1 j2 then I j1 else
+       (match is_unsigned_integer j1, is_unsigned_integer j2 with
+        | true, true | false, false ->
+           if integer_type_rank j1 < integer_type_rank j2 then I j2 else I j1
+        | true, false ->
+           if integer_type_rank j2 <= integer_type_rank j1 then I j1 else
+             if int_sizeof j1 < int_sizeof j2 then I j2 else
+               I (unsigned_type j2)
+        | false, true ->
+           if integer_type_rank j1 <= integer_type_rank j2 then I j2 else
+             if int_sizeof j2 < int_sizeof j1 then I j1 else
+               I (unsigned_type j1)
+       )
 
 (* If true, 'a' could be casted to 'b' at compile type without loss of precision
 We choose stricter casting rules than in C. In particular:
 * All pointers must be implicitly casted
 *)
-let rec subtype a b =
+let rec subtype a b = true
+                        (*
   if a = b then true
   else
     match a with
@@ -89,25 +117,32 @@ let rec subtype a b =
     | I UInt16Type -> List.mem [ I UInt32Type ; I UInt64Type ] b eq_itype
     | I UInt32Type -> List.mem [ I UInt64Type ] b eq_itype
     | I UInt64Type -> false
-    | I BoolType -> is_numeric b (* could be cast to any numeric type *)
+    | I BoolType -> is_arith b (* could be cast to any arith type *)
     | VecType (t,l) -> (match b with
                         | VecType (t1,l1) -> l1 = l && subtype t t1
                         | _ -> false)
     | PtrType (t,a) -> false
+                         *)
 
 (* TODO: should be in Std? *)
 let constlist a n =  List.map ~f:(fun _ -> a) (List.range 0 n)
 
-let numeric_op nargs typelist al =
-  let open ITypeSet in
-  if nargs <> List.length al then
+let arith_binop al =
+  let open List in
+  if 2 <> length al then
     raise (TypeError ("Invalid number of arguments"))
   else
-    filter ~f:(fun t ->
-             List.for_all ~f:(fun a -> exists ~f:(fun x -> subtype x t) a) al)
-           typelist
+    let a0 = nth_exn al 0 in
+    let a1 = nth_exn al 1 in
+    let p = cartesian_product (ITypeSet.to_list a0) (ITypeSet.to_list a1) in
+    let ap = filter_map ~f:(fun (a0,a1) ->
+                          match a0 , a1 with
+                          | A aa0 , A aa1 -> Some (A (usual_arithmetic_conversion aa0 aa1))
+                          | _ , _ -> None
+                        ) p in
+    ITypeSet.of_list ap
 
-let numeric_op_with_rettype rettype nargs typelist al =
+let arith_op_with_rettype rettype nargs typelist al =
   let open ITypeSet in
   if nargs <> List.length al then
     raise (TypeError "Invalid number of arguments")
@@ -126,23 +161,24 @@ let func_type_cond a =
     raise (TypeError ("Invalid number of arguments for 'cond'" ))
   else
     let a0 = hd_exn a in
-    if not (ITypeSet.mem a0 (I BoolType)) then
+    if not (ITypeSet.mem a0 (A (I BoolType))) then
       raise (TypeError (Format.asprintf "Could not coerce 1st argument of 'cond' to boolean type. Actual types: [%a]." type_list_fmt (ITypeSet.to_list a0)))
     else
-      ITypeSet.union (nth_exn a 1) (nth_exn a 2)
+      ITypeSet.inter (nth_exn a 1) (nth_exn a 2) (* TODO: Add casting *)
 
 let builtins_map =
   String.Map.Tree.of_alist_exn
     [
       ("cond", func_type_cond);
-      ("max", numeric_op 2 numeric_types) ;
-      ("add", numeric_op 2 numeric_types) ;
-      ("sub", numeric_op 2 numeric_types) ;
-      ("mul", numeric_op 2 numeric_types) ;
-      ("div", numeric_op 2 numeric_types) ;
-      ("neg", numeric_op 1 signed_numeric_types) ;
-      ("abs", numeric_op 1 numeric_types) ;
-      ("geq", numeric_op_with_rettype (I BoolType) 2 numeric_types) (* TODO: extend to non-numeric *) ;
+      ("max", arith_binop) ;
+      ("add", arith_binop) ;
+      ("sub", arith_binop) ;
+      ("mul", arith_binop) ;
+      ("div", arith_binop) ;
+(*
+      ("neg", arith_op 1 signed_arith_types) ;
+      ("abs", arith_op 1 arith_types) ;
+      ("geq", arith_op_with_rettype (I BoolType) 2 arith_types) (* TODO: extend to non-arith *) ; *)
     ]
 
 let build_var_map l =
@@ -206,19 +242,19 @@ let func_type n a =
   let open List in
   let al = map ~f:ITypeSet.to_list a in
   Printf.fprintf stderr "*** Resolving function %s %s\n" n (Sexp.to_string
-                                                                 (sexp_of_list
-                                                                    (sexp_of_list IType.sexp_of_t) al));
+                                                              (sexp_of_list
+                                                                 (sexp_of_list IType.sexp_of_t) al));
 
   match (String.Map.Tree.find builtins_map n) with
-    | None -> raise (TypeError ("Unknown function '" ^ n ^ "'" ))
-    | Some bf -> bf a
+  | None -> raise (TypeError ("Unknown function '" ^ n ^ "'" ))
+  | Some bf -> bf a
 
 (* There is ambiguity. We return list of potential types *)
 let rec rvalue_type vmap lv =
   let fconst_type = function
-    | FPLiteral _ -> ITypeSet.of_list [DoubleType; FloatType]
-    | FloatEPS -> ITypeSet.singleton FloatType
-    | DoubleEPS -> ITypeSet.singleton DoubleType in
+    | FPLiteral _ -> ITypeSet.of_list [A DoubleType; A FloatType]
+    | FloatEPS -> ITypeSet.singleton (A FloatType)
+    | DoubleEPS -> ITypeSet.singleton (A DoubleType) in
   let iconst_type _ = ITypeSet.of_list [ Config.intType () ; Config.uIntType ()] in
   let vparam_type = function
     | VParamList l -> ITypeSet.singleton (VecType (Config.uIntType (), List.length l))
@@ -319,8 +355,8 @@ let typecheck vmap prog =
        let lt = lvalue_type vmap l in
        if not (ITypeSet.exists ~f:(fun x -> subtype x lt) rts) then
          raise (TypeError (Format.asprintf "Incompatible types in assignment %a=[%a]."
-                                       pr_itype lt
-                                       type_list_fmt (ITypeSet.to_list rts)
+                                           pr_itype lt
+                                           type_list_fmt (ITypeSet.to_list rts)
                ));
        check_vars_in_lvalue u l;
        check_vars_in_rvalue u r;
