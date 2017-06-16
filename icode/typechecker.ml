@@ -75,7 +75,8 @@ let integer_promotion t =
   let i = if is_signed_integer t then Config.intIntType () else Config.uIntIntType () in
   if integer_type_rank t < integer_type_rank i then i else t
 
-(** Usual arithmetic conversions, a.k.a. binary conversions. This function returns the type to which the two operands must be converted. (adopted from http://compcert.inria.fr/doc/html/Cop.html) *)
+(** Usual arithmetic conversions, a.k.a. binary conversions. This function returns the type to which the two operands must be converted. Adopted from http://compcert.inria.fr/doc/html/Cop.html. Reference: C99 Section 6.3.1.8.
+*)
 let usual_arithmetic_conversion t1 t2 =
   match t1, t2 with
   | DoubleType, _ | _, DoubleType -> DoubleType
@@ -127,44 +128,30 @@ let rec subtype a b = true
 (* TODO: should be in Std? *)
 let constlist a n =  List.map ~f:(fun _ -> a) (List.range 0 n)
 
-let arith_binop al =
+let arith_binop name al =
   let open List in
   if 2 <> length al then
     raise (TypeError ("Invalid number of arguments"))
   else
     let a0 = nth_exn al 0 in
     let a1 = nth_exn al 1 in
-    let p = cartesian_product (ITypeSet.to_list a0) (ITypeSet.to_list a1) in
-    let ap = filter_map ~f:(fun (a0,a1) ->
-                          match a0 , a1 with
-                          | A aa0 , A aa1 -> Some (A (usual_arithmetic_conversion aa0 aa1))
-                          | _ , _ -> None
-                        ) p in
-    ITypeSet.of_list ap
+    match a0 , a1 with
+    | A ia0 , A ia1 -> A (usual_arithmetic_conversion ia0 ia1)
+    | _ , _ -> raise (TypeError
+                        (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
+                                         pr_itype a0 pr_itype a1 name))
 
-let arith_op_with_rettype rettype nargs typelist al =
-  let open ITypeSet in
-  if nargs <> List.length al then
-    raise (TypeError "Invalid number of arguments")
-  else
-    if (exists ~f:(fun t ->
-                 List.for_all ~f:(fun a -> exists ~f:(fun x -> subtype x t) a) al)
-               typelist)
-    then
-      singleton rettype
-    else
-      empty
-
-let func_type_cond a =
+let func_type_cond name a =
   let open List in
   if length a <> 3 then
     raise (TypeError ("Invalid number of arguments for 'cond'" ))
   else
     let a0 = hd_exn a in
-    if not (ITypeSet.mem a0 (A (I BoolType))) then
-      raise (TypeError (Format.asprintf "Could not coerce 1st argument of 'cond' to boolean type. Actual types: [%a]." type_list_fmt (ITypeSet.to_list a0)))
+    if not (eq_itype a0 (A (I BoolType))) then
+      raise (TypeError (Format.asprintf "Could not coerce 1st argument of '%s' to boolean type. Actual types: [%a]." name pr_itype a0))
     else
-      ITypeSet.inter (nth_exn a 1) (nth_exn a 2) (* TODO: Add casting *)
+      arith_binop name (tl_exn a)
+
 
 let builtins_map =
   String.Map.Tree.of_alist_exn
@@ -240,61 +227,57 @@ let rec lvalue_type vmap = function
 
 let func_type n a =
   let open List in
-  let al = map ~f:ITypeSet.to_list a in
   Printf.fprintf stderr "*** Resolving function %s %s\n" n (Sexp.to_string
-                                                              (sexp_of_list
-                                                                 (sexp_of_list IType.sexp_of_t) al));
+                                                              (sexp_of_list IType.sexp_of_t a));
 
   match (String.Map.Tree.find builtins_map n) with
   | None -> raise (TypeError ("Unknown function '" ^ n ^ "'" ))
-  | Some bf -> bf a
+  | Some bf -> bf n a
 
 (* There is ambiguity. We return list of potential types *)
 let rec rvalue_type vmap lv =
   let fconst_type = function
-    | FPLiteral _ -> ITypeSet.of_list [A DoubleType; A FloatType]
-    | FloatEPS -> ITypeSet.singleton (A FloatType)
-    | DoubleEPS -> ITypeSet.singleton (A DoubleType) in
-  let iconst_type _ = ITypeSet.of_list [ Config.intType () ; Config.uIntType ()] in
+    (* Per C99 6.4.4.2.4 "An unsuffixed floating constant has type double". In i-code we deatult it to default machine size *)
+    | FPLiteral _ -> Config.realType ()
+    | FloatEPS -> A FloatType
+    | DoubleEPS -> A DoubleType in
+  (* TODO: Per c99 spec 6.4.4.1 "The type of an integer constant is the first of the corresponding list in which its value can be represented."*)
+  let iconst_type _ = Config.intType () in
   let vparam_type = function
-    | VParamList l -> ITypeSet.singleton (VecType (Config.uIntType (), List.length l))
-    | VParamValue _ -> ITypeSet.singleton (Config.uIntType ()) (* bit mask *)
+    | VParamList l -> VecType (Config.uIntType (), List.length l)
+    | VParamValue _ -> Config.uIntType () (* bit mask *)
   in
   match lv with
-  | VarRValue v -> ITypeSet.singleton (var_type vmap v)
+  | VarRValue v -> var_type vmap v
   | FunCall (n,a) ->
      let ft = func_type n (List.map ~f:(rvalue_type vmap) a) in
-     Printf.fprintf stderr "*** %s type is %s\n" n (Sexp.to_string (sexp_of_list IType.sexp_of_t (ITypeSet.to_list ft)));
+     Format.fprintf Format.err_formatter "*** %s type is %a\n" n pr_itype ft;
      ft
   | FConst fc -> fconst_type fc
   | IConst ic -> iconst_type ic
   | FConstVec fl ->
-     let flt = List.fold ~f:ITypeSet.union ~init:(ITypeSet.empty)
-                         (List.map ~f:fconst_type fl) in
-     (* TODO: Check that all types in flt are convertible to float *)
-     let fll = List.length fl in
-     ITypeSet.map ~f:(fun t -> VecType (t, fll)) flt
+     let flt = List.map ~f:fconst_type fl in
+     (* TODO:
+          1. Check that all types in flt are compatible
+          2. Derive common type
+     *)
+     VecType (Config.realType (), List.length fl)
   | IConstVec il ->
-     let ilt = List.fold ~f:ITypeSet.union ~init:(ITypeSet.empty)
-                         (List.map ~f:iconst_type il) in
-     (* TODO: Check that all types in flt are convertible to int *)
-     let ill = List.length il in
-     ITypeSet.map ~f:(fun t -> VecType (t, ill)) ilt
-  | RCast (t,_) -> ITypeSet.singleton t
+     let ilt = List.map ~f:iconst_type il in
+     (* TODO:
+           1. Check that all types in flt are compatible
+           2. Derive common type
+      *)
+     VecType (Config.intType (), List.length il)
+  | RCast (t,_) ->  t
   | VParam v -> vparam_type v
-  | RDeref v -> ITypeSet.map
-                  ~f:(fun ti ->
-                    match ti with
-                    | PtrType (t,_) -> t
-                    | _ -> raise (TypeError (Format.asprintf "Dereferencing non-pointer type %a" pr_itype ti)))
-                  (rvalue_type vmap v)
+  | RDeref v -> (match rvalue_type vmap v with
+                | PtrType (t,_) -> t
+                | t -> raise (TypeError (Format.asprintf "Dereferencing non-pointer type %a" pr_itype t)))
+  | NthRvalue (v, i) -> (match rvalue_type vmap v with
+                         | VecType (t,_) | PtrType (t,_) -> t
+                         | t -> raise (TypeError (Format.asprintf "Invalid type %a in NTH" pr_itype t)))
 
-  | NthRvalue (v, i) -> ITypeSet.map
-                          ~f:(fun ti ->
-                            match ti with
-                            | VecType (t,_) | PtrType (t,_) -> t
-                            | _ -> raise (TypeError (Format.asprintf "Invalid type %a in NTH" pr_itype ti)))
-                          (rvalue_type vmap v)
 
 (*
    Peforms various type and strcutural correctness checks:
@@ -351,12 +334,12 @@ let typecheck vmap prog =
          (typecheck u bf)
     | Skip -> u
     | Assign (l,r) ->
-       let rts = rvalue_type vmap r in
+       let rt = rvalue_type vmap r in
        let lt = lvalue_type vmap l in
-       if not (ITypeSet.exists ~f:(fun x -> subtype x lt) rts) then
+       if not (subtype rt lt) then
          raise (TypeError (Format.asprintf "Incompatible types in assignment %a=[%a]."
                                            pr_itype lt
-                                           type_list_fmt (ITypeSet.to_list rts)
+                                           pr_itype rt
                ));
        check_vars_in_lvalue u l;
        check_vars_in_rvalue u r;
