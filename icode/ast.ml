@@ -1,7 +1,20 @@
 (* I-code AST *)
 
-open Core
+open Int64
+open Uint64
 open Sexplib
+open Core
+
+(* Machine-safe int to hold any int value, signed or unsiged *)
+module Int_or_uint_64 = struct
+  type t =
+    | I64 of int64
+    | U64 of uint64
+
+  let to_string = function
+    | I64 x -> Int64.to_string x
+    | U64 x -> Uint64.to_string x ^ "u"
+end
 
 module IIntType = struct
   type t =
@@ -52,9 +65,9 @@ type rvalue =
   | FunCall of string*(rvalue list)
   | VarRValue of string
   | FConst of fconst
-  | IConst of int
+  | IConst of Int_or_uint_64.t
   | FConstVec of (fconst list)
-  | IConstVec of (int list)
+  | IConstVec of (Int_or_uint_64.t list)
   | NthRvalue of rvalue*rvalue (* 'int' type for index will be checked later *)
   | RCast of IType.t*rvalue
   | VParam of vparam
@@ -73,7 +86,7 @@ type istmt =
   | Chain of (istmt list)
   | Data of ivar*(rvalue list)*istmt (* homogenity of rvalues to be checked later *)
   | Assign of lvalue*rvalue
-  | Loop of ivar*int*int*istmt (* 'int' type for bounds, and a<=b will be checked later *)
+  | Loop of ivar*Int_or_uint_64.t*Int_or_uint_64.t*istmt (* 'int' type for bounds, and a<=b will be checked later *)
   | If of rvalue*istmt*istmt
   | Return of rvalue
 

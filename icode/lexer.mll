@@ -1,6 +1,5 @@
 {
   open Parser
-
   exception Error of string
 }
 
@@ -18,7 +17,7 @@ rule main = parse
 | '-'?['0'-'9']*'.'['0'-'9']+ as f
     { FLOAT (float_of_string f) }
 | ['0'-'9']+ as i
-    { UINT (int_of_string i) }
+    { UINT (i) }
 
 (* special characters *)
 | ','  { COMMA    }

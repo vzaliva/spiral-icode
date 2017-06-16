@@ -1,12 +1,15 @@
 %{
     open Ast
-    open IType
     open IIntType
+    open IArithType
+    open IType
     open Config
+
+    open Uint
 %}
 
 %token <float> FLOAT
-%token <int> UINT
+%token <string> UINT
 %token <string> STRING
 
 %token MINUS COMMA
@@ -45,8 +48,11 @@ i_type:
   | TDOUBLE  { A DoubleType }
   | TBOOL    { A (I BoolType)   }
   | TVOID    { VoidType   }
-  | TPTR LPAREN t=i_type RPAREN DOT ALIGNED LPAREN LBRACKET a=separated_list(COMMA, UINT) RBRACKET RPAREN {PtrType (t,a)}
-  | TVECT LPAREN t=i_type COMMA s=UINT RPAREN { VecType (t,s) }
+  | TPTR LPAREN t=i_type RPAREN DOT ALIGNED LPAREN LBRACKET a=separated_list(COMMA, UINT) RBRACKET RPAREN
+                {
+                    PtrType (t, List.map int_of_string a)
+                }
+  | TVECT LPAREN t=i_type COMMA s=UINT RPAREN { VecType (t,int_of_string s) }
   ;
 
 i_var:
@@ -67,8 +73,8 @@ i_fconst:
   ;
 
 i_int:
-  | x=UINT { x }
-  | MINUS x=UINT { -x }
+  | x=UINT { Int_or_uint_64.U64 (Uint64.of_string x) }
+  | MINUS x = UINT { Int_or_uint_64.I64 (Int64.of_string ("-" ^ x)) }
 
 i_iconst:
   | V LPAREN i=i_int RPAREN { i }
@@ -80,7 +86,9 @@ i_rvalue:
   | V LPAREN LBRACKET l=separated_nonempty_list(COMMA, i_iconst) RBRACKET RPAREN
               { IConstVec l }
   | VPARAM LPAREN LBRACKET l=separated_nonempty_list(COMMA, UINT) RBRACKET RPAREN
-              { VParam (VParamList l) }
+              {
+                  VParam (VParamList (List.map int_of_string l))
+              }
   | VHEX LPAREN LBRACKET l=separated_nonempty_list(COMMA, STRING) RBRACKET RPAREN
               { IConstVec [] } (* TODO *)             
   | f=i_fconst { FConst f }
@@ -114,5 +122,8 @@ i_stmt:
   | ASSIGN LPAREN n=i_lvalue COMMA e=i_rvalue RPAREN {Assign (n,e)}
   | CRETURN LPAREN i=i_rvalue RPAREN { Return i }
   | IF LPAREN v=i_rvalue COMMA t=i_stmt COMMA e=i_stmt RPAREN { If (v,t,e) }
-  | LOOP LPAREN v=IDENTIFIER COMMA LBRACKET f=i_int TWODOT t=i_int RBRACKET COMMA b=i_stmt RPAREN  { Loop (v,f,t,b) }
+  | LOOP LPAREN v=IDENTIFIER COMMA LBRACKET f=i_int TWODOT t=i_int RBRACKET COMMA b=i_stmt RPAREN
+                {
+                    Loop (v,f,t,b)
+                }
   ;

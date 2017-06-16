@@ -324,7 +324,7 @@ let typecheck vmap prog =
        typecheck (add_var u v) body
     | Loop (v,f,t,body) ->
        if f>t then
-         raise (TypeError (Printf.sprintf "Invalid loop index range: %d .. %d  " f t ))
+         raise (TypeError (Printf.sprintf "Invalid loop index range: %s .. %s  " (Int_or_uint_64.to_string f) (Int_or_uint_64.to_string t) ))
        else
          typecheck (add_var u v) body
     | If (r,bt,bf) ->
