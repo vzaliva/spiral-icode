@@ -151,7 +151,30 @@ let arith_binop name al =
 
 let bool_arith_binop name al = ignore ( arith_binop name al) ; A (I BoolType)
 
-let type_combine t1 t2 = Some t1 (* TODO *)
+let ptr_attr_combine a1 a2 = a1 (* TODO *)
+
+let rec type_combine ty1 ty2 =
+  match ty1, ty2 with
+  | VoidType, VoidType -> Some VoidType
+  | A FloatType,  A FloatType -> Some (A FloatType)
+  | A DoubleType,  A DoubleType -> Some (A DoubleType)
+  | A (I t1), A (I t2) ->
+     if is_signed_integer t1 = is_signed_integer t2 && int_sizeof t1 = int_sizeof t2
+     then Some (A (I t1)) else None
+  | PtrType (t1,a1), PtrType (t2, a2) ->
+     (match type_combine t1 t2 with
+      | Some t -> Some (PtrType (t,ptr_attr_combine a1 a2))
+      | None -> None
+     )
+  | VecType (t1,s1), VecType (t2, s2) ->
+     (match type_combine t1 t2 with
+      | Some t -> if s1 = s2 then
+                    Some (VecType (t,s1))
+                  else
+                    None
+      | None -> None
+     )
+  | _, _ -> None
 
 (* Lifted from http://compcert.inria.fr/doc/html/Ctyping.html
  See also C99 section 6.5.15
