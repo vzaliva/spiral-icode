@@ -100,6 +100,11 @@ let usual_arithmetic_conversion t1 t2 =
                I (unsigned_type j1)
        )
 
+let is_void = function
+  | VoidType -> true
+  | _ -> false
+
+
 (* If true, 'a' could be casted to 'b' at compile type without loss of precision
 We choose stricter casting rules than in C. In particular:
 * All pointers must be implicitly casted
@@ -143,16 +148,44 @@ let arith_binop name al =
                         (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
                                          pr_itype a0 pr_itype a1 name))
 
+
+let bool_arith_binop name al = ignore ( arith_binop name al) ; A (I BoolType)
+
+let type_combine t1 t2 = Some t1 (* TODO *)
+
+(* Lifted from http://compcert.inria.fr/doc/html/Ctyping.html
+ See also C99 section 6.5.15
+ *)
+let type_conditional ty1 ty2 =
+  match ty1, ty2 with
+  | A ia0 , A ia1 -> A (usual_arithmetic_conversion ia0 ia1)
+  | PtrType (t1,a1), PtrType (t2, a2) ->
+     let t =
+       if is_void t1 || is_void t2 then VoidType else
+         match type_combine t1 t2 with
+         | Some t -> t
+         | None -> VoidType
+     in PtrType (t,[])
+  | PtrType (t1,_), A (I _) -> PtrType (t1,[])
+  | A (I _), PtrType (t2,_) -> PtrType (t2,[])
+  | t1, t2 -> match type_combine t1 t2 with
+              | Some t -> t
+              | None -> raise (TypeError
+                                 (Format.asprintf "Incompatible arguments for conditional operator:  %a and %a" pr_itype t1 pr_itype t2))
+
 let func_type_cond name a =
   let open List in
   if length a <> 3 then
     raise (TypeError ("Invalid number of arguments for 'cond'" ))
   else
     let a0 = hd_exn a in
-    if not (eq_itype a0 (A (I BoolType))) then
-      raise (TypeError (Format.asprintf "Could not coerce 1st argument of '%s' to boolean type. Actual types: [%a]." name pr_itype a0))
-    else
-      arith_binop name (tl_exn a)
+    (* first argument should be interpretable as boolean *)
+    match a0 with
+    | VecType _ | VoidType -> raise (TypeError (Format.asprintf "Could not coerce 1st argument of '%s' to boolean type. Actual types: [%a]." name pr_itype a0))
+    | A _ | PtrType _ ->
+       (match nth_exn a 1, nth_exn a 2 with
+        | _,_ -> arith_binop name (tl_exn a)
+       )
 
 
 let builtins_map =
@@ -164,10 +197,10 @@ let builtins_map =
       ("sub", arith_binop) ;
       ("mul", arith_binop) ;
       ("div", arith_binop) ;
+      ("geq", bool_arith_binop) ;
 (*
       ("neg", arith_op 1 signed_arith_types) ;
-      ("abs", arith_op 1 arith_types) ;
-      ("geq", arith_op_with_rettype (I BoolType) 2 arith_types) (* TODO: extend to non-arith *) ; *)
+      ("abs", arith_op 1 arith_types) ; *)
     ]
 
 let build_var_map l =
