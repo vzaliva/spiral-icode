@@ -1,13 +1,13 @@
 open Core
 
-exception TypeError of string
-
 open Ast
 open IType
 open IIntType
 open IArithType
 open Int_or_uint_64
 open Uint64
+
+exception TypeError of string
 
 let signed_integer_types = IIntTypeSet.of_list [
                                Int8Type ;

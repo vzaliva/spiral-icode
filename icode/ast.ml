@@ -1,9 +1,8 @@
 (* I-code AST *)
 
-open Int64
-open Uint64
-open Sexplib
 open Core
+open Sexplib
+open Uint64
 
 (* Machine-safe int to hold any int value, signed or unsiged *)
 module Int_or_uint_64 = struct
