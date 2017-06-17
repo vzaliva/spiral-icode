@@ -6,6 +6,8 @@ open Ast
 open IType
 open IIntType
 open IArithType
+open Int_or_uint_64
+open Uint64
 
 let signed_integer_types = IIntTypeSet.of_list [
                                Int8Type ;
@@ -234,6 +236,24 @@ let func_type n a =
   | None -> raise (TypeError ("Unknown function '" ^ n ^ "'" ))
   | Some bf -> bf n a
 
+(* inclusive *)
+let in_range64 f t x =
+  Int64.compare x (Int64.of_string f) >= 0 &&
+    Int64.compare x (Int64.of_string t) <= 0
+
+let in_int8_range = in_range64 "-128" "127"
+let in_int16_range = in_range64 "-32768" "32767"
+let in_int32_range = in_range64 "-2147483648" "2147483647"
+
+(* inclusive *)
+let in_rangeU64 f t x =
+  Uint64.compare x (Uint64.of_string f) >= 0 &&
+    Uint64.compare x (Uint64.of_string t) <= 0
+
+let in_uint8_range = in_rangeU64 "0" "255"
+let in_uint16_range = in_rangeU64 "0" "65535"
+let in_uint32_range = in_rangeU64 "0" "4294967295"
+
 (* There is ambiguity. We return list of potential types *)
 let rec rvalue_type vmap lv =
   let fconst_type = function
@@ -241,8 +261,17 @@ let rec rvalue_type vmap lv =
     | FPLiteral _ -> Config.realType ()
     | FloatEPS -> A FloatType
     | DoubleEPS -> A DoubleType in
-  (* TODO: Per c99 spec 6.4.4.1 "The type of an integer constant is the first of the corresponding list in which its value can be represented."*)
-  let iconst_type _ = Config.intType () in
+  (* Per c99 spec 6.4.4.1 "The type of an integer constant is the first of the corresponding list in which its value can be represented."*)
+  let iconst_type = function
+    | I64 x -> if in_int8_range x then A (I Int8Type)
+               else if in_int16_range x then A (I Int16Type)
+               else if in_int32_range x then A (I Int32Type)
+               else A (I Int64Type)
+    | U64 x -> if in_uint8_range x then A (I UInt8Type)
+               else if in_uint16_range x then A (I UInt16Type)
+               else if in_uint32_range x then A (I UInt32Type)
+               else A (I UInt64Type)
+  in
   let vparam_type = function
     | VParamList l -> VecType (Config.uIntType (), List.length l)
     | VParamValue _ -> Config.uIntType () (* bit mask *)
