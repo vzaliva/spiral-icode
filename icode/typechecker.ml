@@ -210,6 +210,18 @@ let func_type_cond name a =
         | _,_ -> arith_binop name (tl_exn a)
        )
 
+(* 6.5.3.3 Unary arithmetic operators: "The result of the unary + operator is the value of its (promoted) operand. The integer promotions are performed on the operand, and the result has the promoted type". *)
+let func_type_neg _ a =
+  let open List in
+  if length a <> 1 then
+    raise (TypeError ("Invalid number of arguments for negation" ))
+  else
+    let a0 = hd_exn a in
+    match a0 with
+    | A I it -> A (I (integer_promotion it))
+    | A _ as t -> t (* floats negated to the same type. Not dealing with signedness *)
+    | _ -> raise (TypeError (Format.asprintf "Could not apply negation to non-arithmetic type [%a]." pr_itype a0))
+
 
 let builtins_map =
   String.Map.Tree.of_alist_exn
@@ -221,9 +233,8 @@ let builtins_map =
       ("mul", arith_binop) ;
       ("div", arith_binop) ;
       ("geq", bool_arith_binop) ;
-(*
-      ("neg", arith_op 1 signed_arith_types) ;
-      ("abs", arith_op 1 arith_types) ; *)
+      ("neg", func_type_neg) ;
+(*      ("abs", arith_op 1 arith_types) ; *)
     ]
 
 let build_var_map l =
