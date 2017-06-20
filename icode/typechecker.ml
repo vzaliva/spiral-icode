@@ -269,20 +269,6 @@ let var_type vmap v =
   | None -> raise (TypeError ("Unknown variable '" ^ v ^ "'" ))
   | Some t -> t
 
-let rec lvalue_type vmap = function
-  | VarLValue v -> var_type vmap v
-  | LCast (t,_) -> t
-  | LDeref v ->
-     (match lvalue_type vmap v with
-      | PtrType (t,_) -> t
-      | _ as vt ->
-         raise (TypeError (Format.asprintf "Dereferencing non-pointer type %a" pr_itype vt)))
-  | NthLvalue (v, i) ->
-     let vt = lvalue_type vmap v in
-     match vt with
-     | VecType (t,_) | PtrType (t,_) -> t
-     | _ -> raise (TypeError (Format.asprintf "Invalid type %a in NTH" pr_itype vt))
-
 let func_type n a =
   let open List in
   Printf.fprintf stderr "*** Resolving function %s %s\n" n (Sexp.to_string
@@ -310,8 +296,24 @@ let in_uint8_range = in_rangeU64 "0" "255"
 let in_uint16_range = in_rangeU64 "0" "65535"
 let in_uint32_range = in_rangeU64 "0" "4294967295"
 
-(* There is ambiguity. We return list of potential types *)
-let rec rvalue_type vmap lv =
+let rec lvalue_type vmap = function
+  | VarLValue v -> var_type vmap v
+  | LCast (t,_) -> t
+  | LDeref v ->
+     (match lvalue_type vmap v with
+      | PtrType (t,_) -> t
+      | _ as vt ->
+         raise (TypeError (Format.asprintf "Dereferencing non-pointer type %a" pr_itype vt)))
+  | NthLvalue (v, i) ->
+     let it = rvalue_type vmap i in
+     if not (is_integer it) then
+       raise (TypeError (Format.asprintf "Invalid index type %a in NTH" pr_itype it))
+     else
+       let vt = lvalue_type vmap v in
+       match vt with
+       | VecType (t,_) | PtrType (t,_) -> t
+       | _ -> raise (TypeError (Format.asprintf "Invalid type %a in NTH" pr_itype vt))
+and rvalue_type vmap lv =
   let fconst_type = function
     (* Per C99 6.4.4.2.4 "An unsuffixed floating constant has type double". In i-code we deatult it to default machine size *)
     | FPLiteral _ -> Config.realAType ()
@@ -360,9 +362,14 @@ let rec rvalue_type vmap lv =
   | RDeref v -> (match rvalue_type vmap v with
                 | PtrType (t,_) -> t
                 | t -> raise (TypeError (Format.asprintf "Dereferencing non-pointer type %a" pr_itype t)))
-  | NthRvalue (v, i) -> (match rvalue_type vmap v with
-                         | VecType (t,_) | PtrType (t,_) -> t
-                         | t -> raise (TypeError (Format.asprintf "Invalid type %a in NTH" pr_itype t)))
+  | NthRvalue (v, i) ->
+     let it = rvalue_type vmap i in
+     if not (is_integer it) then
+       raise (TypeError (Format.asprintf "Invalid index type %a in NTH" pr_itype it))
+     else
+       match rvalue_type vmap v with
+        | VecType (t,_) | PtrType (t,_) -> t
+        | t -> raise (TypeError (Format.asprintf "Invalid value type %a in NTH" pr_itype t))
 
 
 (*
@@ -384,8 +391,9 @@ let rec rvalue_type vmap lv =
 
    5. Compatibilitity of constants in int and float vector intializers
 
+   6. 'nth' index type is int
+
   TODO:
-  * 'nth' index rvalue type is int
   * Unifrmity of 'data' initializer value types
   * Matching argument types in functoin calls
   * Matching function return type to rvalue type in creturn
