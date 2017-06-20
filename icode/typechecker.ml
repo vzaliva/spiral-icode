@@ -222,6 +222,19 @@ let func_type_neg _ a =
     | A _ as t -> t (* floats negated to the same type. Not dealing with signedness *)
     | _ -> raise (TypeError (Format.asprintf "Could not apply negation to non-arithmetic type [%a]." pr_itype a0))
 
+(* 'abs' is polymorphic version of C99 abs, labs, fabsf, fabs*)
+let func_type_abs _ a =
+  let open List in
+  if length a <> 1 then
+    raise (TypeError ("Invalid number of arguments for 'abs'" ))
+  else
+    let a0 = hd_exn a in
+    match a0 with
+    | A I it as t -> if is_signed_integer it then t
+                     else raise (TypeError (Format.asprintf "Could not apply 'abs' to unsigned type [%a]." pr_itype a0))
+    | A _ as t -> t (* floats negated to the same type. Not dealing with signedness *)
+    | _ -> raise (TypeError (Format.asprintf "Could not apply 'abs' to non-arithmetic type [%a]." pr_itype a0))
+
 
 let builtins_map =
   String.Map.Tree.of_alist_exn
@@ -234,7 +247,7 @@ let builtins_map =
       ("div", arith_binop) ;
       ("geq", bool_arith_binop) ;
       ("neg", func_type_neg) ;
-(*      ("abs", arith_op 1 arith_types) ; *)
+      ("abs", func_type_abs) ;
     ]
 
 let build_var_map l =
