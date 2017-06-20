@@ -36,7 +36,7 @@ let signed_arith_types = ITypeSet.union
 let arith_types = IArithTypeSet.of_list IArithType.all
 
 let is_integer = function
-  | I _ -> true
+  | A I _ -> true
   | _ -> false
 
 let is_arith = function
@@ -314,19 +314,19 @@ let in_uint32_range = in_rangeU64 "0" "4294967295"
 let rec rvalue_type vmap lv =
   let fconst_type = function
     (* Per C99 6.4.4.2.4 "An unsuffixed floating constant has type double". In i-code we deatult it to default machine size *)
-    | FPLiteral _ -> Config.realType ()
-    | FloatEPS -> A FloatType
-    | DoubleEPS -> A DoubleType in
+    | FPLiteral _ -> Config.realAType ()
+    | FloatEPS -> FloatType
+    | DoubleEPS -> DoubleType in
   (* Per c99 spec 6.4.4.1 "The type of an integer constant is the first of the corresponding list in which its value can be represented."*)
   let iconst_type = function
-    | I64 x -> if in_int8_range x then A (I Int8Type)
-               else if in_int16_range x then A (I Int16Type)
-               else if in_int32_range x then A (I Int32Type)
-               else A (I Int64Type)
-    | U64 x -> if in_uint8_range x then A (I UInt8Type)
-               else if in_uint16_range x then A (I UInt16Type)
-               else if in_uint32_range x then A (I UInt32Type)
-               else A (I UInt64Type)
+    | I64 x -> if in_int8_range x then I Int8Type
+               else if in_int16_range x then I Int16Type
+               else if in_int32_range x then I Int32Type
+               else I Int64Type
+    | U64 x -> if in_uint8_range x then I UInt8Type
+               else if in_uint16_range x then I UInt16Type
+               else if in_uint32_range x then I UInt32Type
+               else I UInt64Type
   in
   let vparam_type = function
     | VParamList l -> VecType (Config.uIntType (), List.length l)
@@ -338,22 +338,23 @@ let rec rvalue_type vmap lv =
      let ft = func_type n (List.map ~f:(rvalue_type vmap) a) in
      Format.fprintf Format.err_formatter "*** %s type is %a\n" n pr_itype ft;
      ft
-  | FConst fc -> fconst_type fc
-  | IConst ic -> iconst_type ic
+  | FConst fc -> A (fconst_type fc)
+  | IConst ic -> A (iconst_type ic)
   | FConstVec fl ->
      let flt = List.map ~f:fconst_type fl in
-     (* TODO:
-          1. Check that all types in flt are compatible
-          2. Derive common type
-     *)
-     VecType (Config.realType (), List.length fl)
+     let t = A (if List.is_empty flt then Config.realAType ()
+                else List.fold ~f:usual_arithmetic_conversion
+                            ~init:(List.hd_exn flt) flt) in
+     VecType (t, List.length fl)
   | IConstVec il ->
      let ilt = List.map ~f:iconst_type il in
-     (* TODO:
-           1. Check that all types in flt are compatible
-           2. Derive common type
-      *)
-     VecType (Config.intType (), List.length il)
+     let t = A (if List.is_empty ilt then Config.intAType () (* defaultin to signed *)
+                else List.fold ~f:usual_arithmetic_conversion
+                               ~init:(List.hd_exn ilt) ilt) in
+     if not (is_integer t) then
+       raise (TypeError (Format.asprintf "Initialize int array witn non-integer constants")) (* maybe warning? *)
+     else
+       VecType (t, List.length il)
   | RCast (t,_) ->  t
   | VParam v -> vparam_type v
   | RDeref v -> (match rvalue_type vmap v with
@@ -381,10 +382,11 @@ let rec rvalue_type vmap lv =
 
    4. Type in assignment are convertable
 
+   5. Compatibilitity of constants in int and float vector intializers
+
   TODO:
   * 'nth' index rvalue type is int
   * Unifrmity of 'data' initializer value types
-  * Uniformity of data in int and float vector intializers
   * Matching argument types in functoin calls
   * Matching function return type to rvalue type in creturn
   * Presence of return (may require some branch analysis)
