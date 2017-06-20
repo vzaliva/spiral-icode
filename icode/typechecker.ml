@@ -394,7 +394,6 @@ and rvalue_type vmap lv =
    6. 'nth' index type is int
 
   TODO:
-  * Unifrmity of 'data' initializer value types
   * Matching argument types in functoin calls
   * Matching function return type to rvalue type in creturn
   * Presence of return (may require some branch analysis)
