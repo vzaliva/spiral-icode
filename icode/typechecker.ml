@@ -151,7 +151,11 @@ let arith_binop name al =
 
 let bool_arith_binop name al = ignore ( arith_binop name al) ; A (I BoolType)
 
-let ptr_attr_combine a1 a2 = a1 (* TODO *)
+let ptr_attr_combine a1 a2 =
+  match a1, a2 with
+  | None, al2 -> al2
+  | al1, None -> al1
+  | Some n1, Some n2 -> Some (max n1 n2)
 
 let rec type_combine ty1 ty2 =
   match ty1, ty2 with
@@ -163,7 +167,7 @@ let rec type_combine ty1 ty2 =
      then Some (A (I t1)) else None
   | PtrType (t1,a1), PtrType (t2, a2) ->
      (match type_combine t1 t2 with
-      | Some t -> Some (PtrType (t,ptr_attr_combine a1 a2))
+      | Some t -> Some (PtrType (t, ptr_attr_combine a1 a2))
       | None -> None
      )
   | VecType (t1,s1), VecType (t2, s2) ->
@@ -188,9 +192,9 @@ let type_conditional ty1 ty2 =
          match type_combine t1 t2 with
          | Some t -> t
          | None -> VoidType
-     in PtrType (t,[])
-  | PtrType (t1,_), A (I _) -> PtrType (t1,[])
-  | A (I _), PtrType (t2,_) -> PtrType (t2,[])
+     in PtrType (t, None) (* TODO: do we need to preserve alignments? https://github.com/AbsInt/CompCert/issues/186 *)
+  | PtrType (_,_) as t, A (I _) -> t
+  | A (I _), (PtrType (_,_) as t) -> t
   | t1, t2 -> match type_combine t1 t2 with
               | Some t -> t
               | None -> raise (TypeError

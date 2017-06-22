@@ -50,7 +50,13 @@ i_type:
   | TVOID    { VoidType   }
   | TPTR LPAREN t=i_type RPAREN DOT ALIGNED LPAREN LBRACKET a=separated_list(COMMA, UINT) RBRACKET RPAREN
                 {
-                    PtrType (t, List.map int_of_string a)
+                    let l = List.map int_of_string a in
+                    (* Per our discussion with Franz on 2017-06-19 we will ignore 2nd
+                     element of alignment in Spiral and will use only first one 
+                     *)
+                    let open Core in
+                    let a = if List.is_empty l then None else Some (List.hd_exn l) in
+                    PtrType (t, a)
                 }
   | TVECT LPAREN t=i_type COMMA s=UINT RPAREN { VecType (t,int_of_string s) }
   ;

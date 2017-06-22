@@ -44,7 +44,7 @@ module IType = struct
     | A of IArithType.t
     | VoidType
     | VecType of t*int
-    | PtrType of t*(int list) (* type, alignment *) [@@deriving compare, sexp]
+    | PtrType of t*(int option) (* type, optional alignment *) [@@deriving compare, sexp]
 end
 open IType
 module ITypeSet = Set.Make(IType)
