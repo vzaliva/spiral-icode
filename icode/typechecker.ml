@@ -107,8 +107,8 @@ let is_void = function
 
 (* check if 'r' could be cast to 'l' even with possible loss of precision.
    Our rules are stricter than in C99 *)
-let rec check_cast r l =
-  match l, r with
+let rec check_cast tfrom tto =
+  match tto, tfrom with
   | VoidType , _         -> true
   | _        , VoidType  -> false
   | A _      , A _       -> true
@@ -315,7 +315,12 @@ let in_uint32_range = in_rangeU64 "0" "4294967295"
 
 let rec lvalue_type vmap = function
   | VarLValue v -> var_type vmap v
-  | LCast (t,_) -> t
+  | LCast (t,lv) ->
+     let lt = lvalue_type vmap lv in
+     if check_cast lt t then t
+     else raise (TypeError (Format.asprintf "Illegal cast from %a to %a."
+                                         pr_itype lt
+                                         pr_itype t ));
   | LDeref v ->
      (match lvalue_type vmap v with
       | PtrType (t,_) -> t
@@ -374,7 +379,12 @@ and rvalue_type vmap lv =
        raise (TypeError (Format.asprintf "Initialize int array witn non-integer constants")) (* maybe warning? *)
      else
        VecType (t, List.length il)
-  | RCast (t,_) ->  t
+  | RCast (t,rv) ->
+     let rt = rvalue_type vmap lv in
+     if check_cast rt t then t
+     else raise (TypeError (Format.asprintf "Illegal cast from %a to %a."
+                                            pr_itype rt
+                                            pr_itype t ));
   | VParam v -> vparam_type v
   | RDeref v -> (match rvalue_type vmap v with
                 | PtrType (t,_) -> t
@@ -410,11 +420,12 @@ and rvalue_type vmap lv =
 
    6. 'nth' index type is int
 
+   7. Permitted and non-permitted casts
+
   TODO:
   * Matching argument types in functoin calls
   * Matching function return type to rvalue type in creturn
   * Presence of return (may require some branch analysis)
-  * Permitted and non-permitted casts
   *)
 let typecheck vmap prog =
   let open String.Set.Tree in
