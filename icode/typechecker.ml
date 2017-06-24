@@ -135,7 +135,7 @@ let rec subtype a b = true
 (* TODO: should be in Std? *)
 let constlist a n =  List.map ~f:(fun _ -> a) (List.range 0 n)
 
-let arith_binop name al =
+let func_type_arith_binop name al =
   let open List in
   if 2 <> length al then
     raise (TypeError ("Invalid number of arguments"))
@@ -149,7 +149,7 @@ let arith_binop name al =
                                          pr_itype a0 pr_itype a1 name))
 
 
-let bool_arith_binop name al = ignore ( arith_binop name al) ; A (I BoolType)
+let func_type_bool_arith_binop name al = ignore ( func_type_arith_binop name al) ; A (I BoolType)
 
 let ptr_attr_combine a1 a2 =
   match a1, a2 with
@@ -211,7 +211,7 @@ let func_type_cond name a =
     | VecType _ | VoidType -> raise (TypeError (Format.asprintf "Could not coerce 1st argument of '%s' to boolean type. Actual types: [%a]." name pr_itype a0))
     | A _ | PtrType _ ->
        (match nth_exn a 1, nth_exn a 2 with
-        | _,_ -> arith_binop name (tl_exn a)
+        | _,_ -> func_type_arith_binop name (tl_exn a)
        )
 
 (* 6.5.3.3 Unary arithmetic operators: "The result of the unary + operator is the value of its (promoted) operand. The integer promotions are performed on the operand, and the result has the promoted type". *)
@@ -244,14 +244,14 @@ let builtins_map =
   String.Map.Tree.of_alist_exn
     [
       ("cond", func_type_cond);
-      ("max", arith_binop) ;
-      ("add", arith_binop) ;
-      ("sub", arith_binop) ;
-      ("mul", arith_binop) ;
-      ("div", arith_binop) ;
-      ("geq", bool_arith_binop) ;
+      ("max", func_type_arith_binop) ;
+      ("add", func_type_arith_binop) ;
+      ("sub", func_type_arith_binop) ;
+      ("mul", func_type_arith_binop) ;
+      ("div", func_type_arith_binop) ;
+      ("geq", func_type_bool_arith_binop) ;
       ("neg", func_type_neg) ;
-      ("abs", func_type_abs) ;
+      ("abs", func_type_abs)
     ]
 
 let build_var_map l =
