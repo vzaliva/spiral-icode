@@ -192,7 +192,7 @@ let type_conditional ty1 ty2 =
          match type_combine t1 t2 with
          | Some t -> t
          | None -> VoidType
-     in PtrType (t, None) (* TODO: do we need to preserve alignments? https://github.com/AbsInt/CompCert/issues/186 *)
+     in PtrType (t, None)
   | PtrType (_,_) as t, A (I _) -> t
   | A (I _), (PtrType (_,_) as t) -> t
   | t1, t2 -> match type_combine t1 t2 with
