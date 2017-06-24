@@ -105,32 +105,21 @@ let is_void = function
   | _ -> false
 
 
-(* If true, 'a' could be casted to 'b' at compile type without loss of precision
-We choose stricter casting rules than in C. In particular:
-* All pointers must be implicitly casted
-*)
-let rec subtype a b = true
-                        (*
-  if a = b then true
-  else
-    match a with
-    | VoidType -> false
-    | FloatType -> eq_itype b DoubleType
-    | DoubleType -> false
-    | I Int8Type  -> List.mem [ FloatType ; DoubleType ; I Int16Type ; I Int32Type ; I Int64Type ] b eq_itype
-    | I Int16Type -> List.mem [ FloatType ; DoubleType ; I Int32Type ; I Int64Type ] b eq_itype
-    | I Int32Type -> List.mem [ FloatType; DoubleType ; I Int64Type ] b eq_itype
-    | I Int64Type -> false
-    | I UInt8Type  -> List.mem [ I UInt16Type ; I UInt32Type ; I UInt64Type ] b eq_itype
-    | I UInt16Type -> List.mem [ I UInt32Type ; I UInt64Type ] b eq_itype
-    | I UInt32Type -> List.mem [ I UInt64Type ] b eq_itype
-    | I UInt64Type -> false
-    | I BoolType -> is_arith b (* could be cast to any arith type *)
-    | VecType (t,l) -> (match b with
-                        | VecType (t1,l1) -> l1 = l && subtype t t1
-                        | _ -> false)
-    | PtrType (t,a) -> false
-                         *)
+(* check if 'r' could be cast to 'l' even with possible loss of precision.
+   Our rules are stricter than in C99 *)
+let rec check_cast r l =
+  match l, r with
+  | VoidType , _         -> true
+  | _        , VoidType  -> false
+  | A _      , A _       -> true
+  | A _      , PtrType _ -> false (* unlike C we do not allow cast between ints and ptr *)
+  | A _      , VecType _ -> false
+  | PtrType _, A _       -> false (* unlike C we do not allow cast between ints and ptr *)
+  | VecType _, A _       -> false
+  | VecType (lt,ll), VecType (rt,rl) -> ll = rl && check_cast rt lt
+  | PtrType (lt, la), PtrType (rt, ra) -> lt=rt (* TODO: alignment? *)
+  | VecType (lt,ll), PtrType (rt, ra) -> lt=rt (* TODO: Check with Franz *)
+  | PtrType (lt, la), VecType (rt,rl) -> lt=rt (* TODO: Check with Franz *)
 
 (* TODO: should be in Std? *)
 let constlist a n =  List.map ~f:(fun _ -> a) (List.range 0 n)
@@ -458,7 +447,7 @@ let typecheck vmap prog =
     | Assign (l,r) ->
        let rt = rvalue_type vmap r in
        let lt = lvalue_type vmap l in
-       if not (subtype rt lt) then
+       if not (check_cast rt lt) then
          raise (TypeError (Format.asprintf "Incompatible types in assignment %a=[%a]."
                                            pr_itype lt
                                            pr_itype rt
