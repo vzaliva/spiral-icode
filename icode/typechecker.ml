@@ -435,11 +435,9 @@ let typecheck vmap prog =
     else add s v
   in
   let add_vars s vl = List.fold ~init:s ~f:add_var vl in
-  let rec typecheck fstack u = function
+  let rec typecheck (fstack:(string * Ast.IType.t) list) u = function
     | Function (fn,fr,params,body) ->
-       Stack.push fstack (fn,fr);
-       let r = typecheck fstack (add_vars u params) body in
-       (ignore (Stack.pop_exn fstack); r)
+       typecheck ((fn,fr)::fstack) (add_vars u params) body
     | Decl (params,body) ->
        typecheck fstack (add_vars u params) body
     | Chain lbody ->
@@ -470,7 +468,7 @@ let typecheck vmap prog =
        check_vars_in_rvalue u r;
        u
     | Return r -> check_vars_in_rvalue u r ;
-                  (match Stack.top fstack with
+                  (match List.hd fstack with
                    | None -> raise (TypeError "Return outsude of function")
                    | Some (fn,ft) ->
                       let at = rvalue_type vmap r in
@@ -478,7 +476,7 @@ let typecheck vmap prog =
                         raise (TypeError (Format.asprintf "Incompatible types in return from functon '%s'. Actual: %a. Expected: %a." fn  pr_itype at pr_itype ft))
                       else u)
   in
-  let used = typecheck (Stack.create ()) String.Set.Tree.empty prog in
+  let used = typecheck [] String.Set.Tree.empty prog in
   ignore (check_never_decl vmap used)
 
 
