@@ -422,9 +422,10 @@ and rvalue_type vmap lv =
 
    7. Permitted and non-permitted casts
 
+   8. Matching function return type to rvalue type in creturn
+
   TODO:
   * Matching argument types in functoin calls
-  * Matching function return type to rvalue type in creturn
   * Presence of return (may require some branch analysis)
   *)
 let typecheck vmap prog =
@@ -434,26 +435,28 @@ let typecheck vmap prog =
     else add s v
   in
   let add_vars s vl = List.fold ~init:s ~f:add_var vl in
-  let rec typecheck u = function
-    | Function (_,_,params,body) ->
-       typecheck (add_vars u params) body
+  let rec typecheck fstack u = function
+    | Function (fn,fr,params,body) ->
+       Stack.push fstack (fn,fr);
+       let r = typecheck fstack (add_vars u params) body in
+       (ignore (Stack.pop_exn fstack); r)
     | Decl (params,body) ->
-       typecheck (add_vars u params) body
+       typecheck fstack (add_vars u params) body
     | Chain lbody ->
-       List.fold ~f:typecheck ~init:u lbody
+       List.fold ~f:(typecheck fstack) ~init:u lbody
     | Data (v,rl,body) ->
        ignore (List.map ~f:(check_vars_in_rvalue u) rl) ;
-       typecheck (add_var u v) body
+       typecheck fstack (add_var u v) body
     | Loop (v,f,t,body) ->
        if f>t then
          raise (TypeError (Printf.sprintf "Invalid loop index range: %s .. %s  " (Int_or_uint_64.to_string f) (Int_or_uint_64.to_string t) ))
        else
-         typecheck (add_var u v) body
+         typecheck fstack (add_var u v) body
     | If (r,bt,bf) ->
        check_vars_in_rvalue u r ;
        union
-         (typecheck u bt)
-         (typecheck u bf)
+         (typecheck fstack u bt)
+         (typecheck fstack u bf)
     | Skip -> u
     | Assign (l,r) ->
        let rt = rvalue_type vmap r in
@@ -466,9 +469,16 @@ let typecheck vmap prog =
        check_vars_in_lvalue u l;
        check_vars_in_rvalue u r;
        u
-    | Return r -> check_vars_in_rvalue u r ; u
+    | Return r -> check_vars_in_rvalue u r ;
+                  (match Stack.top fstack with
+                   | None -> raise (TypeError "Return outsude of function")
+                   | Some (fn,ft) ->
+                      let at = rvalue_type vmap r in
+                      if not (check_cast at ft) then
+                        raise (TypeError (Format.asprintf "Incompatible types in return from functon '%s'. Actual: %a. Expected: %a." fn  pr_itype at pr_itype ft))
+                      else u)
   in
-  let used = typecheck String.Set.Tree.empty prog in
+  let used = typecheck (Stack.create ()) String.Set.Tree.empty prog in
   ignore (check_never_decl vmap used)
 
 
