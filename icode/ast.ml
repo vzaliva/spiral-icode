@@ -62,7 +62,7 @@ type vparam =
 
 type rvalue =
   | FunCall of string*(rvalue list)
-  | VarRValue of string
+  | VarRValue of ivar
   | FConst of fconst
   | IConst of Int_or_uint_64.t
   | FConstVec of (fconst list)
@@ -73,7 +73,7 @@ type rvalue =
   | RDeref of rvalue
 
 type lvalue =
-  | VarLValue of string
+  | VarLValue of ivar
   | NthLvalue of lvalue*rvalue
   | LDeref of lvalue
   | LCast of IType.t*lvalue
