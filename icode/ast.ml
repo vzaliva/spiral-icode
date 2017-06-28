@@ -89,7 +89,7 @@ type istmt =
   | If of rvalue*istmt*istmt
   | Return of rvalue
 
-type iprogram = Program of ((string*IType.t) list)*istmt
+type iprogram = Program of ((ivar*IType.t) list)*istmt
 
 let eq_itype (a:IType.t) (b:IType.t) = IType.compare a b = 0
 let eq_int_type (a:IIntType.t) (b:IIntType.t) = IIntType.compare a b = 0
