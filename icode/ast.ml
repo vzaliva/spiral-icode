@@ -43,7 +43,7 @@ module IType = struct
   type t =
     | A of IArithType.t
     | VoidType
-    | VecType of t*int
+    | ArrType of t*int
     | PtrType of t*(int option) (* type, optional alignment *) [@@deriving compare, sexp]
 end
 open IType
@@ -65,8 +65,8 @@ type rvalue =
   | VarRValue of ivar
   | FConst of fconst
   | IConst of Int_or_uint_64.t
-  | FConstVec of (fconst list)
-  | IConstVec of (Int_or_uint_64.t list)
+  | FConstArr of (fconst list)
+  | IConstArr of (Int_or_uint_64.t list)
   | NthRvalue of rvalue*rvalue (* 'int' type for index will be checked later *)
   | RCast of IType.t*rvalue
   | VParam of vparam
@@ -112,7 +112,7 @@ let rec pr_itype ppf = function
   | A FloatType -> fprintf ppf "@[Float@]"
   | A DoubleType -> fprintf ppf "@[Double@]"
   | VoidType -> fprintf ppf "@[TVoid@]"
-  | VecType (t,s) -> fprintf ppf "@[%a[%d]@]" pr_itype t s
+  | ArrType (t,s) -> fprintf ppf "@[%a[%d]@]" pr_itype t s
   | PtrType (t,_) -> fprintf ppf "@[%a@]" pr_itype t
 
 let itype_as_string = Format.asprintf "%a" pr_itype

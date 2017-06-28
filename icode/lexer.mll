@@ -65,6 +65,7 @@ rule main = parse
 | "TBool"      { TBOOL   }
 | "TPtr"       { TPTR    }
 | "TVect"      { TVECT   }
+| "TArray"     { TVECT   } (* TODO: temporary *)
 
 
 (* Special functions *)

@@ -113,13 +113,13 @@ let rec check_cast tfrom tto =
   | _        , VoidType  -> false
   | A _      , A _       -> true
   | A _      , PtrType _ -> false (* unlike C we do not allow cast between ints and ptr *)
-  | A _      , VecType _ -> false
+  | A _      , ArrType _ -> false
   | PtrType _, A _       -> false (* unlike C we do not allow cast between ints and ptr *)
-  | VecType _, A _       -> false
-  | VecType (lt,ll), VecType (rt,rl) -> ll = rl && check_cast rt lt
+  | ArrType _, A _       -> false
+  | ArrType (lt,ll), ArrType (rt,rl) -> ll = rl && check_cast rt lt
   | PtrType (lt, la), PtrType (rt, ra) -> lt=rt (* TODO: alignment? *)
-  | VecType (lt,ll), PtrType (rt, ra) -> lt=rt (* TODO: Check with Franz *)
-  | PtrType (lt, la), VecType (rt,rl) -> lt=rt (* TODO: Check with Franz *)
+  | ArrType (lt,ll), PtrType (rt, ra) -> lt=rt (* TODO: Check with Franz *)
+  | PtrType (lt, la), ArrType (rt,rl) -> lt=rt (* TODO: Check with Franz *)
 
 (* TODO: should be in Std? *)
 let constlist a n =  List.map ~f:(fun _ -> a) (List.range 0 n)
@@ -159,10 +159,10 @@ let rec type_combine ty1 ty2 =
       | Some t -> Some (PtrType (t, ptr_attr_combine a1 a2))
       | None -> None
      )
-  | VecType (t1,s1), VecType (t2, s2) ->
+  | ArrType (t1,s1), ArrType (t2, s2) ->
      (match type_combine t1 t2 with
       | Some t -> if s1 = s2 then
-                    Some (VecType (t,s1))
+                    Some (ArrType (t,s1))
                   else
                     None
       | None -> None
@@ -197,7 +197,7 @@ let func_type_cond name a =
     let a0 = hd_exn a in
     (* first argument should be interpretable as boolean *)
     match a0 with
-    | VecType _ | VoidType -> raise (TypeError (Format.asprintf "Could not coerce 1st argument of '%s' to boolean type. Actual types: [%a]." name pr_itype a0))
+    | ArrType _ | VoidType -> raise (TypeError (Format.asprintf "Could not coerce 1st argument of '%s' to boolean type. Actual types: [%a]." name pr_itype a0))
     | A _ | PtrType _ ->
        (match nth_exn a 1, nth_exn a 2 with
         | _,_ -> func_type_arith_binop name (tl_exn a)
@@ -269,7 +269,7 @@ let rec check_vars_in_rvalue s = function
                            (check_vars_in_rvalue s r2)
   | RCast (_,r) -> check_vars_in_rvalue s r
   | RDeref r -> check_vars_in_rvalue s r
-  | VParam _ | FConstVec _  | IConstVec _ | FConst _  | IConst _  -> ()
+  | VParam _ | FConstArr _  | IConstArr _ | FConst _  | IConst _  -> ()
 and check_vars_in_lvalue s = function
   | VarLValue v -> var_in_scope s v
   | NthLvalue (l, r) -> (check_vars_in_lvalue s l) ;
@@ -333,7 +333,7 @@ let rec lvalue_type vmap = function
      else
        let vt = lvalue_type vmap v in
        match vt with
-       | VecType (t,_) | PtrType (t,_) -> t
+       | ArrType (t,_) | PtrType (t,_) -> t
        | _ -> raise (TypeError (Format.asprintf "Invalid type %a in NTH" pr_itype vt))
 and rvalue_type vmap lv =
   let fconst_type = function
@@ -353,7 +353,7 @@ and rvalue_type vmap lv =
                else I UInt64Type
   in
   let vparam_type = function
-    | VParamList l -> VecType (Config.uIntType (), List.length l)
+    | VParamList l -> ArrType (Config.uIntType (), List.length l)
     | VParamValue _ -> Config.uIntType () (* bit mask *)
   in
   match lv with
@@ -364,13 +364,13 @@ and rvalue_type vmap lv =
      ft
   | FConst fc -> A (fconst_type fc)
   | IConst ic -> A (iconst_type ic)
-  | FConstVec fl ->
+  | FConstArr fl ->
      let flt = List.map ~f:fconst_type fl in
      let t = A (if List.is_empty flt then Config.realAType ()
                 else List.fold ~f:usual_arithmetic_conversion
                             ~init:(List.hd_exn flt) flt) in
-     VecType (t, List.length fl)
-  | IConstVec il ->
+     ArrType (t, List.length fl)
+  | IConstArr il ->
      let ilt = List.map ~f:iconst_type il in
      let t = A (if List.is_empty ilt then Config.intAType () (* defaultin to signed *)
                 else List.fold ~f:usual_arithmetic_conversion
@@ -378,7 +378,7 @@ and rvalue_type vmap lv =
      if not (is_integer t) then
        raise (TypeError (Format.asprintf "Initialize int array witn non-integer constants")) (* maybe warning? *)
      else
-       VecType (t, List.length il)
+       ArrType (t, List.length il)
   | RCast (t,rv) ->
      let rt = rvalue_type vmap lv in
      if check_cast rt t then t
@@ -395,7 +395,7 @@ and rvalue_type vmap lv =
        raise (TypeError (Format.asprintf "Invalid index type %a in NTH" pr_itype it))
      else
        match rvalue_type vmap v with
-        | VecType (t,_) | PtrType (t,_) -> t
+        | ArrType (t,_) | PtrType (t,_) -> t
         | t -> raise (TypeError (Format.asprintf "Invalid value type %a in NTH" pr_itype t))
 
 

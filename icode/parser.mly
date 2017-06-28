@@ -58,7 +58,7 @@ i_type:
                     let a = if List.is_empty l then None else Some (List.hd_exn l) in
                     PtrType (t, a)
                 }
-  | TVECT LPAREN t=i_type COMMA s=UINT RPAREN { VecType (t,int_of_string s) }
+  | TVECT LPAREN t=i_type COMMA s=UINT RPAREN { ArrType (t,int_of_string s) }
   ;
 
 i_var:
@@ -88,15 +88,15 @@ i_iconst:
 
 i_rvalue:
   | V LPAREN LBRACKET l=separated_nonempty_list(COMMA, i_fconst) RBRACKET RPAREN
-              { FConstVec l }
+              { FConstArr l }
   | V LPAREN LBRACKET l=separated_nonempty_list(COMMA, i_iconst) RBRACKET RPAREN
-              { IConstVec l }
+              { IConstArr l }
   | VPARAM LPAREN LBRACKET l=separated_nonempty_list(COMMA, UINT) RBRACKET RPAREN
               {
                   VParam (VParamList (List.map int_of_string l))
               }
   | VHEX LPAREN LBRACKET l=separated_nonempty_list(COMMA, STRING) RBRACKET RPAREN
-              { IConstVec [] } (* TODO *)             
+              { IConstArr [] } (* TODO *)             
   | f=i_fconst { FConst f }
   | i=i_iconst { IConst i }
   | NTH LPAREN a=i_rvalue COMMA i=i_rvalue RPAREN { NthRvalue (a,i) }
