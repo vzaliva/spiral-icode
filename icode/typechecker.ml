@@ -114,12 +114,19 @@ let rec check_cast tfrom tto =
   | A _      , A _       -> true
   | A _      , PtrType _ -> false (* unlike C we do not allow cast between ints and ptr *)
   | A _      , ArrType _ -> false
+  | A _      , VecType _ -> false
   | PtrType _, A _       -> false (* unlike C we do not allow cast between ints and ptr *)
   | ArrType _, A _       -> false
+  | VecType _, A _       -> false
   | ArrType (lt,ll), ArrType (rt,rl) -> ll = rl && check_cast rt lt
+  | VecType (lt,ll), VecType (rt,rl) -> ll = rl && check_cast rt lt
   | PtrType (lt, la), PtrType (rt, ra) -> lt=rt (* TODO: alignment? *)
   | ArrType (lt,ll), PtrType (rt, ra) -> lt=rt (* TODO: Check with Franz *)
   | PtrType (lt, la), ArrType (rt,rl) -> lt=rt (* TODO: Check with Franz *)
+  | VecType _, PtrType _ -> false
+  | PtrType _, VecType _ -> false
+  | ArrType (lt,ll), VecType (rt,rl) -> ll = rl && check_cast rt lt
+  | VecType (lt,ll), ArrType (rt,rl) -> ll = rl && check_cast rt lt
 
 (* TODO: should be in Std? *)
 let constlist a n =  List.map ~f:(fun _ -> a) (List.range 0 n)
@@ -197,7 +204,7 @@ let func_type_cond name a =
     let a0 = hd_exn a in
     (* first argument should be interpretable as boolean *)
     match a0 with
-    | ArrType _ | VoidType -> raise (TypeError (Format.asprintf "Could not coerce 1st argument of '%s' to boolean type. Actual types: [%a]." name pr_itype a0))
+    |VecType _ | ArrType _ | VoidType -> raise (TypeError (Format.asprintf "Could not coerce 1st argument of '%s' to boolean type. Actual types: [%a]." name pr_itype a0))
     | A _ | PtrType _ ->
        (match nth_exn a 1, nth_exn a 2 with
         | _,_ -> func_type_arith_binop name (tl_exn a)

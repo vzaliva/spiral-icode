@@ -44,6 +44,7 @@ module IType = struct
     | A of IArithType.t
     | VoidType
     | ArrType of t*int
+    | VecType of t*int
     | PtrType of t*(int option) (* type, optional alignment *) [@@deriving compare, sexp]
 end
 open IType
@@ -113,6 +114,7 @@ let rec pr_itype ppf = function
   | A DoubleType -> fprintf ppf "@[Double@]"
   | VoidType -> fprintf ppf "@[TVoid@]"
   | ArrType (t,s) -> fprintf ppf "@[%a[%d]@]" pr_itype t s
+  | VecType (t,s) -> fprintf ppf "@[%a<%d>@]" pr_itype t s
   | PtrType (t,_) -> fprintf ppf "@[%a@]" pr_itype t
 
 let itype_as_string = Format.asprintf "%a" pr_itype
