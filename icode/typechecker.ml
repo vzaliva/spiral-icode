@@ -121,14 +121,14 @@ let rec check_cast tfrom tto =
   | ArrType _, A _       -> false
   | VecType _, A _       -> false
   | ArrType (lt,ll), ArrType (rt,rl) -> ll = rl && check_cast rt lt
-  | VecType (lt,ll), VecType (rt,rl) -> ll = rl && check_cast rt lt
+  | VecType (lt,ll), VecType (rt,rl) -> ll = rl && check_cast (A rt) (A lt)
   | PtrType (lt, la), PtrType (rt, ra) -> lt=rt (* TODO: alignment? *)
   | ArrType (lt,ll), PtrType (rt, ra) -> lt=rt (* TODO: Check with Franz *)
   | PtrType (lt, la), ArrType (rt,rl) -> lt=rt (* TODO: Check with Franz *)
   | VecType _, PtrType _ -> false
   | PtrType _, VecType _ -> false
-  | ArrType (lt,ll), VecType (rt,rl) -> ll = rl && check_cast rt lt
-  | VecType (lt,ll), ArrType (rt,rl) -> ll = rl && check_cast rt lt
+  | ArrType (lt,ll), VecType (rt,rl) -> ll = rl && check_cast (A rt) lt
+  | VecType (lt,ll), ArrType (rt,rl) -> ll = rl && check_cast rt (A lt)
 
 (* TODO: should be in Std? *)
 let constlist a n =  List.map ~f:(fun _ -> a) (List.range 0 n)

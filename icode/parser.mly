@@ -32,21 +32,25 @@
 
 %%
 
+i_arith_type:
+  | TINT     { intAType ()  }
+  | TINT8    { I Int8Type   }
+  | TINT16   { I Int16Type  }
+  | TINT32   { I Int32Type  }
+  | TINT64   { I Int64Type  }
+  | TUINT    { uIntAType () }
+  | TUINT8   { I UInt8Type  }
+  | TUINT16  { I UInt16Type }
+  | TUINT32  { I UInt32Type }
+  | TUINT64  { I UInt64Type }
+  | TREAL    { realAType () }
+  | TFLOAT   { FloatType   }
+  | TDOUBLE  { DoubleType  }
+  | TBOOL    { I BoolType   }
+  ;
+
 i_type:
-  | TINT     { intType ()    }
-  | TINT8    { A (I Int8Type)   }
-  | TINT16   { A (I Int16Type)  }
-  | TINT32   { A (I Int32Type)  }
-  | TINT64   { A (I Int64Type)  }
-  | TUINT    { uIntType ()   }
-  | TUINT8   { A (I UInt8Type)  }
-  | TUINT16  { A ( I UInt16Type) }
-  | TUINT32  { A (I UInt32Type) }
-  | TUINT64  { A (I UInt64Type) }
-  | TREAL    { realType ()   }
-  | TFLOAT   { A FloatType  }
-  | TDOUBLE  { A DoubleType }
-  | TBOOL    { A (I BoolType)   }
+  | a=i_arith_type { A a }
   | TVOID    { VoidType   }
   | TPTR LPAREN t=i_type RPAREN DOT ALIGNED LPAREN LBRACKET a=separated_list(COMMA, UINT) RBRACKET RPAREN
                 {
@@ -59,7 +63,7 @@ i_type:
                     PtrType (t, a)
                 }
   | TARR  LPAREN t=i_type COMMA s=UINT RPAREN { ArrType (t, int_of_string s) }
-  | TVECT LPAREN t=i_type COMMA s=UINT RPAREN { VecType (t, int_of_string s) }
+  | TVECT LPAREN t=i_arith_type COMMA s=UINT RPAREN { VecType (t, int_of_string s) }
   ;
 
 i_var:
