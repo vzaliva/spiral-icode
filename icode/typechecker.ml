@@ -68,6 +68,11 @@ let int_sizeof = function
   | Int32Type | UInt32Type  -> 4
   | Int64Type | UInt64Type  -> 8
 
+let arith_sizeof = function
+  | I i -> int_sizeof i
+  | FloatType -> 4
+  | DoubleType -> 8
+
 let unsigned_type = function
   | Int8Type -> UInt8Type
   | Int16Type -> UInt16Type
@@ -121,7 +126,10 @@ let rec check_cast tfrom tto =
   | ArrType _, A _       -> false
   | VecType _, A _       -> false
   | ArrType (lt,ll), ArrType (rt,rl) -> ll = rl && check_cast rt lt
-  | VecType (lt,ll), VecType (rt,rl) -> ll = rl && check_cast (A rt) (A lt)
+  | VecType (lt,ll), VecType (rt,rl) ->
+     (* TODO: shall we allow casts between vectors of same byte size:
+      (arith_sizeof lt)*ll = (arith_sizeof rt)*rl ? *)
+     ll = rl && check_cast (A rt) (A lt)
   | PtrType (lt, la), PtrType (rt, ra) -> lt=rt (* TODO: alignment? *)
   | ArrType (lt,ll), PtrType (rt, ra) -> lt=rt (* TODO: Check with Franz *)
   | PtrType (lt, la), ArrType (rt,rl) -> lt=rt (* TODO: Check with Franz *)
