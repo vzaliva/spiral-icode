@@ -58,8 +58,8 @@ i_type:
                     let a = if List.is_empty l then None else Some (List.hd_exn l) in
                     PtrType (t, a)
                 }
-  | TVECT LPAREN t=i_type COMMA s=UINT RPAREN { ArrType (t, int_of_string s) }
-  | TARR  LPAREN t=i_type COMMA s=UINT RPAREN { VecType (t, int_of_string s) }
+  | TARR  LPAREN t=i_type COMMA s=UINT RPAREN { ArrType (t, int_of_string s) }
+  | TVECT LPAREN t=i_type COMMA s=UINT RPAREN { VecType (t, int_of_string s) }
   ;
 
 i_var:

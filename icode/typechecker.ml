@@ -9,6 +9,8 @@ open Uint64
 
 exception TypeError of string
 
+let is_power_of_2 n =  n <> 0 && (n land (n - 1) = 0)
+
 let signed_integer_types = IIntTypeSet.of_list [
                                Int8Type ;
                                Int16Type ;
@@ -204,7 +206,7 @@ let func_type_cond name a =
     let a0 = hd_exn a in
     (* first argument should be interpretable as boolean *)
     match a0 with
-    |VecType _ | ArrType _ | VoidType -> raise (TypeError (Format.asprintf "Could not coerce 1st argument of '%s' to boolean type. Actual types: [%a]." name pr_itype a0))
+    | VecType _ | ArrType _ | VoidType -> raise (TypeError (Format.asprintf "Could not coerce 1st argument of '%s' to boolean type. Actual types: [%a]." name pr_itype a0))
     | A _ | PtrType _ ->
        (match nth_exn a 1, nth_exn a 2 with
         | _,_ -> func_type_arith_binop name (tl_exn a)
@@ -251,6 +253,14 @@ let builtins_map =
     ]
 
 let build_var_map l =
+  ignore (List.map ~f:(fun (_,x) ->
+                     match x with
+                     | VecType (_, n) ->
+                        if is_power_of_2 n then ()
+                        else
+                          raise (TypeError ("Size of vector must be power of 2. Got: " ^ (string_of_int n)))
+                     | _ -> ()
+                   ) l) ;
   match String.Map.Tree.of_alist l with
   | `Duplicate_key k -> raise (TypeError ("duplicate variable '" ^ k ^ "' in 'let'" ))
   | `Ok m -> m
