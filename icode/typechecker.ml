@@ -127,9 +127,9 @@ let rec check_cast tfrom tto =
   | VecType _, A _       -> false
   | ArrType (lt,ll), ArrType (rt,rl) -> ll = rl && check_cast rt lt
   | VecType (lt,ll), VecType (rt,rl) ->
-     (* TODO: shall we allow casts between vectors of same byte size:
-      (arith_sizeof lt)*ll = (arith_sizeof rt)*rl ? *)
-     ll = rl && check_cast (A rt) (A lt)
+     (arith_sizeof lt)*ll = (arith_sizeof rt)*rl
+     && ll = rl
+     && check_cast (A rt) (A lt)
   | PtrType (lt, la), PtrType (rt, ra) -> lt=rt (* TODO: alignment? *)
   | ArrType (lt,ll), PtrType (rt, ra) -> lt=rt (* TODO: Check with Franz *)
   | PtrType (lt, la), ArrType (rt,rl) -> lt=rt (* TODO: Check with Franz *)
