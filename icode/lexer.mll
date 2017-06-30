@@ -38,6 +38,7 @@ rule main = parse
 | "loop"    { LOOP    }
 | "func"    { FUNC    }
 | "nth"     { NTH     }
+| "vdup"    { VDUP    }
 | "V"       { V       }
 | "skip"    { SKIP    }
 | "if"      { IF      }

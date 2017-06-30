@@ -68,6 +68,7 @@ type rvalue =
   | IConst of Int_or_uint_64.t
   | FConstArr of (fconst list)
   | IConstArr of (Int_or_uint_64.t list)
+  | VdupRvalue of rvalue*Int_or_uint_64.t
   | NthRvalue of rvalue*rvalue (* 'int' type for index will be checked later *)
   | RCast of IType.t*rvalue
   | VParam of vparam

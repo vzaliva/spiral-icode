@@ -85,7 +85,7 @@ let integer_promotion t =
   if integer_type_rank t < integer_type_rank i then i else t
 
 (** Usual arithmetic conversions, a.k.a. binary conversions. This function returns the type to which the two operands must be converted. Adopted from http://compcert.inria.fr/doc/html/Cop.html. Reference: C99 Section 6.3.1.8.
-*)
+ *)
 let usual_arithmetic_conversion t1 t2 =
   match t1, t2 with
   | DoubleType, _ | _, DoubleType -> DoubleType
@@ -292,6 +292,7 @@ let rec check_vars_in_rvalue s = function
   | VarRValue v -> var_in_scope s v
   | NthRvalue (r1,r2) ->   (check_vars_in_rvalue s r1) ;
                            (check_vars_in_rvalue s r2)
+  | VdupRvalue (a,_) -> (check_vars_in_rvalue s a) ; ()
   | RCast (_,r) -> check_vars_in_rvalue s r
   | RDeref r -> check_vars_in_rvalue s r
   | VParam _ | FConstArr _  | IConstArr _ | FConst _  | IConst _  -> ()
@@ -338,14 +339,18 @@ let in_uint8_range = in_rangeU64 "0" "255"
 let in_uint16_range = in_rangeU64 "0" "65535"
 let in_uint32_range = in_rangeU64 "0" "4294967295"
 
+let uint16_cast : Ast.Int_or_uint_64.t -> int option = function
+  | U64 x -> if in_uint16_range x then Some (to_int x) else None
+  | I64 x -> if in_range64 "0" "65535" x then Int64.to_int x else None
+
 let rec lvalue_type vmap = function
   | VarLValue v -> var_type vmap v
   | LCast (t,lv) ->
      let lt = lvalue_type vmap lv in
      if check_cast lt t then t
      else raise (TypeError (Format.asprintf "Illegal cast from %a to %a."
-                                         pr_itype lt
-                                         pr_itype t ));
+                                            pr_itype lt
+                                            pr_itype t ));
   | LDeref v ->
      (match lvalue_type vmap v with
       | PtrType (t,_) -> t
@@ -360,7 +365,7 @@ let rec lvalue_type vmap = function
        match vt with
        | ArrType (t,_) | PtrType (t,_) -> t
        | _ -> raise (TypeError (Format.asprintf "Invalid type %a in NTH" pr_itype vt))
-and rvalue_type vmap lv =
+and rvalue_type vmap rv =
   let fconst_type = function
     (* Per C99 6.4.4.2.4 "An unsuffixed floating constant has type double". In i-code we deatult it to default machine size *)
     | FPLiteral _ -> Config.realAType ()
@@ -381,7 +386,7 @@ and rvalue_type vmap lv =
     | VParamList l -> ArrType (Config.uIntType (), List.length l)
     | VParamValue _ -> Config.uIntType () (* bit mask *)
   in
-  match lv with
+  match rv with
   | VarRValue v -> var_type vmap v
   | FunCall (n,a) ->
      let ft = func_type n (List.map ~f:(rvalue_type vmap) a) in
@@ -393,7 +398,7 @@ and rvalue_type vmap lv =
      let flt = List.map ~f:fconst_type fl in
      let t = A (if List.is_empty flt then Config.realAType ()
                 else List.fold ~f:usual_arithmetic_conversion
-                            ~init:(List.hd_exn flt) flt) in
+                               ~init:(List.hd_exn flt) flt) in
      ArrType (t, List.length fl)
   | IConstArr il ->
      let ilt = List.map ~f:iconst_type il in
@@ -405,23 +410,33 @@ and rvalue_type vmap lv =
      else
        ArrType (t, List.length il)
   | RCast (t,rv) ->
-     let rt = rvalue_type vmap lv in
+     let rt = rvalue_type vmap rv in
      if check_cast rt t then t
      else raise (TypeError (Format.asprintf "Illegal cast from %a to %a."
                                             pr_itype rt
                                             pr_itype t ));
   | VParam v -> vparam_type v
   | RDeref v -> (match rvalue_type vmap v with
-                | PtrType (t,_) -> t
-                | t -> raise (TypeError (Format.asprintf "Dereferencing non-pointer type %a" pr_itype t)))
+                 | PtrType (t,_) -> t
+                 | t -> raise (TypeError (Format.asprintf "Dereferencing non-pointer type %a" pr_itype t)))
   | NthRvalue (v, i) ->
      let it = rvalue_type vmap i in
      if not (is_integer it) then
        raise (TypeError (Format.asprintf "Invalid index type %a in NTH" pr_itype it))
      else
-       match rvalue_type vmap v with
+       (match rvalue_type vmap v with
         | ArrType (t,_) | PtrType (t,_) -> t
-        | t -> raise (TypeError (Format.asprintf "Invalid value type %a in NTH" pr_itype t))
+        | t -> raise (TypeError (Format.asprintf "Invalid value type %a in NTH" pr_itype t)))
+  | VdupRvalue (v, i) ->
+     match rvalue_type vmap v with
+     | A vt -> (match uint16_cast i with
+                | Some i -> (* I arbitrary decided that max vector length should fit in 16 bit. *)
+                   if is_power_of_2 i then VecType (vt, i)
+                   else raise (TypeError ("Size in VDUP must be power of 2. Got: " ^ (string_of_int i)))
+
+
+                | None -> raise (TypeError "Could invalid size in VDUP"))
+     | t -> raise (TypeError (Format.asprintf "Invalid value type %a in VDUP" pr_itype t))
 
 
 (*
@@ -449,9 +464,10 @@ and rvalue_type vmap lv =
 
    8. Matching function return type to rvalue type in creturn
 
+   9. Checking vdup size to be positive power of 2
+
   TODO:
   * Matching argument types in functoin calls
-  * Presence of return (may require some branch analysis)
   *)
 let typecheck vmap prog =
   let open String.Set.Tree in
