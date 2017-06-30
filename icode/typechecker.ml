@@ -135,13 +135,13 @@ let rec check_cast tfrom tto =
   | PtrType (lt, la), ArrType (rt,rl) -> lt=rt (* TODO: Check with Franz *)
   | VecType _, PtrType _ -> false
   | PtrType _, VecType _ -> false
-  | ArrType (lt,ll), VecType (rt,rl) -> ll = rl && check_cast (A rt) lt
+  | ArrType (lt,ll), VecType (rt,rl) -> ll = rl && is_power_of_2 ll && check_cast (A rt) lt
   | VecType (lt,ll), ArrType (rt,rl) -> ll = rl && check_cast rt (A lt)
 
 (* TODO: should be in Std? *)
 let constlist a n =  List.map ~f:(fun _ -> a) (List.range 0 n)
 
-let func_type_arith_binop name al =
+let rec func_type_arith_binop name al =
   let open List in
   if 2 <> length al then
     raise (TypeError ("Invalid number of arguments"))
@@ -150,13 +150,22 @@ let func_type_arith_binop name al =
     let a1 = nth_exn al 1 in
     match a0 , a1 with
     | A ia0 , A ia1 -> A (usual_arithmetic_conversion ia0 ia1)
-    | VecType (vt1,l1), VecType (vt2, l2) ->
+    | VecType (vt1,l1), ArrType (A vt2, l2) | ArrType (A vt1,l1), VecType (vt2, l2) | VecType (vt1,l1), VecType (vt2, l2) ->
        if l1=l2 && check_cast a0 a1 then
-         VecType ((usual_arithmetic_conversion vt1 vt2),l1)
+         VecType (usual_arithmetic_conversion vt1 vt2, l1)
        else
          raise (TypeError
                   (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
                                    pr_itype a0 pr_itype a1 name))
+
+    | ArrType (A vt1, l1), ArrType (A vt2, l2) ->
+       let va0 = VecType (vt1, l1) in
+       let va1 = VecType (vt2, l2) in
+       if check_cast a0 va0 && check_cast a1 va1 then
+         func_type_arith_binop name [va0; va1]
+       else
+         raise (TypeError (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
+                                pr_itype a0 pr_itype a1 name))
     | _ , _ -> raise (TypeError
                         (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
                                          pr_itype a0 pr_itype a1 name))
