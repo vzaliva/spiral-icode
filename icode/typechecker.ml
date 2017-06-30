@@ -127,7 +127,7 @@ let rec check_cast tfrom tto =
   | VecType _, A _       -> false
   | ArrType (lt,ll), ArrType (rt,rl) -> ll = rl && check_cast rt lt
   | VecType (lt,ll), VecType (rt,rl) ->
-     (arith_sizeof lt)*ll = (arith_sizeof rt)*rl
+     arith_sizeof lt = arith_sizeof rt
      && ll = rl
      && check_cast (A rt) (A lt)
   | PtrType (lt, la), PtrType (rt, ra) -> lt=rt (* TODO: alignment? *)
@@ -150,10 +150,16 @@ let func_type_arith_binop name al =
     let a1 = nth_exn al 1 in
     match a0 , a1 with
     | A ia0 , A ia1 -> A (usual_arithmetic_conversion ia0 ia1)
+    | VecType (vt1,l1), VecType (vt2, l2) ->
+       if l1=l2 && check_cast a0 a1 then
+         VecType ((usual_arithmetic_conversion vt1 vt2),l1)
+       else
+         raise (TypeError
+                  (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
+                                   pr_itype a0 pr_itype a1 name))
     | _ , _ -> raise (TypeError
                         (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
                                          pr_itype a0 pr_itype a1 name))
-
 
 let func_type_bool_arith_binop name al = ignore ( func_type_arith_binop name al) ; A (I BoolType)
 
