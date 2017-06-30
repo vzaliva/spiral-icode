@@ -246,18 +246,40 @@ let func_type_abs _ a =
     | _ -> raise (TypeError (Format.asprintf "Could not apply 'abs' to non-arithmetic type [%a]." pr_itype a0))
 
 
+let func_type eargs ret name args =
+  if List.length eargs <> List.length args then
+    raise (TypeError (Format.asprintf "Unexpected number of arguments for '%s'" name))
+  else
+    if not (List.map2_exn ~f:check_cast eargs args |>
+              List.fold ~f:(&&) ~init:true) then
+      raise (TypeError (Format.asprintf "Incompatible arguments for '%s'" name))
+    else
+      ret
+
 let builtins_map =
   String.Map.Tree.of_alist_exn
     [
+      (* polymorphic codnition operator *)
       ("cond", func_type_cond);
+
+      (* polymorphic artihmetic binary operators *)
       ("max", func_type_arith_binop) ;
       ("add", func_type_arith_binop) ;
       ("sub", func_type_arith_binop) ;
       ("mul", func_type_arith_binop) ;
       ("div", func_type_arith_binop) ;
+
+      (* polymorphic binary operators *)
       ("geq", func_type_bool_arith_binop) ;
+
+      (* polimorphic unary operators *)
       ("neg", func_type_neg) ;
-      ("abs", func_type_abs)
+      ("abs", func_type_abs) ;
+
+      (* non-polymorphic functions *)
+      ("addsub_4x32f", func_type [VecType (FloatType, 4); VecType (FloatType, 4)] (VecType (FloatType, 4))) ;
+      ("addsub_2x64f", func_type [VecType (DoubleType, 2); VecType (DoubleType, 2)] (VecType (DoubleType, 2))) ;
+      ("vcvt_64f32f", func_type [(VecType (FloatType, 4))] (VecType (DoubleType, 2))) (* TODO: dependently type to match any vector lenth? *)
     ]
 
 let build_var_map l =
