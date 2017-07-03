@@ -102,14 +102,14 @@ let iType_of_IntType t = A (I t)
 open Format
 
 let rec pr_itype ppf = function
-  | A I Int8Type -> fprintf ppf "@[TInt8]"
-  | A I Int16Type -> fprintf ppf "@[TInt16]"
-  | A I Int32Type -> fprintf ppf "@[TInt32]"
-  | A I Int64Type -> fprintf ppf "@[TInt64]"
-  | A I UInt8Type -> fprintf ppf "@[TUInt8]"
-  | A I UInt16Type -> fprintf ppf "@[TUInt16]"
-  | A I UInt32Type -> fprintf ppf "@[TUInt32]"
-  | A I UInt64Type -> fprintf ppf "@[TUInt64]"
+  | A I Int8Type -> fprintf ppf "@[TInt8@]"
+  | A I Int16Type -> fprintf ppf "@[TInt16@]"
+  | A I Int32Type -> fprintf ppf "@[TInt32@]"
+  | A I Int64Type -> fprintf ppf "@[TInt64@]"
+  | A I UInt8Type -> fprintf ppf "@[TUInt8@]"
+  | A I UInt16Type -> fprintf ppf "@[TUInt16@]"
+  | A I UInt32Type -> fprintf ppf "@[TUInt32@]"
+  | A I UInt64Type -> fprintf ppf "@[TUInt64@]"
   | A I BoolType -> fprintf ppf "@[TBool@]"
   | A FloatType -> fprintf ppf "@[Float@]"
   | A DoubleType -> fprintf ppf "@[Double@]"
