@@ -243,8 +243,9 @@ let func_type_neg _ a =
   else
     let a0 = hd_exn a in
     match a0 with
+    | VecType _ -> a0
     | A I it -> A (I (integer_promotion it))
-    | A _ as t -> t (* floats negated to the same type. Not dealing with signedness *)
+    | A _ -> a0 (* floats negated to the same type. Not dealing with signedness *)
     | _ -> raise (TypeError (Format.asprintf "Could not apply negation to non-arithmetic type [%a]." pr_itype a0))
 
 (* 'abs' is polymorphic version of C99 abs, labs, fabsf, fabs*)
