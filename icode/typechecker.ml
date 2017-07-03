@@ -295,6 +295,7 @@ let builtins_map =
       ("cond", func_type_cond);
 
       (* polymorphic artihmetic binary operators *)
+      ("min", func_type_arith_binop) ;
       ("max", func_type_arith_binop) ;
       ("add", func_type_arith_binop) ;
       ("sub", func_type_arith_binop) ;
