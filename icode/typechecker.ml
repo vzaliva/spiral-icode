@@ -345,7 +345,10 @@ let builtins_map =
       ("vcvt_64f32f", func_type [(VecType (FloatType, 4))] (VecType (DoubleType, 2))) ; (* TODO: dependently type to match any vector lenth? *)
 
       ("vushuffle_2x64f", func_type_vushuffle) ;
-      ("vshuffle_2x64f" , func_type_vshuffle)
+      ("vshuffle_2x64f" , func_type_vshuffle) ;
+
+      ("cmpge_2x64f", func_type [VecType (DoubleType, 2); VecType (DoubleType, 2)]
+                                (VecType (I Int64Type, 2)))
     ]
 
 let build_var_map l =
