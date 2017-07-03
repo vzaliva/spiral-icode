@@ -439,7 +439,7 @@ let rec lvalue_type vmap = function
   | LCast (t,lv) ->
      let lt = lvalue_type vmap lv in
      if check_cast lt t then t
-     else raise (TypeError (Format.asprintf "Illegal cast from %a to %a."
+     else raise (TypeError (Format.asprintf "Illegal lvalue cast from %a to %a."
                                             pr_itype lt
                                             pr_itype t ));
   | LDeref v ->
@@ -503,7 +503,7 @@ and rvalue_type vmap rv =
   | RCast (t,rv) ->
      let rt = rvalue_type vmap rv in
      if check_cast rt t then t
-     else raise (TypeError (Format.asprintf "Illegal cast from %a to %a."
+     else raise (TypeError (Format.asprintf "Illegal rvalue cast from %a to %a."
                                             pr_itype rt
                                             pr_itype t ));
   | VParam v -> vparam_type v
