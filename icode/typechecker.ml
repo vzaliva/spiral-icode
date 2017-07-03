@@ -273,8 +273,7 @@ let func_type_vshuffle name a =
     | VecType (t, vl), ArrType (A (I _), al) ->
        if al <> vl then
          raise (TypeError (Format.asprintf "Unexpected number size of vparam array for '%s'" name))
-       else
-         A t
+       else a1
     | _, _ -> raise (TypeError
                        (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
                                         pr_itype a0 pr_itype a1 name))
