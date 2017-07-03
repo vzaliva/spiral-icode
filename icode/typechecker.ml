@@ -404,10 +404,10 @@ let var_type vmap v =
   | Some t -> t
 
 let func_type n a =
-  let open List in
-  Printf.fprintf stderr "*** Resolving function %s %s\n" n (Sexp.to_string
-                                                              (sexp_of_list IType.sexp_of_t a));
-
+  let open Format in
+  fprintf err_formatter "*** Resolving function @[<h>%s(%a)@]@\n" n
+          (pp_print_list ~pp_sep:(fun x _ -> pp_print_text x ", ") pr_itype) a
+  ;
   match (String.Map.Tree.find builtins_map n) with
   | None -> raise (TypeError ("Unknown function '" ^ n ^ "'" ))
   | Some bf -> bf n a
@@ -481,7 +481,7 @@ and rvalue_type vmap rv =
   | VarRValue v -> var_type vmap v
   | FunCall (n,a) ->
      let ft = func_type n (List.map ~f:(rvalue_type vmap) a) in
-     Format.fprintf Format.err_formatter "*** %s type is %a\n" n pr_itype ft;
+     Format.fprintf Format.err_formatter "*** '%s' type is %a\n" n pr_itype ft;
      ft
   | FConst fc -> A (fconst_type fc)
   | IConst ic -> A (iconst_type ic)
