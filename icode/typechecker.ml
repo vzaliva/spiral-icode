@@ -261,6 +261,24 @@ let func_type_abs _ a =
     | _ -> raise (TypeError (Format.asprintf "Could not apply 'abs' to non-arithmetic type [%a]." pr_itype a0))
 
 
+let func_type_vshuffle name a =
+  let open List in
+  if 2 <> length a then
+    raise (TypeError ("Invalid number of arguments"))
+  else
+    let a0 = nth_exn a 0 in
+    let a1 = nth_exn a 1 in
+    match a0 , a1 with
+    | VecType (t, _), A (I _) -> a1
+    | VecType (t, vl), ArrType (A (I _), al) ->
+       if al <> vl then
+         raise (TypeError (Format.asprintf "Unexpected number size of vparam array for '%s'" name))
+       else
+         A t
+    | _, _ -> raise (TypeError
+                       (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
+                                        pr_itype a0 pr_itype a1 name))
+
 let func_type eargs ret name args =
   if List.length eargs <> List.length args then
     raise (TypeError (Format.asprintf "Unexpected number of arguments for '%s'" name))
@@ -294,7 +312,9 @@ let builtins_map =
       (* non-polymorphic functions *)
       ("addsub_4x32f", func_type [VecType (FloatType, 4); VecType (FloatType, 4)] (VecType (FloatType, 4))) ;
       ("addsub_2x64f", func_type [VecType (DoubleType, 2); VecType (DoubleType, 2)] (VecType (DoubleType, 2))) ;
-      ("vcvt_64f32f", func_type [(VecType (FloatType, 4))] (VecType (DoubleType, 2))) (* TODO: dependently type to match any vector lenth? *)
+      ("vcvt_64f32f", func_type [(VecType (FloatType, 4))] (VecType (DoubleType, 2))) ; (* TODO: dependently type to match any vector lenth? *)
+
+      ("vushuffle_2x64f", func_type_vshuffle)
     ]
 
 let build_var_map l =
