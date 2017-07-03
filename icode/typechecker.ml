@@ -144,7 +144,7 @@ let constlist a n =  List.map ~f:(fun _ -> a) (List.range 0 n)
 let rec func_type_arith_binop name al =
   let open List in
   if 2 <> length al then
-    raise (TypeError ("Invalid number of arguments"))
+    raise (TypeError (Format.asprintf "Invalid number of arguments for '%s'" name))
   else
     let a0 = nth_exn al 0 in
     let a1 = nth_exn al 1 in
@@ -173,7 +173,7 @@ let rec func_type_arith_binop name al =
 let func_type_arith_nop name al =
   let open List in
   if length al < 2 then
-    raise (TypeError ("Invalid number of arguments"))
+    raise (TypeError (Format.asprintf "Invalid number of arguments for '%s'" name))
   else if length al = 2 then func_type_arith_binop name al
   else fold ~init:(hd_exn al)
             ~f:(fun a b -> func_type_arith_binop name [a;b])
@@ -233,7 +233,7 @@ let type_conditional ty1 ty2 =
 let func_type_cond name a =
   let open List in
   if length a <> 3 then
-    raise (TypeError ("Invalid number of arguments for 'cond'" ))
+    raise (TypeError (Format.asprintf "Invalid number of arguments for '%s'" name))
   else
     let a0 = hd_exn a in
     (* first argument should be interpretable as boolean *)
@@ -245,10 +245,10 @@ let func_type_cond name a =
        )
 
 (* 6.5.3.3 Unary arithmetic operators: "The result of the unary + operator is the value of its (promoted) operand. The integer promotions are performed on the operand, and the result has the promoted type". *)
-let func_type_neg _ a =
+let func_type_neg name a =
   let open List in
   if length a <> 1 then
-    raise (TypeError ("Invalid number of arguments for negation" ))
+    raise (TypeError (Format.asprintf "Invalid number of arguments for '%s'" name))
   else
     let a0 = hd_exn a in
     match a0 with
@@ -258,10 +258,10 @@ let func_type_neg _ a =
     | _ -> raise (TypeError (Format.asprintf "Could not apply negation to non-arithmetic type [%a]." pr_itype a0))
 
 (* 'abs' is polymorphic version of C99 abs, labs, fabsf, fabs*)
-let func_type_abs _ a =
+let func_type_abs name a =
   let open List in
   if length a <> 1 then
-    raise (TypeError ("Invalid number of arguments for 'abs'" ))
+    raise (TypeError (Format.asprintf "Invalid number of arguments for '%s'" name))
   else
     let a0 = hd_exn a in
     match a0 with
@@ -271,19 +271,38 @@ let func_type_abs _ a =
     | _ -> raise (TypeError (Format.asprintf "Could not apply 'abs' to non-arithmetic type [%a]." pr_itype a0))
 
 
-let func_type_vshuffle name a =
+let func_type_vushuffle name a =
   let open List in
   if 2 <> length a then
-    raise (TypeError ("Invalid number of arguments"))
+    raise (TypeError (Format.asprintf "Invalid number of arguments for '%s'" name))
   else
     let a0 = nth_exn a 0 in
     let a1 = nth_exn a 1 in
     match a0 , a1 with
-    | VecType (t, _), A (I _) -> a1
-    | VecType (t, vl), ArrType (A (I _), al) ->
+    | VecType (_, _), A (I _) -> a1
+    | VecType (_, vl), ArrType (A (I _), al) ->
        if al <> vl then
          raise (TypeError (Format.asprintf "Unexpected number size of vparam array for '%s'" name))
        else a1
+    | _, _ -> raise (TypeError
+                       (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
+                                        pr_itype a0 pr_itype a1 name))
+
+let func_type_vshuffle name a =
+  let open List in
+  if 3 <> length a then
+    raise (TypeError (Format.asprintf "Invalid number of arguments for '%s'" name))
+  else
+    let a0 = nth_exn a 0 in
+    let a1 = nth_exn a 1 in
+    let a2 = nth_exn a 2 in
+    let rt = func_type_arith_binop name [a0;a1] in
+    match rt,a2 with
+    | VecType _, A (I _) -> rt
+    | VecType (_, vl), ArrType (A (I _), al)  ->
+       if al <> vl then
+         raise (TypeError (Format.asprintf "Unexpected number size of vparam array for '%s'" name))
+       else rt
     | _, _ -> raise (TypeError
                        (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
                                         pr_itype a0 pr_itype a1 name))
@@ -325,7 +344,8 @@ let builtins_map =
       ("addsub_2x64f", func_type [VecType (DoubleType, 2); VecType (DoubleType, 2)] (VecType (DoubleType, 2))) ;
       ("vcvt_64f32f", func_type [(VecType (FloatType, 4))] (VecType (DoubleType, 2))) ; (* TODO: dependently type to match any vector lenth? *)
 
-      ("vushuffle_2x64f", func_type_vshuffle)
+      ("vushuffle_2x64f", func_type_vushuffle) ;
+      ("vshuffle_2x64f" , func_type_vshuffle)
     ]
 
 let build_var_map l =
