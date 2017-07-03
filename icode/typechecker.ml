@@ -112,9 +112,8 @@ let is_void = function
   | _ -> false
 
 
-(* check if 'r' could be cast to 'l' even with possible loss of precision.
-   Our rules are stricter than in C99 *)
-let rec check_cast tfrom tto =
+(* check if 'r' could be coerced (implictly casted) to 'l' even with possible loss of precision.  Our rules are stricter than in C99 *)
+let rec check_coercion tfrom tto =
   match tto, tfrom with
   | VoidType , _         -> true
   | _        , VoidType  -> false
@@ -125,21 +124,29 @@ let rec check_cast tfrom tto =
   | PtrType _, A _       -> false (* unlike C we do not allow cast between ints and ptr *)
   | ArrType _, A _       -> false
   | VecType _, A _       -> false
-  | ArrType (lt,ll), ArrType (rt,rl) -> ll = rl && check_cast rt lt
+  | ArrType (lt,ll), ArrType (rt,rl) -> ll = rl && check_coercion rt lt
   | VecType (lt,ll), VecType (rt,rl) ->
      arith_sizeof lt = arith_sizeof rt
      && ll = rl
-     && check_cast (A rt) (A lt)
+     && check_coercion (A rt) (A lt)
   | PtrType (lt, la), PtrType (rt, ra) -> lt=rt (* TODO: alignment? *)
   | ArrType (lt,ll), PtrType (rt, ra) -> lt=rt (* TODO: Check with Franz *)
   | PtrType (lt, la), ArrType (rt,rl) -> lt=rt (* TODO: Check with Franz *)
   | VecType _, PtrType _ -> false
   | PtrType _, VecType _ -> false
-  | ArrType (lt,ll), VecType (rt,rl) -> ll = rl && is_power_of_2 ll && check_cast (A rt) lt
-  | VecType (lt,ll), ArrType (rt,rl) -> ll = rl && check_cast rt (A lt)
+  | ArrType (lt,ll), VecType (rt,rl) -> ll = rl && is_power_of_2 ll && check_coercion (A rt) lt
+  | VecType (lt,ll), ArrType (rt,rl) -> ll = rl && check_coercion rt (A lt)
 
-(* TODO: should be in Std? *)
-let constlist a n =  List.map ~f:(fun _ -> a) (List.range 0 n)
+(* check if 'r' could be explicitly casted to 'l' even with possible loss of precision.
+   Our rules may be stricter than in C99 *)
+let rec check_cast tfrom tto =
+  match tto, tfrom with
+  | PtrType _, PtrType _       -> true (* TODO: check alightment? *)
+  | VecType (lt,ll), VecType (rt,rl) ->
+     (* we allow to convert vectors as long as they are same byte size *)
+     ll*(arith_sizeof lt) = rl*(arith_sizeof rt)
+  | a ,b ->check_coercion a b
+
 
 let rec func_type_arith_binop name al =
   let open List in
@@ -151,7 +158,7 @@ let rec func_type_arith_binop name al =
     match a0 , a1 with
     | A ia0 , A ia1 -> A (usual_arithmetic_conversion ia0 ia1)
     | VecType (vt1,l1), ArrType (A vt2, l2) | ArrType (A vt1,l1), VecType (vt2, l2) | VecType (vt1,l1), VecType (vt2, l2) ->
-       if l1=l2 && check_cast a0 a1 then
+       if l1=l2 && check_coercion a0 a1 then
          VecType (usual_arithmetic_conversion vt1 vt2, l1)
        else
          raise (TypeError
@@ -161,7 +168,7 @@ let rec func_type_arith_binop name al =
     | ArrType (A vt1, l1), ArrType (A vt2, l2) ->
        let va0 = VecType (vt1, l1) in
        let va1 = VecType (vt2, l2) in
-       if check_cast a0 va0 && check_cast a1 va1 then
+       if check_coercion a0 va0 && check_coercion a1 va1 then
          func_type_arith_binop name [va0; va1]
        else
          raise (TypeError (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
@@ -311,7 +318,7 @@ let func_type eargs ret name args =
   if List.length eargs <> List.length args then
     raise (TypeError (Format.asprintf "Unexpected number of arguments for '%s'" name))
   else
-    if not (List.map2_exn ~f:check_cast eargs args |>
+    if not (List.map2_exn ~f:check_coercion eargs args |>
               List.fold ~f:(&&) ~init:true) then
       raise (TypeError (Format.asprintf "Incompatible arguments for '%s'" name))
     else
@@ -591,7 +598,7 @@ let typecheck vmap prog =
     | Assign (l,r) ->
        let rt = rvalue_type vmap r in
        let lt = lvalue_type vmap l in
-       if not (check_cast rt lt) then
+       if not (check_coercion rt lt) then
          raise (TypeError (Format.asprintf "Incompatible types in assignment %a=[%a]."
                                            pr_itype lt
                                            pr_itype rt
@@ -604,7 +611,7 @@ let typecheck vmap prog =
                    | None -> raise (TypeError "Return outsude of function")
                    | Some (fn,ft) ->
                       let at = rvalue_type vmap r in
-                      if not (check_cast at ft) then
+                      if not (check_coercion at ft) then
                         raise (TypeError (Format.asprintf "Incompatible types in return from functon '%s'. Actual: %a. Expected: %a." fn  pr_itype at pr_itype ft))
                       else u)
   in
