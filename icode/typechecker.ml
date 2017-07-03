@@ -170,6 +170,15 @@ let rec func_type_arith_binop name al =
                         (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
                                          pr_itype a0 pr_itype a1 name))
 
+let func_type_arith_nop name al =
+  let open List in
+  if length al < 2 then
+    raise (TypeError ("Invalid number of arguments"))
+  else if length al = 2 then func_type_arith_binop name al
+  else fold ~init:(hd_exn al)
+            ~f:(fun a b -> func_type_arith_binop name [a;b])
+            (tl_exn al)
+
 let func_type_bool_arith_binop name al = ignore ( func_type_arith_binop name al) ; A (I BoolType)
 
 let ptr_attr_combine a1 a2 =
@@ -296,8 +305,9 @@ let builtins_map =
       ("cond", func_type_cond);
 
       (* polymorphic artihmetic binary operators *)
-      ("min", func_type_arith_binop) ;
-      ("max", func_type_arith_binop) ;
+      ("min", func_type_arith_nop) ;
+      ("max", func_type_arith_nop) ;
+
       ("add", func_type_arith_binop) ;
       ("sub", func_type_arith_binop) ;
       ("mul", func_type_arith_binop) ;
