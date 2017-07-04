@@ -172,7 +172,7 @@ let rec func_type_arith_binop name al =
          func_type_arith_binop name [va0; va1]
        else
          raise (TypeError (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
-                                pr_itype a0 pr_itype a1 name))
+                                           pr_itype a0 pr_itype a1 name))
     | _ , _ -> raise (TypeError
                         (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
                                          pr_itype a0 pr_itype a1 name))
@@ -360,7 +360,7 @@ let builtins_map =
       ("testc_4x32i", func_type [VecType (I Int32Type, 4); VecType (I Int32Type, 4)]
                                 (Config.intType ()));
       ("testnzc_4x32i", func_type [VecType (I Int32Type, 4); VecType (I Int32Type, 4)]
-                                (Config.intType ()));
+                                  (Config.intType ()));
     ]
 
 let build_var_map l =
@@ -420,9 +420,9 @@ let func_type n a =
   fprintf err_formatter "*** Resolving function @[<h>%s(%a)@]@\n" n
           (pp_print_list ~pp_sep:(fun x _ -> pp_print_text x ", ") pr_itype) a
   ;
-  match (String.Map.Tree.find builtins_map n) with
-  | None -> raise (TypeError ("Unknown function '" ^ n ^ "'" ))
-  | Some bf -> bf n a
+    match (String.Map.Tree.find builtins_map n) with
+    | None -> raise (TypeError ("Unknown function '" ^ n ^ "'" ))
+    | Some bf -> bf n a
 
 (* inclusive *)
 let in_range64 f t x =
@@ -569,7 +569,7 @@ and rvalue_type vmap rv =
 
    2. Vairable used in expressions are in scope.
 
-   3. Loop indices are proper non-empty range (TODO: allow empy?)
+   3. Loop indices are proper non-empty range
 
    4. Type in assignment are convertable
 
@@ -582,10 +582,7 @@ and rvalue_type vmap rv =
    8. Matching function return type to rvalue type in creturn
 
    9. Checking vdup size to be positive power of 2
-
-  TODO:
-  * Matching argument types in functoin calls
-  *)
+ *)
 let typecheck vmap prog =
   let open String.Set.Tree in
   let add_var s v =
