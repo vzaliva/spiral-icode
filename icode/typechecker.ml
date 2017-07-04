@@ -86,13 +86,13 @@ let integer_promotion t =
 
 (** Usual arithmetic conversions, a.k.a. binary conversions. This function returns the type to which the two operands must be converted. Adopted from http://compcert.inria.fr/doc/html/Cop.html. Reference: C99 Section 6.3.1.8.
  *)
-let usual_arithmetic_conversion t1 t2 =
+let usual_arithmetic_conversion promote t1 t2 =
   match t1, t2 with
   | DoubleType, _ | _, DoubleType -> DoubleType
   | FloatType, _ | _, FloatType -> FloatType
   | I i1, I i2 ->
-     let j1 = integer_promotion i1 in
-     let j2 = integer_promotion i2 in
+     let j1 = if promote then integer_promotion i1 else i1 in
+     let j2 = if promote then integer_promotion i2 else i2 in
      if eq_int_type j1 j2 then I j1 else
        (match is_unsigned_integer j1, is_unsigned_integer j2 with
         | true, true | false, false ->
@@ -156,10 +156,10 @@ let rec func_type_arith_binop name al =
     let a0 = nth_exn al 0 in
     let a1 = nth_exn al 1 in
     match a0 , a1 with
-    | A ia0 , A ia1 -> A (usual_arithmetic_conversion ia0 ia1)
+    | A ia0 , A ia1 -> A (usual_arithmetic_conversion true ia0 ia1)
     | VecType (vt1,l1), ArrType (A vt2, l2) | ArrType (A vt1,l1), VecType (vt2, l2) | VecType (vt1,l1), VecType (vt2, l2) ->
        if l1=l2 && check_coercion a0 a1 then
-         VecType (usual_arithmetic_conversion vt1 vt2, l1)
+         VecType (usual_arithmetic_conversion true vt1 vt2, l1)
        else
          raise (TypeError
                   (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
@@ -222,7 +222,7 @@ let rec type_combine ty1 ty2 =
  *)
 let type_conditional ty1 ty2 =
   match ty1, ty2 with
-  | A ia0 , A ia1 -> A (usual_arithmetic_conversion ia0 ia1)
+  | A ia0 , A ia1 -> A (usual_arithmetic_conversion true ia0 ia1)
   | PtrType (t1,a1), PtrType (t2, a2) ->
      let t =
        if is_void t1 || is_void t2 then VoidType else
@@ -499,13 +499,13 @@ and rvalue_type vmap rv =
   | FConstArr fl ->
      let flt = List.map ~f:fconst_type fl in
      let t = A (if List.is_empty flt then Config.realAType ()
-                else List.fold ~f:usual_arithmetic_conversion
+                else List.fold ~f:(usual_arithmetic_conversion false)
                                ~init:(List.hd_exn flt) flt) in
      ArrType (t, List.length fl)
   | IConstArr il ->
      let ilt = List.map ~f:iconst_type il in
      let t = A (if List.is_empty ilt then Config.intAType () (* defaultin to signed *)
-                else List.fold ~f:usual_arithmetic_conversion
+                else List.fold ~f:(usual_arithmetic_conversion false)
                                ~init:(List.hd_exn ilt) ilt) in
      if not (is_integer t) then
        raise (TypeError (Format.asprintf "Initialize int array witn non-integer constants")) (* maybe warning? *)
