@@ -513,14 +513,17 @@ and rvalue_type vmap rv =
      else
        ArrType (t, List.length il)
   | VHex sl ->
-     (* TODO: this function throws some raw exceptions. perhaps catch and wrap in TypeError later *)
      let iconst_of_hex s =
        if String.is_empty s then
          raise (TypeError (Format.asprintf "Empty hex string in 'vhex'"))
-       else if String.prefix s 1 = "-" then
-         Int_or_uint_64.I64 (Int64.of_string s)
        else
-         Int_or_uint_64.U64 (Uint64.of_string s)
+         try
+           if String.prefix s 1 = "-" then
+             Int_or_uint_64.I64 (Int64.of_string s)
+           else
+             Int_or_uint_64.U64 (Uint64.of_string s)
+         with
+         | Failure _ -> raise (TypeError (Format.asprintf "Invalid hex string \"%s\" in 'vhex'" s))
      in
      rvalue_type vmap (IConstArr (List.map ~f:iconst_of_hex sl))
   | RCast (t,rv) ->
