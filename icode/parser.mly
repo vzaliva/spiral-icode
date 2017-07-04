@@ -101,7 +101,9 @@ i_rvalue:
                   VParam (VParamList (List.map int_of_string l))
               }
   | VHEX LPAREN LBRACKET l=separated_nonempty_list(COMMA, STRING) RBRACKET RPAREN
-              { IConstArr [] } (* TODO *)             
+              {
+                  VHex l
+              }
   | f=i_fconst { FConst f }
   | i=i_iconst { IConst i }
   | NTH  LPAREN a=i_rvalue COMMA i=i_rvalue RPAREN { NthRvalue (a,i) }

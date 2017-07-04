@@ -397,7 +397,7 @@ let rec check_vars_in_rvalue s = function
   | VdupRvalue (a,_) -> (check_vars_in_rvalue s a) ; ()
   | RCast (_,r) -> check_vars_in_rvalue s r
   | RDeref r -> check_vars_in_rvalue s r
-  | VParam _ | FConstArr _  | IConstArr _ | FConst _  | IConst _  -> ()
+  | VParam _ | FConstArr _  | IConstArr _ | FConst _  | IConst _ | VHex _ -> ()
 and check_vars_in_lvalue s = function
   | VarLValue v -> var_in_scope s v
   | NthLvalue (l, r) -> (check_vars_in_lvalue s l) ;
@@ -511,6 +511,17 @@ and rvalue_type vmap rv =
        raise (TypeError (Format.asprintf "Initialize int array witn non-integer constants")) (* maybe warning? *)
      else
        ArrType (t, List.length il)
+  | VHex sl ->
+     (* TODO: this function throws some raw exceptions. perhaps catch and wrap in TypeError later *)
+     let iconst_of_hex s =
+       if String.is_empty s then
+         raise (TypeError (Format.asprintf "Empty hex string in 'vhex'"))
+       else if String.prefix s 1 = "-" then
+         Int_or_uint_64.I64 (Int64.of_string s)
+       else
+         Int_or_uint_64.U64 (Uint64.of_string s)
+     in
+     rvalue_type vmap (IConstArr (List.map ~f:iconst_of_hex sl))
   | RCast (t,rv) ->
      let rt = rvalue_type vmap rv in
      if check_cast rt t then t

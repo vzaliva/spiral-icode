@@ -65,6 +65,7 @@ type rvalue =
   | FunCall of string*(rvalue list)
   | VarRValue of ivar
   | FConst of fconst
+  | VHex of (string list)
   | IConst of Int_or_uint_64.t
   | FConstArr of (fconst list)
   | IConstArr of (Int_or_uint_64.t list)
