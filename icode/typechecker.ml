@@ -358,8 +358,9 @@ let builtins_map =
                                 (VecType (I Int64Type, 2)));
 
       ("testc_4x32i", func_type [VecType (I Int32Type, 4); VecType (I Int32Type, 4)]
-                                (Config.intType ())
-                                );
+                                (Config.intType ()));
+      ("testnzc_4x32i", func_type [VecType (I Int32Type, 4); VecType (I Int32Type, 4)]
+                                (Config.intType ()));
     ]
 
 let build_var_map l =
