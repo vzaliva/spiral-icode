@@ -355,7 +355,7 @@ let builtins_map =
       ("vshuffle_2x64f" , func_type_vshuffle) ;
 
       ("cmpge_2x64f", func_type [VecType (DoubleType, 2); VecType (DoubleType, 2)]
-                                (VecType (I Int64Type, 2)));
+                                (VecType (DoubleType, 2)));
 
       ("testc_4x32i", func_type [VecType (I Int32Type, 4); VecType (I Int32Type, 4)]
                                 (Config.intType ()));
