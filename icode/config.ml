@@ -6,8 +6,8 @@ open IArithType
 (* Mapping of generic numeric types to actual machine types. It is hardcoded now, but will be managed via config file or command line options later *)
 
 let realAType () = DoubleType
-let intIntType () = Int64Type
-let uIntIntType () = UInt64Type
+let intIntType () = Int32Type
+let uIntIntType () = UInt32Type
 
 
 (* --- helper functoin, in IArithType *)
