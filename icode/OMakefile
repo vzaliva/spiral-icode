@@ -32,6 +32,7 @@ OCamlProgram($(PROGRAM), $(FILES))
 run: $(EXE)
 	./$(EXE) ../samples/dwmonitor.g
 	./$(EXE) ../samples/dwmonitor_interval.g
+	./$(EXE) ../samples/dft16.g
 
 clean:
   rm -f \
