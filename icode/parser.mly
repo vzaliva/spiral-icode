@@ -19,7 +19,7 @@
 %token DEF
 
 %token LET VAR ALIGNED
-%token V DECL CHAIN IVENV DATA ASSIGN LOOP FUNC NTH SKIP IF CRETURN EOF
+%token V DECL CHAIN IVENV PROGRAM DATA ASSIGN LOOP FUNC NTH SKIP IF CRETURN EOF
 %token TVOID TREAL TDOUBLE TFLOAT TBOOL TPTR TVECT TARR
 %token TINT TINT8 TINT16 TINT32 TINT64
 %token TUINT TUINT8 TUINT16 TUINT32 TUINT64
@@ -124,8 +124,9 @@ i_lvalue:
 i_rvalue_comma: v=i_rvalue COMMA { v }
 
 i_chain_kw:
-           | CHAIN  {}
-           | IVENV  {}
+        | PROGRAM {}
+        | CHAIN  {}
+        | IVENV  {}
 
 i_stmt:
   | SKIP {Skip}
