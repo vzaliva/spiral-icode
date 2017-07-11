@@ -3,6 +3,64 @@
 open Core
 open Sexplib
 open Uint64
+open Lexing
+
+let sexp_kv k v = Sexp.List [ Sexp.Atom k; Sexp.Atom v]
+
+let sexp_of_position p = Sexp.List [
+                             sexp_kv "pos_fname" p.pos_fname ;
+                             sexp_kv "pos_lnum" (string_of_int p.pos_lnum);
+                             sexp_kv "pos_bol"  (string_of_int p.pos_bol );
+                             sexp_kv "pos_cnum" (string_of_int p.pos_cnum)
+                           ]
+
+let position_of_sexp: Sexp.t -> position = function
+  | Sexp.List l as s ->
+     let open List in
+     if 4 <> length l then
+       of_sexp_error "position: List too short" s
+     else
+       (* Hardcode order. shoud be alist *)
+       {
+         pos_fname  = string_of_sexp (nth_exn l 0) ;
+         pos_lnum   = int_of_sexp (nth_exn l 1) ;
+         pos_bol    = int_of_sexp (nth_exn l 2) ;
+         pos_cnum   = int_of_sexp (nth_exn l 3)
+       }
+  | x  -> of_sexp_error "position_of_sexp: must be List" x
+
+let compare_position x y =
+  let c = compare_string x.pos_fname y.pos_fname in
+  if c <> 0 then c
+  else let c = compare_int x.pos_lnum y.pos_lnum in
+       if c <> 0 then c
+       else let c = compare_int x.pos_bol y.pos_bol in
+            if c <> 0 then c
+            else compare_int x.pos_cnum y.pos_cnum
+
+(* Location code inspired by https://github.com/lucasaiu/ocaml/blob/master/parsing/location.ml *)
+module Loc = struct
+  type t = { loc_start: position; loc_end: position; loc_ghost: bool } [@@deriving compare, sexp]
+
+  let rhs_loc n = {
+      loc_start = Parsing.rhs_start_pos n;
+      loc_end = Parsing.rhs_end_pos n;
+      loc_ghost = false;
+    }
+
+  let symbol_rloc () = {
+      loc_start = Parsing.symbol_start_pos ();
+      loc_end = Parsing.symbol_end_pos ();
+      loc_ghost = false;
+    }
+
+  let symbol_gloc () = {
+      loc_start = Parsing.symbol_start_pos ();
+      loc_end = Parsing.symbol_end_pos ();
+      loc_ghost = true;
+    }
+end
+
 
 (* Machine-safe int to hold any int value, signed or unsiged *)
 module Int_or_uint_64 = struct
