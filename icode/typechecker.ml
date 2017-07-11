@@ -499,8 +499,8 @@ and rvalue_type vmap rv =
        | TypeError msg ->
           let open Format in
           (* TODO: Print expression causing error here *)
-          fprintf err_formatter "!!! Error resolving function @[<h>%s(%a)@]@\n" n
-                  (pp_print_list ~pp_sep:(fun x _ -> pp_print_text x ", ") pr_itype) al
+          fprintf err_formatter "!!! Error resolving function @[<h>%s(%s)@]@\n" n
+                  (Sexp.to_string (Ast.sexp_of_rvalue rv))
          ; raise (TypeError msg)
        ) in
      Format.fprintf Format.err_formatter "*** '%s' type is %a\n" n pr_itype ft;
