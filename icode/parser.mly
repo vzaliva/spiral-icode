@@ -117,7 +117,7 @@ i_rvalue:
 i_lvalue:
   | v=IDENTIFIER {VarLValue v}
   | NTH LPAREN a=i_lvalue COMMA i=i_rvalue RPAREN { NthLvalue (a,i) }
-  | DEREF LPAREN v=i_lvalue RPAREN { LDeref v }
+  | DEREF LPAREN v=i_rvalue RPAREN { LDeref v }
   | TCAST LPAREN t=i_type COMMA v=i_lvalue RPAREN { LCast (t,v) }
   ;
 

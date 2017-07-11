@@ -147,7 +147,6 @@ let rec check_cast tfrom tto =
      ll*(arith_sizeof lt) = rl*(arith_sizeof rt)
   | a ,b ->check_coercion a b
 
-
 let rec func_type_arith_binop name al =
   let open List in
   if 2 <> length al then
@@ -314,7 +313,7 @@ let func_type_vshuffle name a =
                        (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
                                         pr_itype a0 pr_itype a1 name))
 
-let func_type eargs ret name args =
+let a_func_type eargs ret name args =
   if List.length eargs <> List.length args then
     raise (TypeError (Format.asprintf "Unexpected number of arguments for '%s'" name))
   else
@@ -347,19 +346,19 @@ let builtins_map =
       ("abs", func_type_abs) ;
 
       (* non-polymorphic functions *)
-      ("addsub_4x32f", func_type [VecType (FloatType, 4); VecType (FloatType, 4)] (VecType (FloatType, 4))) ;
-      ("addsub_2x64f", func_type [VecType (DoubleType, 2); VecType (DoubleType, 2)] (VecType (DoubleType, 2))) ;
-      ("vcvt_64f32f", func_type [(VecType (FloatType, 4))] (VecType (DoubleType, 2))) ; (* TODO: dependently type to match any vector lenth? *)
+      ("addsub_4x32f", a_func_type [VecType (FloatType, 4); VecType (FloatType, 4)] (VecType (FloatType, 4))) ;
+      ("addsub_2x64f", a_func_type [VecType (DoubleType, 2); VecType (DoubleType, 2)] (VecType (DoubleType, 2))) ;
+      ("vcvt_64f32f", a_func_type [(VecType (FloatType, 4))] (VecType (DoubleType, 2))) ; (* TODO: dependently type to match any vector lenth? *)
 
       ("vushuffle_2x64f", func_type_vushuffle) ;
       ("vshuffle_2x64f" , func_type_vshuffle) ;
 
-      ("cmpge_2x64f", func_type [VecType (DoubleType, 2); VecType (DoubleType, 2)]
+      ("cmpge_2x64f", a_func_type [VecType (DoubleType, 2); VecType (DoubleType, 2)]
                                 (VecType (DoubleType, 2)));
 
-      ("testc_4x32i", func_type [VecType (I Int32Type, 4); VecType (I Int32Type, 4)]
+      ("testc_4x32i", a_func_type [VecType (I Int32Type, 4); VecType (I Int32Type, 4)]
                                 (Config.intType ()));
-      ("testnzc_4x32i", func_type [VecType (I Int32Type, 4); VecType (I Int32Type, 4)]
+      ("testnzc_4x32i", a_func_type [VecType (I Int32Type, 4); VecType (I Int32Type, 4)]
                                   (Config.intType ()));
     ]
 
@@ -404,7 +403,7 @@ and check_vars_in_lvalue s = function
   | NthLvalue (l, r) -> (check_vars_in_lvalue s l) ;
                         (check_vars_in_rvalue s r)
   | LCast (_, v) -> check_vars_in_lvalue s v
-  | LDeref v -> check_vars_in_lvalue s v
+  | LDeref v -> check_vars_in_rvalue s v
 and var_in_scope s v =
   if not (String.Set.Tree.mem s v) then
     raise (TypeError ("Variable '" ^ v ^ "' is not in scope" ))
@@ -455,7 +454,7 @@ let rec lvalue_type vmap = function
                                             pr_itype lt
                                             pr_itype t ));
   | LDeref v ->
-     (match lvalue_type vmap v with
+     (match rvalue_type vmap v with
       | PtrType (t,_) -> t
       | _ as vt ->
          raise (TypeError (Format.asprintf "Dereferencing non-pointer type %a" pr_itype vt)))
@@ -492,7 +491,18 @@ and rvalue_type vmap rv =
   match rv with
   | VarRValue v -> var_type vmap v
   | FunCall (n,a) ->
-     let ft = func_type n (List.map ~f:(rvalue_type vmap) a) in
+     let al = (List.map ~f:(rvalue_type vmap) a) in
+     let ft =
+       (try
+         func_type n al
+       with
+       | TypeError msg ->
+          let open Format in
+          (* TODO: Print expression causing error here *)
+          fprintf err_formatter "!!! Error resolving function @[<h>%s(%a)@]@\n" n
+                  (pp_print_list ~pp_sep:(fun x _ -> pp_print_text x ", ") pr_itype) al
+         ; raise (TypeError msg)
+       ) in
      Format.fprintf Format.err_formatter "*** '%s' type is %a\n" n pr_itype ft;
      ft
   | FConst fc -> A (fconst_type fc)

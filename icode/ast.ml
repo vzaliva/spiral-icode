@@ -78,7 +78,7 @@ type rvalue =
 type lvalue =
   | VarLValue of ivar
   | NthLvalue of lvalue*rvalue
-  | LDeref of lvalue
+  | LDeref of rvalue
   | LCast of IType.t*lvalue
 
 type istmt =
