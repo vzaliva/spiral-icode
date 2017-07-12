@@ -349,7 +349,7 @@ let builtins_map =
       ("max", func_type_arith_nop) ;
 
       ("add", func_type_add ) ;
-      ("sub", func_type_arith_binop) ;
+      ("sub", func_type_arith_binop) ; (* TODO: func_type_sub to handle pointer subtraction *)
       ("mul", func_type_arith_binop) ;
       ("div", func_type_arith_binop) ;
 
