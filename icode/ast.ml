@@ -199,9 +199,9 @@ let rec pr_itype ppf = function
   | A FloatType -> fprintf ppf "@[Float@]"
   | A DoubleType -> fprintf ppf "@[Double@]"
   | VoidType -> fprintf ppf "@[TVoid@]"
-  | ArrType (t,s) -> fprintf ppf "@[<h>%a[%d]@]" pr_itype t s
-  | VecType (t,s) -> fprintf ppf "@[<h>%a<%d>@]" pr_itype (A t) s
-  | PtrType (t,_) -> fprintf ppf "@[<h>%a@]" pr_itype t
+  | ArrType (t,s) -> fprintf ppf "@[<h>Arr(%a,%d)@]" pr_itype t s
+  | VecType (t,s) -> fprintf ppf "@[<h>Vec(%a,%d)@]" pr_itype (A t) s
+  | PtrType (t,_) -> fprintf ppf "@[<h>Ptr(%a)@]" pr_itype t
 
 let itype_as_string = Format.asprintf "%a" pr_itype
 

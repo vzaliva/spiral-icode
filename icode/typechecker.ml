@@ -185,7 +185,7 @@ let rec func_type_add name al =
     let a1 = nth_exn al 1 in
     match a0 , a1 with
     | A _ , A _ | VecType _, ArrType (A _,_) | ArrType (A _,_), VecType (_, _) | VecType (_,_), VecType (_, _) | ArrType (A _, _), ArrType (A _, _) -> func_type_arith_binop name al
-    (*    | PtrType _, A (I _) -> a0 *)
+    | PtrType _, A (I _) -> a0
     | A (I _), PtrType _ -> a1
     | _ , _ -> raise (TypeError
                         (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
