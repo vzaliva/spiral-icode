@@ -185,7 +185,8 @@ let rec func_type_add name al =
     let a1 = nth_exn al 1 in
     match a0 , a1 with
     | A _ , A _ | VecType _, ArrType (A _,_) | ArrType (A _,_), VecType (_, _) | VecType (_,_), VecType (_, _) | ArrType (A _, _), ArrType (A _, _) -> func_type_arith_binop name al
-    | PtrType _, A (I _)
+    (*    | PtrType _, A (I _) -> a0 *)
+    | A (I _), PtrType _ -> a1
     | _ , _ -> raise (TypeError
                         (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
                                          pr_itype a0 pr_itype a1 name))
@@ -435,7 +436,10 @@ let func_type n a =
   ;
     match (String.Map.Tree.find builtins_map n) with
     | None -> raise (TypeError ("Unknown function '" ^ n ^ "'" ))
-    | Some bf -> bf n a
+    | Some bf -> let res = bf n a in
+                 fprintf err_formatter "***    %s return type: %a\n" n pr_itype res
+                 ; res
+
 
 (* inclusive *)
 let in_range64 f t x =
@@ -517,7 +521,6 @@ and rvalue_type vmap rv =
                   (Sexp.to_string (Ast.sexp_of_rvalue rv))
          ; raise (TypeError msg)
        ) in
-     Format.fprintf Format.err_formatter "*** '%s' type is %a\n" n pr_itype ft;
      ft
   | FConst fc -> A (fconst_type fc)
   | IConst ic -> A (iconst_type ic)
