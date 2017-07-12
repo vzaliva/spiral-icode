@@ -70,13 +70,6 @@ i_var:
    | i=IDENTIFIER DEF VAR LPAREN STRING COMMA t=i_type RPAREN COMMA { (i,t) }
    ;
 
-i_program:
-    | LET LPAREN v=list(i_var) b=i_stmt RPAREN EOF
-      { Program (v,b) }
-    | f=i_stmt EOF { Program ([], f) }
-    | EOF { Program ([], Skip) }
-    ;
-
 i_fconst:
   | V LPAREN f=FLOAT RPAREN { FPLiteral f }
   | REALEPS LPAREN TFLOAT RPAREN { FloatEPS }
@@ -124,13 +117,15 @@ i_lvalue:
 i_rvalue_comma: v=i_rvalue COMMA { v }
 
 i_chain_kw:
-        | PROGRAM {}
         | CHAIN  {}
         | IVENV  {}
 
+i_func:
+  | FUNC LPAREN t=i_type COMMA n=STRING COMMA LBRACKET a=separated_list(COMMA, IDENTIFIER) RBRACKET COMMA b=i_stmt RPAREN {Function (n,t,a,b)}
+
 i_stmt:
   | SKIP {Skip}
-  | FUNC LPAREN t=i_type COMMA n=STRING COMMA LBRACKET a=separated_list(COMMA, IDENTIFIER) RBRACKET COMMA b=i_stmt RPAREN {Function (n,t,a,b)}
+  | f=i_func {f}
   | DECL LPAREN LBRACKET a=separated_list(COMMA, IDENTIFIER) RBRACKET COMMA b=i_stmt RPAREN {Decl (a,b)}
   | i_chain_kw LPAREN c=separated_list(COMMA, i_stmt) RPAREN {Chain c}
   | DATA LPAREN n=IDENTIFIER COMMA v=list(i_rvalue_comma) b=i_stmt RPAREN {Data (n,v,b)}
@@ -142,3 +137,16 @@ i_stmt:
                     Loop (v,f,t,b)
                 }
   ;
+
+/* Top level: definitions single 'func' or 'program' of func */
+i_top_defs:
+  | f=i_func {Chain [f]}
+  | PROGRAM LPAREN c=separated_list(COMMA, i_func) RPAREN {Chain c}
+
+i_program:
+    | LET LPAREN v=list(i_var) b=i_top_defs RPAREN EOF
+      { Program (v,b) }
+    | f=i_top_defs EOF { Program ([], f) }
+    | EOF { Program ([], Skip) }
+    ;
+

@@ -641,7 +641,17 @@ let typecheck vmap prog =
                         raise (TypeError (Format.asprintf "Incompatible types in return from functon '%s'. Actual: %a. Expected: %a." fn  pr_itype at pr_itype ft))
                       else u)
   in
+  (* check top-level program structure *)
+  ignore(
+      let is_func = function
+        | Function _ -> true
+        | _ -> false in
+      match prog with
+      | Chain body -> if not (List.for_all body is_func) then
+                        raise (TypeError "'program' must contain only function definitions")
+      | Function _ -> ()
+      | _ -> raise (TypeError "'program' must contain only function definitions")
+    );
+  (* build list of used variables *)
   let used = typecheck [] String.Set.Tree.empty prog in
   ignore (check_never_decl vmap used)
-
-
