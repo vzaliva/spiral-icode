@@ -81,7 +81,7 @@ let unsigned_type = function
   | _ as t -> t
 
 let integer_promotion t =
-  let i = if is_signed_integer t then Config.intIntType () else Config.uIntIntType () in
+  let i = if is_signed_integer t then Int32Type else UInt32Type in
   if integer_type_rank t < integer_type_rank i then i else t
 
 (** Usual arithmetic conversions, a.k.a. binary conversions. This function returns the type to which the two operands must be converted. Adopted from http://compcert.inria.fr/doc/html/Cop.html. Reference: C99 Section 6.3.1.8.
@@ -172,6 +172,20 @@ let rec func_type_arith_binop name al =
        else
          raise (TypeError (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
                                            pr_itype a0 pr_itype a1 name))
+    | _ , _ -> raise (TypeError
+                        (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
+                                         pr_itype a0 pr_itype a1 name))
+
+let rec func_type_add name al =
+  let open List in
+  if 2 <> length al then
+    raise (TypeError (Format.asprintf "Invalid number of arguments for '%s'" name))
+  else
+    let a0 = nth_exn al 0 in
+    let a1 = nth_exn al 1 in
+    match a0 , a1 with
+    | A _ , A _ | VecType _, ArrType (A _,_) | ArrType (A _,_), VecType (_, _) | VecType (_,_), VecType (_, _) | ArrType (A _, _), ArrType (A _, _) -> func_type_arith_binop name al
+    | PtrType _, A (I _)
     | _ , _ -> raise (TypeError
                         (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
                                          pr_itype a0 pr_itype a1 name))
@@ -333,7 +347,7 @@ let builtins_map =
       ("min", func_type_arith_nop) ;
       ("max", func_type_arith_nop) ;
 
-      ("add", func_type_arith_binop) ;
+      ("add", func_type_add ) ;
       ("sub", func_type_arith_binop) ;
       ("mul", func_type_arith_binop) ;
       ("div", func_type_arith_binop) ;
@@ -357,9 +371,9 @@ let builtins_map =
                                 (VecType (DoubleType, 2)));
 
       ("testc_4x32i", a_func_type [VecType (I Int32Type, 4); VecType (I Int32Type, 4)]
-                                (Config.intType ()));
+                                (A (I Int32Type)));
       ("testnzc_4x32i", a_func_type [VecType (I Int32Type, 4); VecType (I Int32Type, 4)]
-                                  (Config.intType ()));
+                                  (A (I Int32Type)));
     ]
 
 let build_var_map l =
@@ -485,8 +499,8 @@ and rvalue_type vmap rv =
                else I UInt64Type
   in
   let vparam_type = function
-    | VParamList l -> ArrType (Config.uIntType (), List.length l)
-    | VParamValue _ -> Config.uIntType () (* bit mask *)
+    | VParamList l -> ArrType (A (I Int32Type), List.length l)
+    | VParamValue _ -> A (I UInt32Type) (* bit mask *)
   in
   match rv with
   | VarRValue v -> var_type vmap v
@@ -515,7 +529,7 @@ and rvalue_type vmap rv =
      ArrType (t, List.length fl)
   | IConstArr il ->
      let ilt = List.map ~f:iconst_type il in
-     let t = A (if List.is_empty ilt then Config.intAType () (* defaultin to signed *)
+     let t = A (if List.is_empty ilt then (I Int32Type) (* defaultin to signed *)
                 else List.fold ~f:(usual_arithmetic_conversion false)
                                ~init:(List.hd_exn ilt) ilt) in
      if not (is_integer t) then

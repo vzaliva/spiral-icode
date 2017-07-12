@@ -33,19 +33,19 @@
 %%
 
 i_arith_type:
-  | TINT     { intAType ()  }
+  | TINT     { I Int32Type  }
   | TINT8    { I Int8Type   }
   | TINT16   { I Int16Type  }
   | TINT32   { I Int32Type  }
   | TINT64   { I Int64Type  }
-  | TUINT    { uIntAType () }
+  | TUINT    { I UInt32Type }
   | TUINT8   { I UInt8Type  }
   | TUINT16  { I UInt16Type }
   | TUINT32  { I UInt32Type }
   | TUINT64  { I UInt64Type }
   | TREAL    { realAType () }
-  | TFLOAT   { FloatType   }
-  | TDOUBLE  { DoubleType  }
+  | TFLOAT   { FloatType    }
+  | TDOUBLE  { DoubleType   }
   | TBOOL    { I BoolType   }
   ;
 
