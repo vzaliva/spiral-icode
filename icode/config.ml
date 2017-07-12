@@ -3,11 +3,13 @@ open IType
 open IIntType
 open IArithType
 
+let debug = ref false
+let is64bit = ref true (* by default 64 bit (opposed to 32) *)
+
 (* Mapping of generic numeric types to actual machine types. It is hardcoded now, but will be managed via config file or command line options later *)
 
-let realAType () = DoubleType
-let prtSizeOf () = 8
-
+let realAType () = if !is64bit then DoubleType else FloatType
+let prtSizeOf () = if !is64bit then 8 else 4
 
 (* --- helper functoin, in IArithType *)
 let realType () = A (realAType ())
