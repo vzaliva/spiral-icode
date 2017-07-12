@@ -643,11 +643,14 @@ let typecheck vmap prog =
   in
   (* check top-level program structure *)
   ignore(
-      let is_func = function
+      let rec is_func = function
         | Function _ -> true
-        | _ -> false in
+        | Chain x -> is_all_func x
+        | _ -> false
+      and is_all_func l = List.for_all l is_func
+      in
       match prog with
-      | Chain body -> if not (List.for_all body is_func) then
+      | Chain body -> if not (is_all_func body) then
                         raise (TypeError "'program' must contain only function definitions")
       | Function _ -> ()
       | _ -> raise (TypeError "'program' must contain only function definitions")

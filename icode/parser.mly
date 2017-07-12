@@ -141,7 +141,7 @@ i_stmt:
 /* Top level: definitions single 'func' or 'program' of func */
 i_top_defs:
   | f=i_func {Chain [f]}
-  | PROGRAM LPAREN c=separated_list(COMMA, i_func) RPAREN {Chain c}
+  | PROGRAM LPAREN c=separated_list(COMMA, i_stmt) RPAREN {Chain c}
 
 i_program:
     | LET LPAREN v=list(i_var) b=i_top_defs RPAREN EOF
