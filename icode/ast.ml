@@ -5,14 +5,15 @@ open Sexplib
 open Uint64
 open Lexing
 
-let sexp_kv k v = Sexp.List [ Sexp.Atom k; Sexp.Atom v]
 
-let sexp_of_position p = Sexp.List [
-                             sexp_kv "pos_fname" p.pos_fname ;
-                             sexp_kv "pos_lnum" (string_of_int p.pos_lnum);
-                             sexp_kv "pos_bol"  (string_of_int p.pos_bol );
-                             sexp_kv "pos_cnum" (string_of_int p.pos_cnum)
-                           ]
+let sexp_of_position p =
+  let sexp_kv k v = Sexp.List [ Sexp.Atom k; Sexp.Atom v] in
+  Sexp.List [
+      sexp_kv "pos_fname" p.pos_fname ;
+      sexp_kv "pos_lnum" (string_of_int p.pos_lnum);
+      sexp_kv "pos_bol"  (string_of_int p.pos_bol );
+      sexp_kv "pos_cnum" (string_of_int p.pos_cnum)
+    ]
 
 let position_of_sexp: Sexp.t -> position = function
   | Sexp.List l as s ->
