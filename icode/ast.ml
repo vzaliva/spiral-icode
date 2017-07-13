@@ -5,7 +5,6 @@ open Sexplib
 open Uint64
 open Lexing
 
-
 let sexp_of_position p =
   let sexp_kv k v = Sexp.List [ Sexp.Atom k; Sexp.Atom v] in
   Sexp.List [
@@ -136,16 +135,28 @@ module ITypeSet = Set.Make(IType)
 
 type ivar = string [@@deriving compare, sexp]
 
-type fconst =
+type fconst = {
+    node: fconst_node;
+    loc: Loc.t
+} [@@deriving compare, sexp]
+and fconst_node =
   | FPLiteral of float
   | FloatEPS
   | DoubleEPS [@@deriving compare, sexp]
 
-type vparam =
+type vparam = {
+    node: vparam_node;
+    loc: Loc.t
+} [@@deriving compare, sexp]
+and vparam_node =
   | VParamList of int list
-  | VParamValue of int [@@deriving compare, sexp]
+  | VParamValue of int [@@deriving compare, sexp] (* TODO: vparam value is never used! *)
 
-type rvalue =
+type rvalue = {
+    node: rvalue_node;
+    loc: Loc.t
+} [@@deriving compare, sexp]
+and rvalue_node =
   | FunCall of string*(rvalue list)
   | VarRValue of ivar
   | FConst of fconst
@@ -159,13 +170,21 @@ type rvalue =
   | VParam of vparam
   | RDeref of rvalue [@@deriving compare, sexp]
 
-type lvalue =
+type lvalue = {
+    node: lvalue_node;
+    loc: Loc.t
+} [@@deriving compare, sexp]
+and lvalue_node =
   | VarLValue of ivar
   | NthLvalue of lvalue*rvalue
   | LDeref of rvalue
   | LCast of IType.t*lvalue [@@deriving compare, sexp]
 
-type istmt =
+type istmt = {
+    node: istmt_node;
+    loc: Loc.t
+} [@@deriving compare, sexp]
+and istmt_node =
   | Function of string*IType.t*(ivar list)*istmt
   | Skip
   | Decl of (ivar list)*istmt
@@ -207,3 +226,10 @@ let itype_as_string = Format.asprintf "%a" pr_itype
 
 let type_list_fmt = Format.pp_print_list ~pp_sep:(fun fmt () -> Format.fprintf fmt ";") pr_itype
 
+
+(* Convinience functions for creating nodes *)
+let mkstmt   (d:istmt_node ) : istmt   = { node = d; loc = Loc.symbol_rloc() }
+let mkrvalue (d:rvalue_node) : rvalue  = { node = d; loc = Loc.symbol_rloc() }
+let mklvalue (d:lvalue_node) : lvalue  = { node = d; loc = Loc.symbol_rloc() }
+let mkvparam (d:vparam_node) : vparam  = { node = d; loc = Loc.symbol_rloc() }
+let mkfconst (d:fconst_node) : fconst  = { node = d; loc = Loc.symbol_rloc() }

@@ -404,7 +404,8 @@ let check_never_decl vmap used =
      eprintf "Warning: following variables definded in 'let' but never declared: %s\n" (String.concat ~sep:" " (to_list unused)))
   ; unused
 
-let rec check_vars_in_rvalue s = function
+let rec check_vars_in_rvalue s (x:rvalue) =
+  match x.node with
   | FunCall (_,rl) -> ignore (List.map ~f:(check_vars_in_rvalue s) rl)
   | VarRValue v -> var_in_scope s v
   | NthRvalue (r1,r2) ->   (check_vars_in_rvalue s r1) ;
@@ -413,7 +414,8 @@ let rec check_vars_in_rvalue s = function
   | RCast (_,r) -> check_vars_in_rvalue s r
   | RDeref r -> check_vars_in_rvalue s r
   | VParam _ | FConstArr _  | IConstArr _ | FConst _  | IConst _ | VHex _ -> ()
-and check_vars_in_lvalue s = function
+and check_vars_in_lvalue s (x:lvalue) =
+  match x.node with
   | VarLValue v -> var_in_scope s v
   | NthLvalue (l, r) -> (check_vars_in_lvalue s l) ;
                         (check_vars_in_rvalue s r)
@@ -463,7 +465,8 @@ let uint16_cast : Ast.Int_or_uint_64.t -> int option = function
   | U64 x -> if in_uint16_range x then Some (to_int x) else None
   | I64 x -> if in_range64 "0" "65535" x then Int64.to_int x else None
 
-let rec lvalue_type vmap = function
+let rec lvalue_type vmap (x:lvalue) =
+  match x.node with
   | VarLValue v -> var_type vmap v
   | LCast (t,lv) ->
      let lt = lvalue_type vmap lv in
@@ -486,8 +489,9 @@ let rec lvalue_type vmap = function
        | ArrType (t,_) | PtrType (t,_) -> t
        | _ -> raise (TypeError (Format.asprintf "Invalid type %a in NTH" pr_itype vt))
 and rvalue_type vmap rv =
-  let fconst_type = function
+  let fconst_type (x:fconst) =
     (* Per C99 6.4.4.2.4 "An unsuffixed floating constant has type double". In i-code we deatult it to default machine size *)
+    match x.node with
     | FPLiteral _ -> Config.realAType ()
     | FloatEPS -> FloatType
     | DoubleEPS -> DoubleType in
@@ -502,11 +506,12 @@ and rvalue_type vmap rv =
                else if in_uint32_range x then I UInt32Type
                else I UInt64Type
   in
-  let vparam_type = function
+  let vparam_type (x:vparam) =
+    match x.node with
     | VParamList l -> ArrType (A (I Int32Type), List.length l)
     | VParamValue _ -> A (I UInt32Type) (* bit mask *)
   in
-  match rv with
+  match rv.node with
   | VarRValue v -> var_type vmap v
   | FunCall (n,a) ->
      let al = (List.map ~f:(rvalue_type vmap) a) in
@@ -552,7 +557,9 @@ and rvalue_type vmap rv =
          with
          | Failure _ -> raise (TypeError (Format.asprintf "Invalid hex string \"%s\" in 'vhex'" s))
      in
-     rvalue_type vmap (IConstArr (List.map ~f:iconst_of_hex sl))
+     rvalue_type vmap
+                 { node=IConstArr (List.map ~f:iconst_of_hex sl);
+                   loc = rv.loc }
   | RCast (t,rv) ->
      let rt = rvalue_type vmap rv in
      if check_cast rt t then t
@@ -617,7 +624,8 @@ let typecheck vmap prog =
     else add s v
   in
   let add_vars s vl = List.fold ~init:s ~f:add_var vl in
-  let rec typecheck (fstack:(string * Ast.IType.t) list) u = function
+  let rec typecheck (fstack:(string * Ast.IType.t) list) u x =
+    match x.node with
     | Function (fn,fr,params,body) ->
        typecheck ((fn,fr)::fstack) (add_vars u params) body
     | Decl (params,body) ->
@@ -660,13 +668,14 @@ let typecheck vmap prog =
   in
   (* check top-level program structure *)
   ignore(
-      let rec is_func = function
+      let rec is_func x =
+        match x.node with
         | Function _ -> true
         | Chain x -> is_all_func x
         | _ -> false
       and is_all_func l = List.for_all l is_func
       in
-      match prog with
+      match prog.node with
       | Chain body -> if not (is_all_func body) then
                         raise (TypeError "'program' must contain only function definitions")
       | Function _ -> ()
