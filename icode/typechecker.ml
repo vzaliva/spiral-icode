@@ -401,7 +401,7 @@ let check_never_decl vmap used =
   let all = String.Map.Tree.keys vmap |> of_list in
   let unused = diff all used in
   (if not (is_empty unused) then
-     Printf.fprintf stderr "Warning: following variables definded in 'let' but never declared: %s\n" (String.concat ~sep:" " (to_list unused)))
+     eprintf "Warning: following variables definded in 'let' but never declared: %s\n" (String.concat ~sep:" " (to_list unused)))
   ; unused
 
 let rec check_vars_in_rvalue s = function
@@ -431,13 +431,13 @@ let var_type vmap v =
 
 let func_type n a =
   let open Format in
-  fprintf err_formatter "*** Resolving function @[<h>%s(%a)@]@\n" n
+  eprintf "*** Resolving function @[<h>%s(%a)@]@\n" n
           (pp_print_list ~pp_sep:(fun x _ -> pp_print_text x ", ") pr_itype) a
   ;
     match (String.Map.Tree.find builtins_map n) with
     | None -> raise (TypeError ("Unknown function '" ^ n ^ "'" ))
     | Some bf -> let res = bf n a in
-                 fprintf err_formatter "***    %s return type: %a\n" n pr_itype res
+                 eprintf "***    %s return type: %a\n" n pr_itype res
                  ; res
 
 
@@ -517,7 +517,7 @@ and rvalue_type vmap rv =
        | TypeError msg ->
           let open Format in
           (* TODO: Print expression causing error here *)
-          fprintf err_formatter "!!! Error resolving function @[<h>%s(%s)@]@\n" n
+          eprintf "!!! Error resolving function @[<h>%s(%s)@]@\n" n
                   (Sexp.to_string (Ast.sexp_of_rvalue rv))
          ; raise (TypeError msg)
        ) in

@@ -10,7 +10,6 @@ and version = "0.1"
 
 let input_files = ref []
 
-
 let specs =
   [
     ( 'v', "version", Some (fun _ -> Printf.printf "%s %s\n" prograname version ; exit 0), None,
@@ -38,11 +37,11 @@ let _ =
       let Ast.Program (valist, body) = Parser.i_program Lexer.main lineBuffer in
       let vmap = Typechecker.build_var_map valist in
       Typechecker.typecheck vmap body ;
-      Printf.fprintf stderr "OK\n"
+      eprintf "OK\n"
     with
-    | Typechecker.TypeError msg -> Printf.fprintf stderr "Type check failed: %s%!\n" msg
-    | Lexer.Error msg -> Printf.fprintf stderr "Lexer error %s%!\n" msg
-    | Parser.Error -> Printf.fprintf stderr "Parsing error at offset %d: syntax error.\n%!" (Lexing.lexeme_start lineBuffer)
+    | Typechecker.TypeError msg -> eprintf "Type check failed: %s%!\n" msg
+    | Lexer.Error msg -> eprintf "Lexer error %s%!\n" msg
+    | Parser.Error -> eprintf "Parsing error at offset %d: syntax error.\n%!" (Lexing.lexeme_start lineBuffer)
   in
   parse_cmdline ();
   List.map ~f:process_file !input_files
