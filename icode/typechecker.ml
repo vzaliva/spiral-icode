@@ -6,6 +6,7 @@ open IIntType
 open IArithType
 open Int_or_uint_64
 open Uint64
+open Config
 
 exception TypeError of string
 
@@ -401,7 +402,7 @@ let check_never_decl vmap used =
   let all = String.Map.Tree.keys vmap |> of_list in
   let unused = diff all used in
   (if not (is_empty unused) then
-     eprintf "Warning: following variables definded in 'let' but never declared: %s\n" (String.concat ~sep:" " (to_list unused)))
+     Config.msg "Warning: following variables definded in 'let' but never declared: %s\n" (String.concat ~sep:" " (to_list unused)))
   ; unused
 
 let rec check_vars_in_rvalue s (x:rvalue) =
@@ -433,13 +434,13 @@ let var_type vmap v =
 
 let func_type n a =
   let open Format in
-  eprintf "*** Resolving function @[<h>%s(%a)@]@\n" n
+  msg "Resolving function @[<h>%s(%a)@]@\n" n
           (pp_print_list ~pp_sep:(fun x _ -> pp_print_text x ", ") pr_itype) a
   ;
     match (String.Map.Tree.find builtins_map n) with
     | None -> raise (TypeError ("Unknown function '" ^ n ^ "'" ))
     | Some bf -> let res = bf n a in
-                 eprintf "***    %s return type: %a\n" n pr_itype res
+                 msg "\t%s return type: %a\n" n pr_itype res
                  ; res
 
 
@@ -522,8 +523,9 @@ and rvalue_type vmap rv =
        | TypeError msg ->
           let open Format in
           (* TODO: Print expression causing error here *)
-          eprintf "!!! Error resolving function @[<h>%s(%s)@]@\n" n
-                  (Sexp.to_string (Ast.sexp_of_rvalue rv))
+          eprintf "%a Error resolving function @[<h>%s(%s)@]@\n"
+                  pr_err_loc rv.loc
+                  n (Sexp.to_string (Ast.sexp_of_rvalue rv))
          ; raise (TypeError msg)
        ) in
      ft

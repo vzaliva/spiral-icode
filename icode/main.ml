@@ -1,4 +1,6 @@
 open Typechecker
+open Config
+
 open Format
 open Core
 
@@ -33,11 +35,12 @@ let _ =
   let process_file filename =
     let inBuffer = In_channel.create filename in
     let lineBuffer = Lexing.from_channel inBuffer in
+    lineBuffer.Lexing.lex_curr_p <- { lineBuffer.Lexing.lex_curr_p with Lexing.pos_fname = filename };
     try
       let Ast.Program (valist, body) = Parser.i_program Lexer.main lineBuffer in
       let vmap = Typechecker.build_var_map valist in
       Typechecker.typecheck vmap body ;
-      eprintf "OK\n"
+      msg "*** OK\n"
     with
     | Typechecker.TypeError msg -> eprintf "Type check failed: %s%!\n" msg
     | Lexer.Error msg -> eprintf "Lexer error %s%!\n" msg

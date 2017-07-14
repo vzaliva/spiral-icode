@@ -42,23 +42,6 @@ let compare_position x y =
 module Loc = struct
   type t = { loc_start: position; loc_end: position; loc_ghost: bool } [@@deriving compare, sexp]
 
-  let rhs_loc n = {
-      loc_start = Parsing.rhs_start_pos n;
-      loc_end = Parsing.rhs_end_pos n;
-      loc_ghost = false;
-    }
-
-  let symbol_rloc () = {
-      loc_start = Parsing.symbol_start_pos ();
-      loc_end = Parsing.symbol_end_pos ();
-      loc_ghost = false;
-    }
-
-  let symbol_gloc () = {
-      loc_start = Parsing.symbol_start_pos ();
-      loc_end = Parsing.symbol_end_pos ();
-      loc_ghost = true;
-    }
 end
 
 
@@ -202,6 +185,19 @@ let eq_int_type (a:IIntType.t) (b:IIntType.t) = IIntType.compare a b = 0
 let iType_of_IntType t = A (I t)
 
 
+(* --- Convinience functions for creating nodes --- *)
+let symbol_rloc s e = {
+    Loc.loc_start = s;
+    Loc.loc_end = e;
+    Loc.loc_ghost = false;
+  }
+
+let mkstmt   s e (d:istmt_node ): istmt   = { node = d; loc = symbol_rloc s e}
+let mkrvalue s e (d:rvalue_node): rvalue  = { node = d; loc = symbol_rloc s e}
+let mklvalue s e (d:lvalue_node): lvalue  = { node = d; loc = symbol_rloc s e}
+let mkvparam s e (d:vparam_node): vparam  = { node = d; loc = symbol_rloc s e}
+let mkfconst s e (d:fconst_node): fconst  = { node = d; loc = symbol_rloc s e}
+
 (* -- Formatting --- *)
 open Format
 
@@ -226,10 +222,12 @@ let itype_as_string = Format.asprintf "%a" pr_itype
 
 let type_list_fmt = Format.pp_print_list ~pp_sep:(fun fmt () -> Format.fprintf fmt ";") pr_itype
 
+let pr_pos ppf pos =
+  Format.fprintf ppf "@[%s:%d:%d@]"
+                 pos.pos_fname
+                 pos.pos_lnum
+                 (pos.pos_cnum - pos.pos_bol + 1)
 
-(* Convinience functions for creating nodes *)
-let mkstmt   (d:istmt_node ) : istmt   = { node = d; loc = Loc.symbol_rloc() }
-let mkrvalue (d:rvalue_node) : rvalue  = { node = d; loc = Loc.symbol_rloc() }
-let mklvalue (d:lvalue_node) : lvalue  = { node = d; loc = Loc.symbol_rloc() }
-let mkvparam (d:vparam_node) : vparam  = { node = d; loc = Loc.symbol_rloc() }
-let mkfconst (d:fconst_node) : fconst  = { node = d; loc = Loc.symbol_rloc() }
+
+let pr_err_loc ppf (l:Loc.t) =
+  fprintf ppf "%a: error:" pr_pos l.Loc.loc_start

@@ -71,9 +71,9 @@ i_var:
    ;
 
 i_fconst:
-  | V LPAREN f=FLOAT RPAREN { mkfconst (FPLiteral f) }
-  | REALEPS LPAREN TFLOAT RPAREN { mkfconst FloatEPS }
-  | REALEPS LPAREN TDOUBLE RPAREN { mkfconst DoubleEPS }
+  | V LPAREN f=FLOAT RPAREN { mkfconst $symbolstartpos $endpos (FPLiteral f) }
+  | REALEPS LPAREN TFLOAT RPAREN { mkfconst $symbolstartpos $endpos FloatEPS }
+  | REALEPS LPAREN TDOUBLE RPAREN { mkfconst $symbolstartpos $endpos DoubleEPS }
   ;
 
 i_int:
@@ -86,32 +86,35 @@ i_iconst:
 
 i_rvalue:
   | V LPAREN LBRACKET l=separated_nonempty_list(COMMA, i_fconst) RBRACKET RPAREN
-              { mkrvalue (FConstArr l) }
+              { mkrvalue $symbolstartpos $endpos (FConstArr l) }
   | V LPAREN LBRACKET l=separated_nonempty_list(COMMA, i_iconst) RBRACKET RPAREN
-              { mkrvalue (IConstArr l) }
+              { mkrvalue $symbolstartpos $endpos (IConstArr l) }
   | VPARAM LPAREN LBRACKET l=separated_nonempty_list(COMMA, UINT) RBRACKET RPAREN
               {
-                  mkrvalue (VParam (mkvparam (VParamList (List.map int_of_string l))))
+                  mkrvalue $symbolstartpos $endpos (VParam (mkvparam $symbolstartpos $endpos (VParamList (List.map int_of_string l))))
               }
   | VHEX LPAREN LBRACKET l=separated_nonempty_list(COMMA, STRING) RBRACKET RPAREN
               {
-                  mkrvalue (VHex l)
+                  mkrvalue $symbolstartpos $endpos (VHex l)
               }
-  | f=i_fconst { mkrvalue (FConst f) }
-  | i=i_iconst { mkrvalue (IConst i) }
-  | NTH  LPAREN a=i_rvalue COMMA i=i_rvalue RPAREN { mkrvalue (NthRvalue (a,i)) }
-  | VDUP LPAREN a=i_rvalue COMMA i=i_iconst RPAREN { mkrvalue (VdupRvalue (a,i)) }
-  | TCAST LPAREN t=i_type COMMA v=i_rvalue RPAREN { mkrvalue (RCast (t,v)) }
-  | n=IDENTIFIER LPAREN a=separated_list(COMMA, i_rvalue) RPAREN { mkrvalue (FunCall (n,a))}
-  | v=IDENTIFIER { mkrvalue (VarRValue v) }
-  | DEREF LPAREN v=i_rvalue RPAREN { mkrvalue (RDeref v) }
+  | f=i_fconst { mkrvalue $symbolstartpos $endpos (FConst f) }
+  | i=i_iconst { mkrvalue $symbolstartpos $endpos (IConst i) }
+  | NTH  LPAREN a=i_rvalue COMMA i=i_rvalue RPAREN { mkrvalue $symbolstartpos $endpos (NthRvalue (a,i)) }
+  | VDUP LPAREN a=i_rvalue COMMA i=i_iconst RPAREN { mkrvalue $symbolstartpos $endpos (VdupRvalue (a,i)) }
+  | TCAST LPAREN t=i_type COMMA v=i_rvalue RPAREN { mkrvalue $symbolstartpos $endpos (RCast (t,v)) }
+  | n=IDENTIFIER LPAREN a=separated_list(COMMA, i_rvalue) RPAREN
+                {
+                    mkrvalue $symbolstartpos $endpos (FunCall (n,a))
+                }
+  | v=IDENTIFIER { mkrvalue $symbolstartpos $endpos (VarRValue v) }
+  | DEREF LPAREN v=i_rvalue RPAREN { mkrvalue $symbolstartpos $endpos (RDeref v) }
   ;
 
 i_lvalue:
-    | v=IDENTIFIER {mklvalue (VarLValue v) }
-    | NTH LPAREN a=i_lvalue COMMA i=i_rvalue RPAREN { mklvalue (NthLvalue (a,i)) }
-    | DEREF LPAREN v=i_rvalue RPAREN { mklvalue (LDeref v) }
-    | TCAST LPAREN t=i_type COMMA v=i_lvalue RPAREN { mklvalue (LCast (t,v)) }
+    | v=IDENTIFIER {mklvalue $symbolstartpos $endpos (VarLValue v) }
+    | NTH LPAREN a=i_lvalue COMMA i=i_rvalue RPAREN { mklvalue $symbolstartpos $endpos (NthLvalue (a,i)) }
+    | DEREF LPAREN v=i_rvalue RPAREN { mklvalue $symbolstartpos $endpos (LDeref v) }
+    | TCAST LPAREN t=i_type COMMA v=i_lvalue RPAREN { mklvalue $symbolstartpos $endpos (LCast (t,v)) }
   ;
 
 i_rvalue_comma: v=i_rvalue COMMA { v }
@@ -121,31 +124,31 @@ i_chain_kw:
         | IVENV  {}
 
 i_func:
-  | FUNC LPAREN t=i_type COMMA n=STRING COMMA LBRACKET a=separated_list(COMMA, IDENTIFIER) RBRACKET COMMA b=i_stmt RPAREN { mkstmt (Function (n,t,a,b)) }
+  | FUNC LPAREN t=i_type COMMA n=STRING COMMA LBRACKET a=separated_list(COMMA, IDENTIFIER) RBRACKET COMMA b=i_stmt RPAREN { mkstmt $symbolstartpos $endpos (Function (n,t,a,b)) }
 
 i_stmt:
-  | SKIP { mkstmt Skip}
+  | SKIP { mkstmt $symbolstartpos $endpos Skip}
   | f=i_func {f}
-  | DECL LPAREN LBRACKET a=separated_list(COMMA, IDENTIFIER) RBRACKET COMMA b=i_stmt RPAREN { mkstmt (Decl (a,b)) }
-  | i_chain_kw LPAREN c=separated_list(COMMA, i_stmt) RPAREN { mkstmt (Chain c)}
-  | DATA LPAREN n=IDENTIFIER COMMA v=list(i_rvalue_comma) b=i_stmt RPAREN { mkstmt (Data (n,v,b)) }
-  | ASSIGN LPAREN n=i_lvalue COMMA e=i_rvalue RPAREN { mkstmt (Assign (n,e)) }
-  | CRETURN LPAREN i=i_rvalue RPAREN { mkstmt (Return i) }
-  | IF LPAREN v=i_rvalue COMMA t=i_stmt COMMA e=i_stmt RPAREN { mkstmt (If (v,t,e)) }
+  | DECL LPAREN LBRACKET a=separated_list(COMMA, IDENTIFIER) RBRACKET COMMA b=i_stmt RPAREN { mkstmt $symbolstartpos $endpos (Decl (a,b)) }
+  | i_chain_kw LPAREN c=separated_list(COMMA, i_stmt) RPAREN { mkstmt $symbolstartpos $endpos (Chain c)}
+  | DATA LPAREN n=IDENTIFIER COMMA v=list(i_rvalue_comma) b=i_stmt RPAREN { mkstmt $symbolstartpos $endpos (Data (n,v,b)) }
+  | ASSIGN LPAREN n=i_lvalue COMMA e=i_rvalue RPAREN { mkstmt $symbolstartpos $endpos (Assign (n,e)) }
+  | CRETURN LPAREN i=i_rvalue RPAREN { mkstmt $symbolstartpos $endpos (Return i) }
+  | IF LPAREN v=i_rvalue COMMA t=i_stmt COMMA e=i_stmt RPAREN { mkstmt $symbolstartpos $endpos (If (v,t,e)) }
   | LOOP LPAREN v=IDENTIFIER COMMA LBRACKET f=i_int TWODOT t=i_int RBRACKET COMMA b=i_stmt RPAREN
                 {
-                    mkstmt (Loop (v,f,t,b))
+                    mkstmt $symbolstartpos $endpos (Loop (v,f,t,b))
                 }
   ;
 
 /* Top level: definitions single 'func' or 'program' of func */
 i_top_defs:
-  | f=i_func { mkstmt (Chain [f])}
-  | PROGRAM LPAREN c=separated_list(COMMA, i_stmt) RPAREN { mkstmt (Chain c)}
+  | f=i_func { mkstmt $symbolstartpos $endpos (Chain [f])}
+  | PROGRAM LPAREN c=separated_list(COMMA, i_stmt) RPAREN { mkstmt $symbolstartpos $endpos (Chain c)}
 
 i_program:
   | LET LPAREN v=list(i_var) b=i_top_defs RPAREN EOF
                 { Program (v,b) }
   | f=i_top_defs EOF { Program ([], f) }
-  | EOF { Program ([], mkstmt Skip) }
+  | EOF { Program ([], mkstmt $symbolstartpos $endpos Skip) }
   ;

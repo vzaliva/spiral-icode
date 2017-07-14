@@ -1,6 +1,14 @@
 {
   open Parser
   exception Error of string
+
+  let next_line lexbuf =
+      let pos = lexbuf.Lexing.lex_curr_p in
+           lexbuf.Lexing.lex_curr_p <-
+               { pos with
+                       Lexing.pos_bol  = pos.Lexing.pos_cnum; 
+                       Lexing.pos_lnum = pos.Lexing.pos_lnum + 1
+               }
 }
 
 let lowercase = ['a'-'z' '\223'-'\246' '\248'-'\255' '_'] 
@@ -8,10 +16,13 @@ let uppercase = ['A'-'Z' '\192'-'\214' '\216'-'\222']
 let identchar =
     ['A'-'Z' 'a'-'z' '_' '\192'-'\214' '\216'-'\246' '\248'-'\255' '\'' '0'-'9']
 
+let white = [' ' '\t']+
+let newline = '\r' | '\n' | "\r\n"
+
 rule main = parse
 
-(* ignore whitespace *)
-| [' ' '\t' '\r' '\n'] { main lexbuf }
+| white { main lexbuf } (* ignore whitespace *)
+| newline {  next_line lexbuf; main lexbuf } (* count lines *)
 
 (* numeric literals *)
 | '-'?['0'-'9']*'.'['0'-'9']+ as f
@@ -99,6 +110,7 @@ and stringl buffer = parse
  | "\\n" { Buffer.add_char buffer '\n'; stringl buffer lexbuf }
  | '\\' '"' { Buffer.add_char buffer '"'; stringl buffer lexbuf }
  | '\\' '\\' { Buffer.add_char buffer '\\'; stringl buffer lexbuf }
+ | newline {  next_line lexbuf; stringl buffer lexbuf }
  | eof { raise End_of_file }
  | _ as char { Buffer.add_char buffer char; stringl buffer lexbuf }
 
@@ -107,5 +119,6 @@ and comment = parse
     { main lexbuf }
 | eof
     { raise (Error "Unterminated comment") }
+| newline {  next_line lexbuf; comment lexbuf }
 | _
     { comment lexbuf }

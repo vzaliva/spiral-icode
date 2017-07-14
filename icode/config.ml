@@ -17,16 +17,6 @@ let realType () = A (realAType ())
 
 (* Some loggnig utilities *)
 
-(*
-let null_formatter = Format.make_formatter (fun _ _ _ -> ()) (fun _ -> ())
-
-let msg =
+let msg x =
   let open Format in
-  fprintf (if !debug then err_formatter else null_formatter)
-
-let msg =
-  let open Format in
-  (if !debug then fprintf err_formatter else ifprintf err_formatter)
-
- *)
-
+  (if !debug then fprintf err_formatter x else ifprintf err_formatter x)
