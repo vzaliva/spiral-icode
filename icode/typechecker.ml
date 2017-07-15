@@ -369,6 +369,8 @@ let builtins_map =
       ("vushuffle_2x64f", func_type_vushuffle) ;
       ("vshuffle_2x64f" , func_type_vshuffle) ;
       ("vshuffle_4x32f" , func_type_vshuffle) ;
+      ("vunpacklo_4x32f", func_type_arith_binop ) ;
+      ("vunpackhi_4x32f", func_type_arith_binop ) ;
 
       ("cmpge_2x64f", a_func_type [VecType (DoubleType, 2); VecType (DoubleType, 2)]
                                 (VecType (DoubleType, 2)));
