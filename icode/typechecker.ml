@@ -368,6 +368,7 @@ let builtins_map =
 
       ("vushuffle_2x64f", func_type_vushuffle) ;
       ("vshuffle_2x64f" , func_type_vshuffle) ;
+      ("vshuffle_4x32f" , func_type_vshuffle) ;
 
       ("cmpge_2x64f", a_func_type [VecType (DoubleType, 2); VecType (DoubleType, 2)]
                                 (VecType (DoubleType, 2)));
@@ -509,8 +510,10 @@ and rvalue_type vmap rv =
   in
   let vparam_type (x:vparam) =
     match x.node with
-    | VParamList l -> ArrType (A (I Int32Type), List.length l)
-    | VParamValue _ -> A (I UInt32Type) (* bit mask *)
+    | VParamList l ->
+       (* TODO: not really an array, at it must be an immediate value *)
+       ArrType (A (I Int32Type), List.length l)
+    | VParamValue _ -> A (I UInt8Type) (* 8-bit immediate bit mask per https://msdn.microsoft.com/en-us/library/4d3eabky(v=vs.90).aspx *)
   in
   match rv.node with
   | VarRValue v -> var_type vmap v

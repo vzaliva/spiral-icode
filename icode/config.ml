@@ -20,3 +20,4 @@ let realType () = A (realAType ())
 let msg x =
   let open Format in
   (if !debug then fprintf err_formatter x else ifprintf err_formatter x)
+
