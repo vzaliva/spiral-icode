@@ -437,15 +437,14 @@ let var_type vmap v =
 
 let func_type n a =
   let open Format in
-  msg "Resolving function @[<h>%s(%a)@]@\n" n
+  msg "Resolving function: @[<h>%s(%a)@]@\n" n
           (pp_print_list ~pp_sep:(fun x _ -> pp_print_text x ", ") pr_itype) a
   ;
     match (String.Map.Tree.find builtins_map n) with
     | None -> raise (TypeError ("Unknown function '" ^ n ^ "'" ))
     | Some bf -> let res = bf n a in
-                 msg "\t%s return type: %a\n" n pr_itype res
+                 msg "\t'%s' return type: %a\n" n pr_itype res
                  ; res
-
 
 (* inclusive *)
 let in_range64 f t x =
