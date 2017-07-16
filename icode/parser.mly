@@ -76,6 +76,9 @@ i_fconst:
   | REALEPS LPAREN TDOUBLE RPAREN { mkfconst $symbolstartpos $endpos DoubleEPS }
   ;
 
+i_uint:
+  | x=UINT { Int_or_uint_64.U64 (Uint64.of_string x) }
+
 i_int:
   | x=UINT { Int_or_uint_64.U64 (Uint64.of_string x) }
   | MINUS x = UINT { Int_or_uint_64.I64 (Int64.of_string ("-" ^ x)) }
@@ -89,14 +92,10 @@ i_rvalue:
               { mkrvalue $symbolstartpos $endpos (FConstArr l) }
   | V LPAREN LBRACKET l=separated_nonempty_list(COMMA, i_iconst) RBRACKET RPAREN
               { mkrvalue $symbolstartpos $endpos (IConstArr l) }
-  | VPARAM LPAREN LBRACKET l=separated_nonempty_list(COMMA, UINT) RBRACKET RPAREN
-              {
-                  mkrvalue $symbolstartpos $endpos (VParam (mkvparam $symbolstartpos $endpos (VParamList (List.map int_of_string l))))
-              }
+  | VPARAM LPAREN LBRACKET l=separated_nonempty_list(COMMA, i_uint) RBRACKET RPAREN
+              { mkrvalue $symbolstartpos $endpos (IConstArr l) }
   | VHEX LPAREN LBRACKET l=separated_nonempty_list(COMMA, STRING) RBRACKET RPAREN
-              {
-                  mkrvalue $symbolstartpos $endpos (VHex l)
-              }
+              { mkrvalue $symbolstartpos $endpos (VHex l) }
   | f=i_fconst { mkrvalue $symbolstartpos $endpos (FConst f) }
   | i=i_iconst { mkrvalue $symbolstartpos $endpos (IConst i) }
   | NTH  LPAREN a=i_rvalue COMMA i=i_rvalue RPAREN { mkrvalue $symbolstartpos $endpos (NthRvalue (a,i)) }

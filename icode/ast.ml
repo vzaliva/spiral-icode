@@ -127,14 +127,6 @@ and fconst_node =
   | FloatEPS
   | DoubleEPS [@@deriving compare, sexp]
 
-type vparam = {
-    node: vparam_node;
-    loc: Loc.t
-} [@@deriving compare, sexp]
-and vparam_node =
-  | VParamList of int list
-  | VParamValue of int [@@deriving compare, sexp] (* TODO: vparam value is never used! *)
-
 type rvalue = {
     node: rvalue_node;
     loc: Loc.t
@@ -150,7 +142,6 @@ and rvalue_node =
   | VdupRvalue of rvalue*Int_or_uint_64.t
   | NthRvalue of rvalue*rvalue (* 'int' type for index will be checked later *)
   | RCast of IType.t*rvalue
-  | VParam of vparam
   | RDeref of rvalue [@@deriving compare, sexp]
 
 type lvalue = {
@@ -195,7 +186,6 @@ let symbol_rloc s e = {
 let mkstmt   s e (d:istmt_node ): istmt   = { node = d; loc = symbol_rloc s e}
 let mkrvalue s e (d:rvalue_node): rvalue  = { node = d; loc = symbol_rloc s e}
 let mklvalue s e (d:lvalue_node): lvalue  = { node = d; loc = symbol_rloc s e}
-let mkvparam s e (d:vparam_node): vparam  = { node = d; loc = symbol_rloc s e}
 let mkfconst s e (d:fconst_node): fconst  = { node = d; loc = symbol_rloc s e}
 
 (* -- Formatting --- *)

@@ -417,7 +417,7 @@ let rec check_vars_in_rvalue s (x:rvalue) =
   | VdupRvalue (a,_) -> (check_vars_in_rvalue s a) ; ()
   | RCast (_,r) -> check_vars_in_rvalue s r
   | RDeref r -> check_vars_in_rvalue s r
-  | VParam _ | FConstArr _  | IConstArr _ | FConst _  | IConst _ | VHex _ -> ()
+  | FConstArr _  | IConstArr _ | FConst _  | IConst _ | VHex _ -> ()
 and check_vars_in_lvalue s (x:lvalue) =
   match x.node with
   | VarLValue v -> var_in_scope s v
@@ -510,13 +510,6 @@ and rvalue_type vmap rv =
                else if in_uint32_range x then I UInt32Type
                else I UInt64Type
   in
-  let vparam_type (x:vparam) =
-    match x.node with
-    | VParamList l ->
-       (* TODO: not really an array, at it must be an immediate value *)
-       ArrType (A (I Int32Type), List.length l)
-    | VParamValue _ -> A (I UInt8Type) (* 8-bit immediate bit mask per https://msdn.microsoft.com/en-us/library/4d3eabky(v=vs.90).aspx *)
-  in
   match rv.node with
   | VarRValue v -> var_type vmap v
   | FunCall (n,a) ->
@@ -573,7 +566,6 @@ and rvalue_type vmap rv =
      else raise (TypeError (Format.asprintf "Illegal rvalue cast from %a to %a."
                                             pr_itype rt
                                             pr_itype t ));
-  | VParam v -> vparam_type v
   | RDeref v -> (match rvalue_type vmap v with
                  | PtrType (t,_) -> t
                  | t -> raise (TypeError (Format.asprintf "Dereferencing non-pointer type %a" pr_itype t)))
