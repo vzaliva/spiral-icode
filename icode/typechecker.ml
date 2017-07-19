@@ -310,7 +310,7 @@ let func_type_vushuffle name a =
                        (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
                                         pr_itype a0 pr_itype a1 name))
 
-let func_type_vshuffle name a =
+let func_type_vbinop_with_vparam name a =
   let open List in
   if 3 <> length a then
     raise (TypeError (Format.asprintf "Invalid number of arguments for '%s'" name))
@@ -321,10 +321,7 @@ let func_type_vshuffle name a =
     let rt = func_type_arith_binop name [a0;a1] in
     match rt,a2 with
     | VecType _, A (I _) -> rt
-    | VecType (_, vl), ArrType (A (I _), al)  ->
-       if al <> vl then
-         raise (TypeError (Format.asprintf "Unexpected number size of vparam array for '%s'" name))
-       else rt
+    | VecType (_, vl), ArrType (A (I _), al)  -> rt
     | _, _ -> raise (TypeError
                        (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
                                         pr_itype a0 pr_itype a1 name))
@@ -367,9 +364,10 @@ let builtins_map =
       ("vcvt_64f32f", a_func_type [(VecType (FloatType, 4))] (VecType (DoubleType, 2))) ; (* TODO: dependently type to match any vector lenth? *)
 
       ("vushuffle_2x64f", func_type_vushuffle) ;
-      ("vshuffle_2x64f" , func_type_vshuffle) ;
-      ("vshuffle_4x32f" , func_type_vshuffle) ;
-      ("vshuffle_8x32f" , func_type_vshuffle) ;
+
+      ("vshuffle_2x64f" , func_type_vbinop_with_vparam) ;
+      ("vshuffle_4x32f" , func_type_vbinop_with_vparam) ;
+      ("vshuffle_8x32f" , func_type_vbinop_with_vparam) ;
 
       ("vunpacklo_4x32f", func_type_arith_binop ) ;
       ("vunpackhi_4x32f", func_type_arith_binop ) ;
