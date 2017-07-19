@@ -369,6 +369,8 @@ let builtins_map =
       ("vushuffle_2x64f", func_type_vushuffle) ;
       ("vshuffle_2x64f" , func_type_vshuffle) ;
       ("vshuffle_4x32f" , func_type_vshuffle) ;
+      ("vshuffle_8x32f" , func_type_vshuffle) ;
+
       ("vunpacklo_4x32f", func_type_arith_binop ) ;
       ("vunpackhi_4x32f", func_type_arith_binop ) ;
 
@@ -378,7 +380,14 @@ let builtins_map =
       ("testc_4x32i", a_func_type [VecType (I Int32Type, 4); VecType (I Int32Type, 4)]
                                 (A (I Int32Type)));
       ("testnzc_4x32i", a_func_type [VecType (I Int32Type, 4); VecType (I Int32Type, 4)]
-                                  (A (I Int32Type)));
+                                    (A (I Int32Type)));
+
+      ("vpermf128_4x64f", a_func_type [VecType (DoubleType, 4); VecType (DoubleType, 4);
+                                       ArrType (A (I UInt8Type), 2)] (VecType (DoubleType, 4))) ;
+
+      ("vpermf128_8x32f",a_func_type [VecType (FloatType, 8); VecType (FloatType, 8);
+                                      ArrType (A (I UInt8Type), 2)] (VecType (FloatType, 8))) ;
+
     ]
 
 let build_var_map l =
