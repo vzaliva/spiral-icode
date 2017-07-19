@@ -310,6 +310,21 @@ let func_type_vushuffle name a =
                        (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
                                         pr_itype a0 pr_itype a1 name))
 
+
+let func_type_vbinop name a =
+  let open List in
+  if 2 <> length a then
+    raise (TypeError (Format.asprintf "Invalid number of arguments for '%s'" name))
+  else
+    let a0 = nth_exn a 0 in
+    let a1 = nth_exn a 1 in
+    let rt = func_type_arith_binop name [a0;a1] in
+    match rt with
+    | VecType _ -> rt
+    | _ -> raise (TypeError
+                       (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
+                                        pr_itype a0 pr_itype a1 name))
+
 let func_type_vbinop_with_vparam name a =
   let open List in
   if 3 <> length a then
@@ -358,10 +373,11 @@ let builtins_map =
       ("neg", func_type_neg) ;
       ("abs", func_type_abs) ;
 
-      (* non-polymorphic functions *)
-      ("addsub_4x32f", a_func_type [VecType (FloatType, 4); VecType (FloatType, 4)] (VecType (FloatType, 4))) ;
-      ("addsub_2x64f", a_func_type [VecType (DoubleType, 2); VecType (DoubleType, 2)] (VecType (DoubleType, 2))) ;
       ("vcvt_64f32f", a_func_type [(VecType (FloatType, 4))] (VecType (DoubleType, 2))) ; (* TODO: dependently type to match any vector lenth? *)
+
+      (* non-polymorphic functions *)
+      ("addsub_4x32f", func_type_vbinop) ;
+      ("addsub_2x64f", func_type_vbinop) ;
 
       ("vushuffle_2x64f", func_type_vushuffle) ;
 
@@ -369,12 +385,13 @@ let builtins_map =
       ("vshuffle_4x32f" , func_type_vbinop_with_vparam) ;
       ("vshuffle_8x32f" , func_type_vbinop_with_vparam) ;
 
-      ("vunpacklo_4x32f", func_type_arith_binop ) ;
-      ("vunpacklo_8x32f", func_type_arith_binop ) ;
-      ("vunpacklo_4x64f", func_type_arith_binop ) ;
-      ("vunpackhi_4x32f", func_type_arith_binop ) ;
-      ("vunpackhi_4x64f", func_type_arith_binop ) ;
-      ("vunpackhi_8x32f", func_type_arith_binop ) ;
+      ("vunpacklo_4x32f", func_type_vbinop ) ;
+      ("vunpacklo_8x32f", func_type_vbinop ) ;
+      ("vunpacklo_4x64f", func_type_vbinop ) ;
+
+      ("vunpackhi_4x32f", func_type_vbinop ) ;
+      ("vunpackhi_4x64f", func_type_vbinop ) ;
+      ("vunpackhi_8x32f", func_type_vbinop ) ;
 
       ("cmpge_2x64f", a_func_type [VecType (DoubleType, 2); VecType (DoubleType, 2)]
                                 (VecType (DoubleType, 2)));
