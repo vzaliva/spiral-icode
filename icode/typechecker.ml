@@ -384,11 +384,8 @@ let builtins_map =
       ("testnzc_4x32i", a_func_type [VecType (I Int32Type, 4); VecType (I Int32Type, 4)]
                                     (A (I Int32Type)));
 
-      ("vpermf128_4x64f", a_func_type [VecType (DoubleType, 4); VecType (DoubleType, 4);
-                                       ArrType (A (I UInt8Type), 2)] (VecType (DoubleType, 4))) ;
-
-      ("vpermf128_8x32f",a_func_type [VecType (FloatType, 8); VecType (FloatType, 8);
-                                      ArrType (A (I UInt8Type), 2)] (VecType (FloatType, 8))) ;
+      ("vpermf128_4x64f", func_type_vbinop_with_vparam) ;
+      ("vpermf128_8x32f", func_type_vbinop_with_vparam) ;
 
     ]
 
