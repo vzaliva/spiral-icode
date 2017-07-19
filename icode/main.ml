@@ -40,7 +40,7 @@ let _ =
       let Ast.Program (valist, body) = Parser.i_program Lexer.main lineBuffer in
       let vmap = Typechecker.build_var_map valist in
       Typechecker.typecheck vmap body ;
-      msg "*** OK\n"
+      msg "*** %s compiled OK\n" filename
     with
     | Typechecker.TypeError msg -> eprintf "Type check failed: %s%!\n" msg
     | Lexer.Error msg -> eprintf "Lexer error %s%!\n" msg
