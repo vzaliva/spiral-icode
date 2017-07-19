@@ -1,0 +1,13 @@
+ExportCode := function(c)
+    local vars;
+    vars := FoldL(Collect(c, var), (a,b)->When(not b.id in List(a, i->i.id), Concat([b],a), a), []);
+    Print("let(", DoForAll(vars, i->Print(i.id, " := var(\"", i.id, "\", ", i.t, "),\n")), c, ")");
+end;
+
+Import(avx);
+opts := SIMDGlobals.getOpts(SSE_4x32f);
+t := TRC(DFT(48)).withTags(opts.tags);
+rt := RandomRuleTree(t, opts);
+c := CodeRuleTree(rt, opts);
+
+PrintTo("dft48.g", ExportCode(c));

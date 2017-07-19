@@ -82,28 +82,24 @@ X := var("X", TPtr(TReal).aligned([ 16, 0 ])),
 Y := var("Y", TPtr(TReal).aligned([ 16, 0 ])),
 program(
    chain(
-      func(TVoid, "init", [  ],
+      func(TVoid, "init", [  ], 
          chain(
             chain(),
             chain()
          )
       ),
-      func(TVoid, "transform", [ Y, X ],
+      func(TVoid, "transform", [ Y, X ], 
          decl([ a45, a46, s139, s140, s141, s142, s143, s144, s145, s146, s147, s148, s149, s150, s151, s152, s153, s154, s155, s156, s157, s158, s159, s160, s161, s162, s163, s164, s165, s166, s167, s168, s169, s170, s171, s172, s173, s174, s175, s176, s177, s178, s179, s180, s181, s182, s183, s184, t129, t130, t131, t132, t133, t134, t135, t136, t137, t138, t139, t140, t141, t142, t143, t144, t145, t146, t147, t148, t149, t150, t151, t152, t153, t154, t155, t156, t157, t158, t159, t160 ],
             chain(
                assign(a45, tcast(TPtr(TVect(TReal, 4)).aligned([ 16, 0 ]), X)),
                assign(s139, deref(a45)),
                assign(s140, deref(add(a45, V(1)))),
                assign(s141, vshuffle_4x32f(s139, s140, vparam([ 1, 3, 1, 3 ]))),
-
                assign(s142, vshuffle_4x32f(s139, s140, vparam([ 2, 4, 2, 4 ]))),
-
                assign(s143, deref(add(a45, V(4)))),
                assign(s144, deref(add(a45, V(5)))),
                assign(s145, vshuffle_4x32f(s143, s144, vparam([ 1, 3, 1, 3 ]))),
-
                assign(s146, vshuffle_4x32f(s143, s144, vparam([ 2, 4, 2, 4 ]))),
-
                assign(t129, add(s141, s145)),
                assign(t130, add(s142, s146)),
                assign(t131, sub(s141, s145)),
@@ -111,15 +107,11 @@ program(
                assign(s147, deref(add(a45, V(2)))),
                assign(s148, deref(add(a45, V(3)))),
                assign(s149, vshuffle_4x32f(s147, s148, vparam([ 1, 3, 1, 3 ]))),
-
                assign(s150, vshuffle_4x32f(s147, s148, vparam([ 2, 4, 2, 4 ]))),
-
                assign(s151, deref(add(a45, V(6)))),
                assign(s152, deref(add(a45, V(7)))),
                assign(s153, vshuffle_4x32f(s151, s152, vparam([ 1, 3, 1, 3 ]))),
-
                assign(s154, vshuffle_4x32f(s151, s152, vparam([ 2, 4, 2, 4 ]))),
-
                assign(t133, add(s149, s153)),
                assign(t134, add(s150, s154)),
                assign(t135, sub(s149, s153)),
@@ -141,21 +133,13 @@ program(
                assign(s161, vunpacklo_4x32f(t140, t144)),
                assign(s162, vunpackhi_4x32f(t140, t144)),
                assign(s163, vshuffle_4x32f(s155, s159, vparam([ 1, 2, 1, 2 ]))),
-
                assign(s164, vshuffle_4x32f(s155, s159, vparam([ 3, 4, 3, 4 ]))),
-
                assign(s165, vshuffle_4x32f(s156, s160, vparam([ 1, 2, 1, 2 ]))),
-
                assign(s166, vshuffle_4x32f(s156, s160, vparam([ 3, 4, 3, 4 ]))),
-
                assign(s167, vshuffle_4x32f(s157, s161, vparam([ 1, 2, 1, 2 ]))),
-
                assign(s168, vshuffle_4x32f(s157, s161, vparam([ 3, 4, 3, 4 ]))),
-
                assign(s169, vshuffle_4x32f(s158, s162, vparam([ 1, 2, 1, 2 ]))),
-
                assign(s170, vshuffle_4x32f(s158, s162, vparam([ 3, 4, 3, 4 ]))),
-
                assign(s171, sub(mul(V([ V(1.0), V(0.70710678118654757), V(0.0), V(-0.70710678118654757) ]), s165), mul(V([ V(0.0), V(0.70710678118654757), V(1.0), V(0.70710678118654757) ]), s169))),
                assign(s172, add(mul(V([ V(0.0), V(0.70710678118654757), V(1.0), V(0.70710678118654757) ]), s165), mul(V([ V(1.0), V(0.70710678118654757), V(0.0), V(-0.70710678118654757) ]), s169))),
                assign(t145, add(s163, s171)),
