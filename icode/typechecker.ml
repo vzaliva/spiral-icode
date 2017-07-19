@@ -322,7 +322,7 @@ let func_type_vbinop t name a =
                   (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
                                    pr_itype a0 pr_itype a1 name))
 
-let func_type_vbinop_with_vparam name a =
+let func_type_vbinop_with_vparam t name a =
   let open List in
   if 3 <> length a then
     raise (TypeError (Format.asprintf "Invalid number of arguments for '%s'" name))
@@ -330,13 +330,11 @@ let func_type_vbinop_with_vparam name a =
     let a0 = nth_exn a 0 in
     let a1 = nth_exn a 1 in
     let a2 = nth_exn a 2 in
-    let rt = func_type_arith_binop name [a0;a1] in
-    match rt,a2 with
-    | VecType _, A (I _) -> rt
-    | VecType (_, vl), ArrType (A (I _), al)  -> rt
-    | _, _ -> raise (TypeError
-                       (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
-                                        pr_itype a0 pr_itype a1 name))
+    if check_coercion a0 t && check_coercion a1 t (* TODO: enforce VPRAM type &&
+         check_coercion a2  (A (I UInt16Type)) *) then t
+    else raise (TypeError
+                  (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
+                                   pr_itype a0 pr_itype a1 name))
 
 let a_func_type eargs ret name args =
   if List.length eargs <> List.length args then
@@ -378,9 +376,9 @@ let builtins_map =
 
       ("vushuffle_2x64f", func_type_vushuffle) ;
 
-      ("vshuffle_2x64f" , func_type_vbinop_with_vparam) ;
-      ("vshuffle_4x32f" , func_type_vbinop_with_vparam) ;
-      ("vshuffle_8x32f" , func_type_vbinop_with_vparam) ;
+      ("vshuffle_2x64f" , func_type_vbinop_with_vparam (VecType (DoubleType, 2))) ;
+      ("vshuffle_4x32f" , func_type_vbinop_with_vparam (VecType (FloatType, 4))) ;
+      ("vshuffle_8x32f" , func_type_vbinop_with_vparam (VecType (FloatType, 8))) ;
 
       ("vunpacklo_4x32f", func_type_vbinop (VecType (FloatType, 4))) ;
       ("vunpacklo_8x32f", func_type_vbinop (VecType (FloatType, 8))) ;
@@ -398,8 +396,8 @@ let builtins_map =
       ("testnzc_4x32i", a_func_type [VecType (I Int32Type, 4); VecType (I Int32Type, 4)]
                                     (A (I Int32Type)));
 
-      ("vpermf128_4x64f", func_type_vbinop_with_vparam) ; (* TODO add vec size and type params *)
-      ("vpermf128_8x32f", func_type_vbinop_with_vparam) ;
+      ("vpermf128_4x64f", func_type_vbinop_with_vparam (VecType (DoubleType, 4))) ;
+      ("vpermf128_8x32f", func_type_vbinop_with_vparam (VecType (FloatType, 8))) ;
 
     ]
 
