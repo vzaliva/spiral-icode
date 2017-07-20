@@ -368,7 +368,7 @@ let builtins_map =
       ("neg", func_type_neg) ;
       ("abs", func_type_abs) ;
 
-      ("vcvt_64f32f", a_func_type [(VecType (FloatType, 4))] (VecType (DoubleType, 2))) ; (* TODO: dependently type to match any vector lenth? *)
+      ("vcvt_64f32f", a_func_type [(VecType (FloatType, 4))] (VecType (DoubleType, 2))) ;
 
       (* non-polymorphic functions *)
       ("addsub_4x32f", func_type_vbinop (VecType (FloatType, 4))) ;
@@ -539,7 +539,6 @@ and rvalue_type vmap rv =
        with
        | TypeError msg ->
           let open Format in
-          (* TODO: Print expression causing error here *)
           eprintf "%a Error resolving function @[<h>%s(%s)@]@\n"
                   pr_err_loc rv.loc
                   n (Sexp.to_string (Ast.sexp_of_rvalue rv))
