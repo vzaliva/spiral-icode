@@ -8,8 +8,6 @@
 
 
 
-
-F (float type)
 Redo Vec and Array const types
 Get rid of Deriving
 Define in Coq and Extract

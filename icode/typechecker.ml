@@ -3,6 +3,7 @@ open Core
 open Ast
 open IType
 open IIntType
+open IFloatType
 open IArithType
 open Int_or_uint_64
 open Uint64
@@ -31,8 +32,8 @@ let integer_types = IIntTypeSet.of_list IIntType.all
 
 let signed_arith_types = ITypeSet.union
                            (ITypeSet.of_list [
-                                A FloatType ;
-                                A DoubleType ; ])
+                                A (F FloatType) ;
+                                A (F DoubleType) ; ])
                            (ITypeSet.map ~f:iType_of_IntType signed_integer_types)
 
 
@@ -48,13 +49,11 @@ let is_arith = function
 
 let is_signed_arith = function
   | I t -> IIntTypeSet.mem signed_integer_types t
-  | FloatType -> true
-  | DoubleType -> true
+  | F _ -> true
 
 let is_unsigned_arith = function
   | I t -> IIntTypeSet.mem unsigned_integer_types t
-  | FloatType -> false
-  | DoubleType -> false
+  | F _ -> false
 
 let integer_type_rank = function
   | BoolType                -> 0
@@ -71,8 +70,8 @@ let int_sizeof = function
 
 let arith_sizeof = function
   | I i -> int_sizeof i
-  | FloatType -> 4
-  | DoubleType -> 8
+  | F FloatType -> 4
+  | F DoubleType -> 8
 
 let unsigned_type = function
   | Int8Type -> UInt8Type
@@ -89,8 +88,8 @@ let integer_promotion t =
  *)
 let usual_arithmetic_conversion promote t1 t2 =
   match t1, t2 with
-  | DoubleType, _ | _, DoubleType -> DoubleType
-  | FloatType, _ | _, FloatType -> FloatType
+  | F DoubleType, _ | _, F DoubleType -> F DoubleType
+  | F FloatType, _ | _, F FloatType -> F FloatType
   | I i1, I i2 ->
      let j1 = if promote then integer_promotion i1 else i1 in
      let j2 = if promote then integer_promotion i2 else i2 in
@@ -212,8 +211,8 @@ let ptr_attr_combine a1 a2 =
 let rec type_combine ty1 ty2 =
   match ty1, ty2 with
   | VoidType, VoidType -> Some VoidType
-  | A FloatType,  A FloatType -> Some (A FloatType)
-  | A DoubleType,  A DoubleType -> Some (A DoubleType)
+  | A (F FloatType),  A (F FloatType) -> Some (A (F FloatType))
+  | A (F DoubleType),  A (F DoubleType) -> Some (A (F DoubleType))
   | A (I t1), A (I t2) ->
      if is_signed_integer t1 = is_signed_integer t2 && int_sizeof t1 = int_sizeof t2
      then Some (A (I t1)) else None
@@ -368,36 +367,36 @@ let builtins_map =
       ("neg", func_type_neg) ;
       ("abs", func_type_abs) ;
 
-      ("vcvt_64f32f", a_func_type [(VecType (FloatType, 4))] (VecType (DoubleType, 2))) ;
+      ("vcvt_64f32f", a_func_type [(VecType (F FloatType, 4))] (VecType (F DoubleType, 2))) ;
 
       (* non-polymorphic functions *)
-      ("addsub_4x32f", func_type_vbinop (VecType (FloatType, 4))) ;
-      ("addsub_2x64f", func_type_vbinop (VecType (DoubleType, 2))) ;
+      ("addsub_4x32f", func_type_vbinop (VecType (F FloatType, 4))) ;
+      ("addsub_2x64f", func_type_vbinop (VecType (F DoubleType, 2))) ;
 
       ("vushuffle_2x64f", func_type_vushuffle) ;
 
-      ("vshuffle_2x64f" , func_type_vbinop_with_vparam (VecType (DoubleType, 2))) ;
-      ("vshuffle_4x32f" , func_type_vbinop_with_vparam (VecType (FloatType, 4))) ;
-      ("vshuffle_8x32f" , func_type_vbinop_with_vparam (VecType (FloatType, 8))) ;
+      ("vshuffle_2x64f" , func_type_vbinop_with_vparam (VecType (F DoubleType, 2))) ;
+      ("vshuffle_4x32f" , func_type_vbinop_with_vparam (VecType (F FloatType, 4))) ;
+      ("vshuffle_8x32f" , func_type_vbinop_with_vparam (VecType (F FloatType, 8))) ;
 
-      ("vunpacklo_4x32f", func_type_vbinop (VecType (FloatType, 4))) ;
-      ("vunpacklo_8x32f", func_type_vbinop (VecType (FloatType, 8))) ;
-      ("vunpacklo_4x64f", func_type_vbinop (VecType (DoubleType, 4))) ;
+      ("vunpacklo_4x32f", func_type_vbinop (VecType (F FloatType, 4))) ;
+      ("vunpacklo_8x32f", func_type_vbinop (VecType (F FloatType, 8))) ;
+      ("vunpacklo_4x64f", func_type_vbinop (VecType (F DoubleType, 4))) ;
 
-      ("vunpackhi_4x32f", func_type_vbinop (VecType (FloatType, 4))) ;
-      ("vunpackhi_4x64f", func_type_vbinop (VecType (DoubleType, 4))) ;
-      ("vunpackhi_8x32f", func_type_vbinop (VecType (FloatType, 8))) ;
+      ("vunpackhi_4x32f", func_type_vbinop (VecType (F FloatType, 4))) ;
+      ("vunpackhi_4x64f", func_type_vbinop (VecType (F DoubleType, 4))) ;
+      ("vunpackhi_8x32f", func_type_vbinop (VecType (F FloatType, 8))) ;
 
-      ("cmpge_2x64f", a_func_type [VecType (DoubleType, 2); VecType (DoubleType, 2)]
-                                (VecType (DoubleType, 2)));
+      ("cmpge_2x64f", a_func_type [VecType (F DoubleType, 2); VecType (F DoubleType, 2)]
+                                (VecType (F DoubleType, 2)));
 
       ("testc_4x32i", a_func_type [VecType (I Int32Type, 4); VecType (I Int32Type, 4)]
                                 (A (I Int32Type)));
       ("testnzc_4x32i", a_func_type [VecType (I Int32Type, 4); VecType (I Int32Type, 4)]
                                     (A (I Int32Type)));
 
-      ("vpermf128_4x64f", func_type_vbinop_with_vparam (VecType (DoubleType, 4))) ;
-      ("vpermf128_8x32f", func_type_vbinop_with_vparam (VecType (FloatType, 8))) ;
+      ("vpermf128_4x64f", func_type_vbinop_with_vparam (VecType (F DoubleType, 4))) ;
+      ("vpermf128_8x32f", func_type_vbinop_with_vparam (VecType (F FloatType, 8))) ;
 
     ]
 
@@ -516,8 +515,8 @@ and rvalue_type vmap rv =
     (* Per C99 6.4.4.2.4 "An unsuffixed floating constant has type double". In i-code we deatult it to default machine size *)
     match x.node with
     | FPLiteral _ -> Config.realAType ()
-    | FloatEPS -> FloatType
-    | DoubleEPS -> DoubleType in
+    | FloatEPS -> F FloatType
+    | DoubleEPS -> F DoubleType in
   (* Per c99 spec 6.4.4.1 "The type of an integer constant is the first of the corresponding list in which its value can be represented."*)
   let iconst_type = function
     | I64 x -> if in_int8_range x then I Int8Type

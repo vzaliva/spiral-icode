@@ -29,8 +29,8 @@ OCamlProgram($(PROGRAM), $(FILES))
 # Default target: compile into bytecode or native code, or both
 .DEFAULT: $(EXE)
 
-
-SCRIPTS32[] = dft16.g dft32.g dft48.g dft16avx.g dft64avx8.g dwmonitor.g
+# dft16.g dft48.g 
+SCRIPTS32[] = dft32.g dft16avx.g dft64avx8.g dwmonitor.g
 SCRIPTS64[] = dwmonitor_interval.g
 
 run: $(EXE)

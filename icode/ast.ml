@@ -95,11 +95,19 @@ end
 open IIntType
 module IIntTypeSet = Set.Make(IIntType)
 
+module IFloatType = struct
+  type t =
+    | FloatType (* IEEE 32-bit float *)
+    | DoubleType (* IEEE 64-bit float *)  [@@deriving compare, sexp, enumerate]
+end
+open IFloatType
+module IFloatTypeSet = Set.Make(IFloatType)
+
+
 module IArithType = struct
   type t =
     | I of IIntType.t
-    | FloatType (* IEEE 32-bit float *)
-    | DoubleType (* IEEE 64-bit float *)  [@@deriving compare, sexp, enumerate]
+    | F of IFloatType.t [@@deriving compare, sexp, enumerate]
 end
 open IArithType
 module IArithTypeSet = Set.Make(IArithType)
@@ -200,8 +208,8 @@ let rec pr_itype ppf = function
   | A I UInt32Type -> fprintf ppf "@[TUInt32@]"
   | A I UInt64Type -> fprintf ppf "@[TUInt64@]"
   | A I BoolType -> fprintf ppf "@[TBool@]"
-  | A FloatType -> fprintf ppf "@[Float@]"
-  | A DoubleType -> fprintf ppf "@[Double@]"
+  | A F FloatType -> fprintf ppf "@[Float@]"
+  | A F DoubleType -> fprintf ppf "@[Double@]"
   | VoidType -> fprintf ppf "@[TVoid@]"
   | ArrType (t,s) -> fprintf ppf "@[<h>Arr(%a,%d)@]" pr_itype t s
   | VecType (t,s) -> fprintf ppf "@[<h>Vec(%a,%d)@]" pr_itype (A t) s

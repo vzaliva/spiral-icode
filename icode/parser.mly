@@ -44,8 +44,8 @@ i_arith_type:
   | TUINT32  { I UInt32Type }
   | TUINT64  { I UInt64Type }
   | TREAL    { realAType () }
-  | TFLOAT   { FloatType    }
-  | TDOUBLE  { DoubleType   }
+  | TFLOAT   { F FloatType  }
+  | TDOUBLE  { F DoubleType }
   | TBOOL    { I BoolType   }
   ;
 
