@@ -51,7 +51,7 @@ rule main = parse
 | "func"    { FUNC    }
 | "nth"     { NTH     }
 | "vdup"    { VDUP    }
-| "V"       { V       }
+| "Value"   { VALUE   }
 | "skip"    { SKIP    }
 | "if"      { IF      }
 | "creturn" { CRETURN }

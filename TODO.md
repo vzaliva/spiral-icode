@@ -11,3 +11,7 @@
 Redo Vec and Array const types
 Get rid of Deriving
 Define in Coq and Extract
+
+
+Check iconst type and U/I64 value match
+Check fconst type and literal range for float/double match

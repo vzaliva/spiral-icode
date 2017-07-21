@@ -43,7 +43,6 @@ module Loc = struct
   type t = { loc_start: position; loc_end: position; loc_ghost: bool } [@@deriving compare, sexp]
 end
 
-
 (* Machine-safe int to hold any int value, signed or unsiged *)
 module Int_or_uint_64 = struct
   type t =
@@ -80,6 +79,7 @@ module Int_or_uint_64 = struct
 
 end
 
+
 module IIntType = struct
   type t =
     | Int8Type
@@ -102,7 +102,6 @@ module IFloatType = struct
 end
 open IFloatType
 module IFloatTypeSet = Set.Make(IFloatType)
-
 
 module IArithType = struct
   type t =
@@ -130,9 +129,16 @@ type fconst = {
     loc: Loc.t
 } [@@deriving compare, sexp]
 and fconst_node =
-  | FPLiteral of float
+  | FPLiteral of (IFloatType.t * float)
   | FloatEPS
   | DoubleEPS [@@deriving compare, sexp]
+
+type iconst = {
+    node: iconst_node;
+    loc: Loc.t
+} [@@deriving compare, sexp]
+and iconst_node =
+  | ILiteral of (IIntType.t * Int_or_uint_64.t) [@@deriving compare, sexp]
 
 type rvalue = {
     node: rvalue_node;
@@ -141,11 +147,11 @@ type rvalue = {
 and rvalue_node =
   | FunCall of string*(rvalue list)
   | VarRValue of ivar
-  | FConst of fconst
   | VHex of (string list)
-  | IConst of Int_or_uint_64.t
-  | FConstArr of (fconst list)
-  | IConstArr of (Int_or_uint_64.t list)
+  | FConst of fconst
+  | IConst of iconst
+  | FConstArr of (IFloatType.t * (fconst list))
+  | IConstArr of (IIntType.t   * (iconst list))
   | VdupRvalue of rvalue*Int_or_uint_64.t
   | NthRvalue of rvalue*rvalue (* 'int' type for index will be checked later *)
   | RCast of IType.t*rvalue
@@ -180,8 +186,8 @@ type iprogram = Program of ((ivar*IType.t) list)*istmt [@@deriving compare, sexp
 
 let eq_itype (a:IType.t) (b:IType.t) = IType.compare a b = 0
 let eq_int_type (a:IIntType.t) (b:IIntType.t) = IIntType.compare a b = 0
+let eq_float_type (a:IFloatType.t) (b:IFloatType.t) = IFloatType.compare a b = 0
 let iType_of_IntType t = A (I t)
-
 
 (* --- Convinience functions for creating nodes --- *)
 let symbol_rloc s e = {
@@ -194,6 +200,7 @@ let mkstmt   s e (d:istmt_node ): istmt   = { node = d; loc = symbol_rloc s e}
 let mkrvalue s e (d:rvalue_node): rvalue  = { node = d; loc = symbol_rloc s e}
 let mklvalue s e (d:lvalue_node): lvalue  = { node = d; loc = symbol_rloc s e}
 let mkfconst s e (d:fconst_node): fconst  = { node = d; loc = symbol_rloc s e}
+let mkiconst s e (d:iconst_node): iconst  = { node = d; loc = symbol_rloc s e}
 
 (* -- Formatting --- *)
 open Format

@@ -20,7 +20,7 @@
 %token DEF
 
 %token LET VAR ALIGNED
-%token V DECL CHAIN IVENV PROGRAM DATA ASSIGN LOOP FUNC NTH SKIP IF CRETURN EOF
+%token VALUE DECL CHAIN IVENV PROGRAM DATA ASSIGN LOOP FUNC NTH SKIP IF CRETURN EOF
 %token TVOID TREAL TDOUBLE TFLOAT TBOOL TPTR TVECT TARR
 %token TINT TINT8 TINT16 TINT32 TINT64
 %token TUINT TUINT8 TUINT16 TUINT32 TUINT64
@@ -33,21 +33,29 @@
 
 %%
 
+i_ftype:        
+  | TFLOAT   { FloatType  }
+  | TDOUBLE  { DoubleType }
+  | TREAL    { realFType () }
+  ;
+
+i_itype:
+  | TINT     { Int32Type  }
+  | TINT8    { Int8Type   }
+  | TINT16   { Int16Type  }
+  | TINT32   { Int32Type  }
+  | TINT64   { Int64Type  }
+  | TUINT    { UInt32Type }
+  | TUINT8   { UInt8Type  }
+  | TUINT16  { UInt16Type }
+  | TUINT32  { UInt32Type }
+  | TUINT64  { UInt64Type }
+  ;
+
 i_arith_type:
-  | TINT     { I Int32Type  }
-  | TINT8    { I Int8Type   }
-  | TINT16   { I Int16Type  }
-  | TINT32   { I Int32Type  }
-  | TINT64   { I Int64Type  }
-  | TUINT    { I UInt32Type }
-  | TUINT8   { I UInt8Type  }
-  | TUINT16  { I UInt16Type }
-  | TUINT32  { I UInt32Type }
-  | TUINT64  { I UInt64Type }
-  | TREAL    { realAType () }
-  | TFLOAT   { F FloatType  }
-  | TDOUBLE  { F DoubleType }
-  | TBOOL    { I BoolType   }
+  | t=i_itype { I t }
+  | t=i_ftype { F t }
+  | TBOOL     { I BoolType } /* maybe needs to be in i_itype */
   ;
 
 i_type:
@@ -72,7 +80,8 @@ i_var:
    ;
 
 i_fconst:
-  | V LPAREN f=FLOAT RPAREN { mkfconst $symbolstartpos $endpos (FPLiteral f) }
+  | VALUE LPAREN t=i_ftype COMMA f=FLOAT RPAREN { mkfconst $symbolstartpos $endpos
+                                                 (FPLiteral (t,f)) }
   | REALEPS LPAREN TFLOAT RPAREN { mkfconst $symbolstartpos $endpos FloatEPS }
   | REALEPS LPAREN TDOUBLE RPAREN { mkfconst $symbolstartpos $endpos DoubleEPS }
   ;
@@ -85,13 +94,14 @@ i_int:
   | MINUS x = UINT { Int_or_uint_64.I64 (Int64.of_string ("-" ^ x)) }
 
 i_iconst:
-  | V LPAREN i=i_int RPAREN { i }
+  | VALUE LPAREN t=i_itype COMMA i=i_int RPAREN { mkiconst $symbolstartpos $endpos
+                                                  (ILiteral (t,i)) }
   ;
 
 i_rvalue:
-  | V LPAREN LBRACKET l=separated_nonempty_list(COMMA, i_fconst) RBRACKET RPAREN
+  | VALUE LPAREN LBRACKET l=separated_nonempty_list(COMMA, i_fconst) RBRACKET RPAREN
               { mkrvalue $symbolstartpos $endpos (FConstArr l) }
-  | V LPAREN LBRACKET l=separated_nonempty_list(COMMA, i_iconst) RBRACKET RPAREN
+  | VALUE LPAREN LBRACKET l=separated_nonempty_list(COMMA, i_iconst) RBRACKET RPAREN
               { mkrvalue $symbolstartpos $endpos (IConstArr l) }
   | VPARAM LPAREN LBRACKET l=separated_nonempty_list(COMMA, i_uint) RBRACKET RPAREN
               { mkrvalue $symbolstartpos $endpos (IConstArr l) }

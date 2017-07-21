@@ -511,23 +511,14 @@ let rec lvalue_type vmap (x:lvalue) =
        | ArrType (t,_) | PtrType (t,_) -> t
        | _ -> raise (TypeError (Format.asprintf "Invalid type %a in NTH" pr_itype vt))
 and rvalue_type vmap rv =
-  let fconst_type (x:fconst) =
-    (* Per C99 6.4.4.2.4 "An unsuffixed floating constant has type double". In i-code we deatult it to default machine size *)
-    match x.node with
-    | FPLiteral _ -> Config.realAType ()
-    | FloatEPS -> F FloatType
-    | DoubleEPS -> F DoubleType in
-  (* Per c99 spec 6.4.4.1 "The type of an integer constant is the first of the corresponding list in which its value can be represented."*)
-  let iconst_type = function
-    | I64 x -> if in_int8_range x then I Int8Type
-               else if in_int16_range x then I Int16Type
-               else if in_int32_range x then I Int32Type
-               else I Int64Type
-    | U64 x -> if in_uint8_range x then I UInt8Type
-               else if in_uint16_range x then I UInt16Type
-               else if in_uint32_range x then I UInt32Type
-               else I UInt64Type
-  in
+  let fconst_type (f:fconst) =
+    match f.node with
+    | FPLiteral (t,_) -> t
+    | FloatEPS -> FloatType
+    | DoubleEPS -> DoubleType  in
+  let iconst_type (i:iconst) =
+    match i.node with
+    | ILiteral (t,_) -> t  in
   match rv.node with
   | VarRValue v -> var_type vmap v
   | FunCall (n,a) ->
@@ -544,38 +535,38 @@ and rvalue_type vmap rv =
          ; raise (TypeError msg)
        ) in
      ft
-  | FConst fc -> A (fconst_type fc)
-  | IConst ic -> A (iconst_type ic)
-  | FConstArr fl ->
+  | FConst fc -> A (F (fconst_type fc))
+  | IConst ic -> A (I (iconst_type ic))
+  | FConstArr (at, fl) ->
      let flt = List.map ~f:fconst_type fl in
-     let t = A (if List.is_empty flt then Config.realAType ()
-                else List.fold ~f:(usual_arithmetic_conversion false)
-                               ~init:(List.hd_exn flt) flt) in
-     ArrType (t, List.length fl)
-  | IConstArr il ->
-     let ilt = List.map ~f:iconst_type il in
-     let t = A (if List.is_empty ilt then (I Int32Type) (* defaultin to signed *)
-                else List.fold ~f:(usual_arithmetic_conversion false)
-                               ~init:(List.hd_exn ilt) ilt) in
-     if not (is_integer t) then
-       raise (TypeError (Format.asprintf "Initialize int array witn non-integer constants")) (* maybe warning? *)
+     if List.for_all flt (eq_float_type at) then
+       ArrType (A (F at) , List.length fl)
      else
-       ArrType (t, List.length il)
+       raise (TypeError (Format.asprintf "%a Mismatch between float array type and its value types\n" pr_err_loc rv.loc))
+  | IConstArr (at, il) ->
+     let ilt = List.map ~f:iconst_type il in
+     if List.for_all ilt (eq_int_type at) then
+       ArrType (A (I at) , List.length il)
+     else
+       raise (TypeError (Format.asprintf "%a Mismatch between int array type and its value types\n" pr_err_loc rv.loc))
   | VHex sl ->
-     let iconst_of_hex s =
-       if String.is_empty s then
-         raise (TypeError (Format.asprintf "Empty hex string in 'vhex'"))
-       else
-         try
-           if String.prefix s 1 = "-" then
-             Int_or_uint_64.I64 (Int64.of_string s)
-           else
-             Int_or_uint_64.U64 (Uint64.of_string s)
-         with
-         | Failure _ -> raise (TypeError (Format.asprintf "Invalid hex string \"%s\" in 'vhex'" s))
+     let tHARDCODED = Int32Type in (* TODO: ask Franz to print type *)
+     let iconst_of_hex s : iconst =
+       let v =
+         if String.is_empty s then
+           raise (TypeError (Format.asprintf "Empty hex string in 'vhex'"))
+         else
+           try
+             if String.prefix s 1 = "-" then
+               Int_or_uint_64.I64 (Int64.of_string s)
+             else
+               Int_or_uint_64.U64 (Uint64.of_string s)
+           with
+           | Failure _ -> raise (TypeError (Format.asprintf "Invalid hex string \"%s\" in 'vhex'" s))
+       in {node = ILiteral (tHARDCODED, v); loc = rv.loc } (* TODO: loc for ech number *)
      in
      rvalue_type vmap
-                 { node=IConstArr (List.map ~f:iconst_of_hex sl);
+                 { node = IConstArr (tHARDCODED, List.map ~f:iconst_of_hex sl);
                    loc = rv.loc }
   | RCast (t,rv) ->
      let rt = rvalue_type vmap rv in
