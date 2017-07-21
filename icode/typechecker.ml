@@ -7,7 +7,7 @@ open IFloatType
 open IArithType
 open Int_or_uint_64
 open Uint64
-open Config
+open Utils
 
 exception TypeError of string
 
@@ -424,7 +424,7 @@ let check_never_decl vmap used =
   let all = String.Map.Tree.keys vmap |> of_list in
   let unused = diff all used in
   (if not (is_empty unused) then
-     Config.msg "Warning: following variables definded in 'let' but never declared: %s\n" (String.concat ~sep:" " (to_list unused)))
+     msg "Warning: following variables definded in 'let' but never declared: %s\n" (String.concat ~sep:" " (to_list unused)))
   ; unused
 
 let rec check_vars_in_rvalue s (x:rvalue) =

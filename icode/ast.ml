@@ -202,6 +202,16 @@ let mklvalue s e (d:lvalue_node): lvalue  = { node = d; loc = symbol_rloc s e}
 let mkfconst s e (d:fconst_node): fconst  = { node = d; loc = symbol_rloc s e}
 let mkiconst s e (d:iconst_node): iconst  = { node = d; loc = symbol_rloc s e}
 
+(* Mapping of generic numeric types to actual machine types. It is hardcoded now, but will be managed via config file or command line options later *)
+
+let realFType () = if !Config.is64bit then DoubleType else FloatType
+let realAType () = F (realFType ())
+let prtSizeOf () = if !Config.is64bit then 8 else 4
+
+(* --- helper functoin, in IArithType *)
+let realType () = A (realAType ())
+
+
 (* -- Formatting --- *)
 open Format
 
@@ -226,12 +236,5 @@ let itype_as_string = Format.asprintf "%a" pr_itype
 
 let type_list_fmt = Format.pp_print_list ~pp_sep:(fun fmt () -> Format.fprintf fmt ";") pr_itype
 
-let pr_pos ppf pos =
-  Format.fprintf ppf "@[%s:%d:%d@]"
-                 pos.pos_fname
-                 pos.pos_lnum
-                 (pos.pos_cnum - pos.pos_bol + 1)
-
-
 let pr_err_loc ppf (l:Loc.t) =
-  fprintf ppf "%a: error:" pr_pos l.Loc.loc_start
+  fprintf ppf "%a: error:" Utils.pr_pos l.Loc.loc_start

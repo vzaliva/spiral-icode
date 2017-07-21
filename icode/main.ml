@@ -1,5 +1,6 @@
 open Typechecker
 open Config
+open Utils
 
 open Format
 open Core
@@ -43,8 +44,10 @@ let _ =
       msg "*** %s compiled OK\n" filename
     with
     | Typechecker.TypeError msg -> eprintf "Type check failed: %s%!\n" msg
-    | Lexer.Error msg -> eprintf "Lexer error %s%!\n" msg
-    | Parser.Error -> eprintf "Parsing error at offset %d: syntax error.\n%!" (Lexing.lexeme_start lineBuffer)
+    | Lexer.Error msg ->
+       Format.eprintf "%a Syntax error (lexing error)\n" pr_pos (Lexing.lexeme_start_p lineBuffer)
+    | Parser.Error ->
+       Format.eprintf "%a Syntax error (parsing error)\n" pr_pos (Lexing.lexeme_start_p lineBuffer)
   in
   parse_cmdline ();
   List.map ~f:process_file !input_files
