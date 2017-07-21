@@ -2,6 +2,7 @@
     open Ast
     open IIntType
     open IArithType
+    open IFloatType
     open IType
     open Config
 
