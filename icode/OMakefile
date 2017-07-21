@@ -37,12 +37,16 @@ run: $(EXE)
 	./$(EXE) --64 -d $(addprefix ../samples/, $(SCRIPTS64))
 	./$(EXE) --32 -d $(addprefix ../samples/, $(SCRIPTS32))
 
+parser.dot.png:
+	dot -Tpng -O parser.dot
+
 clean:
   rm -f \
 	lexer.ml \
-	parser.ml parser.mli parser.dot parser.automaton parser.conflicts \
-	 *.omc \
-     $(filter-proper-targets $(glob $(addsuffix .*, $(FILES)))) \
-     $(PROGRAM).run $(PROGRAM).opt
+	parser.ml parser.mli parser.automaton parser.conflicts \
+	parser.dot parser.dot.png \
+	*.omc \
+    $(filter-proper-targets $(glob $(addsuffix .*, $(FILES)))) \
+    $(PROGRAM).run $(PROGRAM).opt
 
 

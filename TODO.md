@@ -6,3 +6,10 @@
 * See where Arrays are actually vectors and where they are just arrays
 * Clarify vec/array casts in `check_coercion`
 
+
+
+
+F (float type)
+Redo Vec and Array const types
+Get rid of Deriving
+Define in Coq and Extract

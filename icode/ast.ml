@@ -41,7 +41,6 @@ let compare_position x y =
 (* Location code inspired by https://github.com/lucasaiu/ocaml/blob/master/parsing/location.ml *)
 module Loc = struct
   type t = { loc_start: position; loc_end: position; loc_ghost: bool } [@@deriving compare, sexp]
-
 end
 
 
