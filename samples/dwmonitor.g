@@ -1,41 +1,70 @@
-let(i3 := var("i3", TInt),
-i5 := var("i5", TInt),
-w1 := var("w1", T_Real(64)),
-s8 := var("s8", T_Real(64)),
-s7 := var("s7", T_Real(64)),
-s6 := var("s6", TReal),
-s5 := var("s5", T_Real(64)),
-s4 := var("s4", TReal),
-s1 := var("s1", T_Real(64)),
-q4 := var("q4", T_Real(64)),
-q3 := var("q3", T_Real(64)),
+let(i31 := var("i31", TInt),
+i33 := var("i33", TInt),
+x38 := var("x38", TVect(T_Real(64), 2)),
+x37 := var("x37", TVect(T_Real(64), 2)),
+x36 := var("x36", TVect(T_Real(64), 2)),
+x33 := var("x33", TVect(T_Real(64), 2)),
+x32 := var("x32", TVect(T_Real(64), 2)),
+x29 := var("x29", TVect(T_Real(64), 2)),
+x28 := var("x28", TVect(T_Real(64), 2)),
+x27 := var("x27", TVect(T_Real(64), 2)),
+x26 := var("x26", TVect(T_Real(64), 2)),
+x25 := var("x25", TVect(T_Real(64), 2)),
+x23 := var("x23", TVect(T_Real(64), 2)),
+x22 := var("x22", TVect(T_Real(64), 2)),
+x21 := var("x21", TVect(T_Real(64), 2)),
+x20 := var("x20", TVect(T_Real(64), 2)),
+w3 := var("w3", TBool),
+u9 := var("u9", TVect(T_Real(64), 2)),
+u16 := var("u16", TVect(T_Real(64), 2)),
+u15 := var("u15", TVect(T_Real(64), 2)),
+u14 := var("u14", TVect(T_Real(64), 2)),
+u13 := var("u13", TVect(T_Real(64), 2)),
+u12 := var("u12", TVect(T_Real(64), 2)),
+u11 := var("u11", TVect(T_Real(64), 2)),
+u10 := var("u10", TVect(T_Real(64), 2)),
 D := var("D", TPtr(T_Real(64)).aligned([ 16, 0 ])),
-X := var("X", TPtr(T_Real(64)).aligned([ 16, 0 ])),
-    
+X := var("X", TPtr(T_Real(32)).aligned([ 16, 0 ])),
 func(TInt, "transform", [ X, D ], 
-   decl([ q3, q4, s1, s4, s5, s6, s7, s8, w1 ],
+   decl([ u10, u11, u12, u13, u14, u15, u16, u9, w3, x20, x21, x22, x23, x25, x26, x27, x28, x29, x32, x33, x36, x37, x38 ],
       chain(
-         assign(s5, V(0.0)),
-         assign(s8, nth(X, V(0))),
-         assign(s7, V(1.0)),
-         loop(i5, [ 0 .. 2 ],
-            chain(
-               assign(s6, mul(s7, nth(D, i5))),
-               assign(s5, add(s5, s6)),
-               assign(s7, mul(s7, s8))
-            )
+         ivenv(
+            assign(u13, Value(TVect(T_Real(64), 2), [ Value(T_Real(64), 0.0), Value(T_Real(64), 0.0) ])),
+            assign(u10, vcvt_64f32f(addsub_4x32f(vdup(RealEPS(T_Real(32)), Value(TInt, 4)), vdup(nth(X, Value(TInt, 0)), Value(TInt, 4))))),
+            assign(u9, Value(TVect(T_Real(64), 2), [ Value(T_Real(64), -1.0), Value(T_Real(64), 1.0) ])),
+            loop(i33, [ 0 .. 2 ],
+               chain(
+                  assign(x25, addsub_2x64f(vdup(add(RealEPS(T_Real(64)), RealEPS(T_Real(64))), Value(TInt, 2)), vdup(nth(D, i33), Value(TInt, 2)))),
+                  assign(x20, addsub_2x64f(Value(TVect(T_Real(64), 2), [ Value(T_Real(64), 0.0), Value(T_Real(64), 0.0) ]), u9)),
+                  assign(x21, mul(x20, x25)),
+                  assign(x22, mul(vushuffle_2x64f(x20, vparam([ 2, 1 ])), x25)),
+                  assign(x23, neg(min(x21, x22))),
+                  assign(u11, add(max(vushuffle_2x64f(x23, vparam([ 2, 1 ])), x21, x22), vdup(RealEPS(T_Real(64)), Value(TInt, 2)))),
+                  assign(u13, add(u13, u11)),
+                  assign(x26, addsub_2x64f(Value(TVect(T_Real(64), 2), [ Value(T_Real(64), 0.0), Value(T_Real(64), 0.0) ]), u9)),
+                  assign(x27, mul(x26, u10)),
+                  assign(x28, mul(vushuffle_2x64f(x26, vparam([ 2, 1 ])), u10)),
+                  assign(x29, neg(min(x27, x28))),
+                  assign(u9, add(max(vushuffle_2x64f(x29, vparam([ 2, 1 ])), x27, x28), vdup(RealEPS(T_Real(64)), Value(TInt, 2))))
+               )
+            ),
+            assign(u14, Value(TVect(T_Real(64), 2), [ Value(T_Real(64), 0.0), Value(T_Real(64), 0.0) ])),
+            loop(i31, [ 0 .. 1 ],
+               chain(
+                  assign(u16, vcvt_64f32f(addsub_4x32f(vdup(RealEPS(T_Real(32)), Value(TInt, 4)), vdup(nth(X, add(i31, Value(TInt, 1))), Value(TInt, 4))))),
+                  assign(u15, vcvt_64f32f(addsub_4x32f(vdup(RealEPS(T_Real(32)), Value(TInt, 4)), vdup(nth(X, add(Value(TInt, 3), i31)), Value(TInt, 4))))),
+                  assign(x33, add(u16, vushuffle_2x64f(u15, vparam([ 2, 1 ])))),
+                  assign(x32, vushuffle_2x64f(x33, vparam([ 2, 1 ]))),
+                  assign(u12, vshuffle_2x64f(min(x32, x33), max(x32, x33), vparam([ 1, 2 ]))),
+                  assign(u14, vshuffle_2x64f(min(u14, u12), max(u14, u12), vparam([ 1, 2 ])))
+               )
+            ),
+            assign(x36, addsub_2x64f(Value(TVect(T_Real(64), 2), [ Value(T_Real(64), 0.0), Value(T_Real(64), 0.0) ]), u14)),
+            assign(x37, addsub_2x64f(Value(TVect(T_Real(64), 2), [ Value(T_Real(64), 0.0), Value(T_Real(64), 0.0) ]), u13)),
+            assign(x38, cmpge_2x64f(x36, vushuffle_2x64f(x37, vparam([ 2, 1 ])))),
+            assign(w3, sub(testc_4x32i(tcast(TVect(T_Int(32), 4), x38), vhex([ "0xffffffff", "0xffffffff", "0xffffffff", "0xffffffff" ])), testnzc_4x32i(tcast(TVect(T_Int(32), 4), x38), vhex([ "0xffffffff", "0xffffffff", "0xffffffff", "0xffffffff" ]))))
          ),
-         assign(s1, V(0.0)),
-         loop(i3, [ 0 .. 1 ],
-            chain(
-               assign(q3, nth(X, add(i3, V(1)))),
-               assign(q4, nth(X, add(V(3), i3))),
-               assign(w1, sub(q3, q4)),
-               assign(s4, cond(geq(w1, V(0)), w1, neg(w1))),
-               assign(s1, cond(geq(s1, s4), s1, s4))
-            )
-         ),
-         creturn(geq(s1, s5))
+         creturn(w3)
       )
    )
 ))

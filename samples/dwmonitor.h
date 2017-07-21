@@ -1,5 +1,8 @@
 /*	Dynamic Window Approach Safety Monitor
 
+	Version:
+	C99, Intel C++, SSE 4.1
+
 	inputs:
 	D[0] = (A/b+1)*(A/2*eps^2+eps*V)
 	D[1] = V/b + eps*(A/b+1)
@@ -26,7 +29,7 @@
 extern "C" {
 #endif
 
-int dwmonitor(double  *X, double  *D);
+int dwmonitor(float  *X, double  *D);
 
 #ifdef __cplusplus
 }
