@@ -98,18 +98,24 @@ i_iconst:
                                                   (ILiteral (t,i)) }
   ;
 
-i_uiconst:
+/*i_uiconst:
   | VALUE LPAREN t=i_itype COMMA i=i_uint RPAREN { mkiconst $symbolstartpos $endpos
                                                   (ILiteral (t,i)) }
   ;
+*/
 
+i_vparamelem:
+  | i=i_uint { mkiconst $symbolstartpos $endpos (ILiteral (UInt8Type,i)) }
+  ;
+                
+        ;
 i_rvalue:
   | VALUE LPAREN t=i_ftype COMMA LBRACKET l=separated_nonempty_list(COMMA, i_fconst) RBRACKET RPAREN
                 { mkrvalue $symbolstartpos $endpos (FConstArr (t,l)) }
   | VALUE LPAREN t=i_itype COMMA LBRACKET l=separated_nonempty_list(COMMA, i_iconst) RBRACKET RPAREN
                 { mkrvalue $symbolstartpos $endpos (IConstArr (t,l)) }
-  | VPARAM LPAREN t=i_itype COMMA LBRACKET l=separated_nonempty_list(COMMA, i_uiconst) RBRACKET RPAREN
-                { mkrvalue $symbolstartpos $endpos (IConstArr (t,l)) }
+  | VPARAM LPAREN LBRACKET l=separated_nonempty_list(COMMA, i_vparamelem) RBRACKET RPAREN
+                { mkrvalue $symbolstartpos $endpos (IConstArr (UInt8Type, l)) }
   | VHEX LPAREN LBRACKET l=separated_nonempty_list(COMMA, STRING) RBRACKET RPAREN
               { mkrvalue $symbolstartpos $endpos (VHex l) }
   | f=i_fconst { mkrvalue $symbolstartpos $endpos (FConst f) }
