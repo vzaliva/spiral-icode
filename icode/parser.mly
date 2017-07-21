@@ -98,19 +98,24 @@ i_iconst:
                                                   (ILiteral (t,i)) }
   ;
 
+i_uiconst:
+  | VALUE LPAREN t=i_itype COMMA i=i_uint RPAREN { mkiconst $symbolstartpos $endpos
+                                                  (ILiteral (t,i)) }
+  ;
+
 i_rvalue:
-  | VALUE LPAREN LBRACKET l=separated_nonempty_list(COMMA, i_fconst) RBRACKET RPAREN
-              { mkrvalue $symbolstartpos $endpos (FConstArr l) }
-  | VALUE LPAREN LBRACKET l=separated_nonempty_list(COMMA, i_iconst) RBRACKET RPAREN
-              { mkrvalue $symbolstartpos $endpos (IConstArr l) }
-  | VPARAM LPAREN LBRACKET l=separated_nonempty_list(COMMA, i_uint) RBRACKET RPAREN
-              { mkrvalue $symbolstartpos $endpos (IConstArr l) }
+  | VALUE LPAREN t=i_ftype COMMA LBRACKET l=separated_nonempty_list(COMMA, i_fconst) RBRACKET RPAREN
+                { mkrvalue $symbolstartpos $endpos (FConstArr (t,l)) }
+  | VALUE LPAREN t=i_itype COMMA LBRACKET l=separated_nonempty_list(COMMA, i_iconst) RBRACKET RPAREN
+                { mkrvalue $symbolstartpos $endpos (IConstArr (t,l)) }
+  | VPARAM LPAREN t=i_itype COMMA LBRACKET l=separated_nonempty_list(COMMA, i_uiconst) RBRACKET RPAREN
+                { mkrvalue $symbolstartpos $endpos (IConstArr (t,l)) }
   | VHEX LPAREN LBRACKET l=separated_nonempty_list(COMMA, STRING) RBRACKET RPAREN
               { mkrvalue $symbolstartpos $endpos (VHex l) }
   | f=i_fconst { mkrvalue $symbolstartpos $endpos (FConst f) }
   | i=i_iconst { mkrvalue $symbolstartpos $endpos (IConst i) }
   | NTH  LPAREN a=i_rvalue COMMA i=i_rvalue RPAREN { mkrvalue $symbolstartpos $endpos (NthRvalue (a,i)) }
-  | VDUP LPAREN a=i_rvalue COMMA i=i_iconst RPAREN { mkrvalue $symbolstartpos $endpos (VdupRvalue (a,i)) }
+  | VDUP LPAREN a=i_rvalue COMMA i=i_int RPAREN { mkrvalue $symbolstartpos $endpos (VdupRvalue (a,i)) }
   | TCAST LPAREN t=i_type COMMA v=i_rvalue RPAREN { mkrvalue $symbolstartpos $endpos (RCast (t,v)) }
   | n=IDENTIFIER LPAREN a=separated_list(COMMA, i_rvalue) RPAREN
                 {
