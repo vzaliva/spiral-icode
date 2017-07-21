@@ -29,8 +29,13 @@ OCamlProgram($(PROGRAM), $(FILES))
 # Default target: compile into bytecode or native code, or both
 .DEFAULT: $(EXE)
 
-SCRIPTS32[] = dft16.g dft48.g  # dft16.g dft32.g dft48.g dft16avx.g dft64avx8.g 
-SCRIPTS64[] = dwmonitor.g #dwmonitor_interval.g
+
+# these are supposed to work in 32 and 64 bit modes
+SCRIPTS[] = dft128-AVX_4x64f.g dft64-AVX_4x64f.g dft96-AVX_4x64f.g dft16-SSE_4x32f.g dft32-SSE_4x32f.g dft48-SSE_4x32f.g dft64-SSE_4x32f.g 
+# additionally, these are supposed to work only in 32
+SCRIPTS32[] = $(SCRIPTS) dft16.g dft48.g # dft16.g dft32.g dft48.g dft16avx.g dft64avx8.g 
+# additionally, these are supposed to work only in 64
+SCRIPTS64[] = $(SCRIPTS) dwmonitor.g  #dwmonitor_interval.g
 
 run: $(EXE)
 	./$(EXE) --64 -d $(addprefix ../samples/, $(SCRIPTS64))
