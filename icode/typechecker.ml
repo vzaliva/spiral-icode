@@ -436,7 +436,7 @@ let rec check_vars_in_rvalue s (x:rvalue) =
   | VdupRvalue (a,_) -> (check_vars_in_rvalue s a) ; ()
   | RCast (_,r) -> check_vars_in_rvalue s r
   | RDeref r -> check_vars_in_rvalue s r
-  | FConstArr _  | IConstArr _ | FConst _  | IConst _ | VHex _ -> ()
+  | FConstArr _  | IConstArr _ | FConstVec _  | IConstVec _ | FConst _  | IConst _ | VHex _ -> ()
 and check_vars_in_lvalue s (x:lvalue) =
   match x.node with
   | VarLValue v -> var_in_scope s v
@@ -549,6 +549,18 @@ and rvalue_type vmap rv =
        ArrType (A (I at) , List.length il)
      else
        raise (TypeError (Format.asprintf "%a Mismatch between int array type and its value types\n" pr_err_loc rv.loc))
+  | FConstVec (at, fl) ->
+     let flt = List.map ~f:fconst_type fl in
+     if List.for_all flt (eq_float_type at) then
+       VecType (F at , List.length fl)
+     else
+       raise (TypeError (Format.asprintf "%a Mismatch between float vector type and its value types\n" pr_err_loc rv.loc))
+  | IConstVec (at, il) ->
+     let ilt = List.map ~f:iconst_type il in
+     if List.for_all ilt (eq_int_type at) then
+       VecType (I at , List.length il)
+     else
+       raise (TypeError (Format.asprintf "%a Mismatch between int vector type and its value types\n" pr_err_loc rv.loc))
   | VHex sl ->
      let tHARDCODED = Int32Type in (* TODO: ask Franz to print type *)
      let iconst_of_hex s : iconst =

@@ -10,6 +10,6 @@
 
 Define in Coq and Extract
 
-Check type of array matches type of elements.
+Check length in const array/vec type matches number of elemens.
 Check iconst type and U/I64 value match
 Check fconst type and literal range for float/double match
