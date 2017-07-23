@@ -50,7 +50,6 @@ rule main = parse
 | "loop"    { LOOP    }
 | "func"    { FUNC    }
 | "nth"     { NTH     }
-| "vdup"    { VDUP    }
 | "Value"   { VALUE   }
 | "skip"    { SKIP    }
 | "if"      { IF      }
@@ -81,11 +80,18 @@ rule main = parse
 | "TVect"      { TVECT   }
 | "TArray"     { TARR    }
 
+(* Special values *)
+| "RealEPS" { REALEPS }
 
 (* Special functions *)
-| "RealEPS" { REALEPS }
 | "tcast"   { TCAST   }
 | "deref"   { DEREF   }
+| "vdup"    { VDUP    }
+
+(* Vector operators *)
+| "vstore_2l_4x32f" { VSTORE_2L_4X32F }
+| "vstore_2h_4x32f" { VSTORE_2H_4X32F }
+| "vstoreu_4x32f"   { VSTOREU_4X32F   }
 
 (* string literals *)
 | '"'

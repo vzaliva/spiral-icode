@@ -12,3 +12,11 @@ Define in Coq and Extract
 
 Check length in const array/vec type matches number of elemens.
 Check iconst type and U/I64 value match
+
+
+
+
+vstore_2l_4x32f(TPtr(TVect(TReal, 2)), TVect(TReal, 4))
+vstore_2h_4x32f(TPtr(TVect(TReal, 2)), TVect(TReal, 4))
+vstoreu_4x32f(TPtr(TReal), TVect(TFloat, 4))
+                                

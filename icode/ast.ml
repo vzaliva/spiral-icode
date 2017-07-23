@@ -182,6 +182,9 @@ and istmt_node =
   | Assign of lvalue*rvalue
   | Loop of ivar*Int_or_uint_64.t*Int_or_uint_64.t*istmt (* 'int' type for bounds, and a<=b will be checked later *)
   | If of rvalue*istmt*istmt
+  | Vstore_2l_4x32f of lvalue*rvalue
+  | Vstore_2h_4x32f of lvalue*rvalue
+  | Vstoreu_4x32f of lvalue*rvalue
   | Return of rvalue [@@deriving compare, sexp]
 
 type iprogram = Program of ((ivar*IType.t) list)*istmt [@@deriving compare, sexp]

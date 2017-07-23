@@ -21,6 +21,7 @@
 
 %token LET VAR ALIGNED
 %token VALUE DECL CHAIN IVENV PROGRAM DATA ASSIGN LOOP FUNC NTH SKIP IF CRETURN EOF
+%token VSTORE_2L_4X32F  VSTORE_2H_4X32F VSTOREU_4X32F 
 %token TVOID TREAL TDOUBLE TFLOAT TBOOL TPTR TVECT TARR
 %token TINT TINT8 TINT16 TINT32 TINT64
 %token TUINT TUINT8 TUINT16 TUINT32 TUINT64
@@ -178,6 +179,8 @@ i_chain_kw:
 i_func:
   | FUNC LPAREN t=i_type COMMA n=STRING COMMA LBRACKET a=separated_list(COMMA, IDENTIFIER) RBRACKET COMMA b=i_stmt RPAREN { mkstmt $symbolstartpos $endpos (Function (n,t,a,b)) }
 
+
+                                
 i_stmt:
   | SKIP { mkstmt $symbolstartpos $endpos Skip}
   | f=i_func {f}
@@ -191,6 +194,12 @@ i_stmt:
                 {
                     mkstmt $symbolstartpos $endpos (Loop (v,f,t,b))
                 }
+  | VSTORE_2L_4X32F LPAREN n=i_lvalue COMMA e=i_rvalue RPAREN
+                { mkstmt $symbolstartpos $endpos (Vstore_2l_4x32f (n,e)) }
+  | VSTORE_2H_4X32F LPAREN n=i_lvalue COMMA e=i_rvalue RPAREN
+                { mkstmt $symbolstartpos $endpos (Vstore_2h_4x32f (n,e)) }
+  | VSTOREU_4X32F LPAREN n=i_lvalue COMMA e=i_rvalue RPAREN
+                { mkstmt $symbolstartpos $endpos (Vstoreu_4x32f (n,e)) }
   ;
 
 /* Top level: definitions single 'func' or 'program' of func */
