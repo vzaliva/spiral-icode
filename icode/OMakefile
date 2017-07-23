@@ -38,8 +38,8 @@ SCRIPTS32[] = $(SCRIPTS) dft16.g dft48.g # dft16.g dft32.g dft48.g dft16avx.g df
 SCRIPTS64[] = $(SCRIPTS) dwmonitor.g  #dwmonitor_interval.g
 
 run: $(EXE)
-	./$(EXE) --32 -d $(addprefix ../samples/, $(SCRIPTS32))
-	./$(EXE) --64 -d $(addprefix ../samples/, $(SCRIPTS64))
+	./$(EXE) --32 -e -d $(addprefix ../samples/, $(SCRIPTS32))
+	./$(EXE) --64 -e -d $(addprefix ../samples/, $(SCRIPTS64))
 
 parser.dot.png:
 	dot -Tpng -O parser.dot
