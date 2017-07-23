@@ -112,23 +112,39 @@ i_rvalue:
   | VALUE LPAREN
                 TARR LPAREN t=i_ftype COMMA s=UINT RPAREN COMMA
                 LBRACKET l=separated_nonempty_list(COMMA, i_fconst) RBRACKET RPAREN
-                { mkrvalue $symbolstartpos $endpos (FConstArr (t,l)) }
-                /* TODO: check vector size to match list size */
+                {
+                    if (int_of_string s) <> (List.length l) then
+                        raise (Syntaxerr.Error "list size mismatch")
+                    else
+                        mkrvalue $symbolstartpos $endpos (FConstArr (t,l))
+                }
   | VALUE LPAREN
                 TARR LPAREN t=i_itype COMMA s=UINT RPAREN COMMA
                 LBRACKET l=separated_nonempty_list(COMMA, i_iconst) RBRACKET RPAREN
-                { mkrvalue $symbolstartpos $endpos (IConstArr (t,l)) }
-                /* TODO: check vector size to match list size */
+                {
+                    if (int_of_string s) <> (List.length l) then
+                        raise (Syntaxerr.Error "list size mismatch")
+                    else
+                        mkrvalue $symbolstartpos $endpos (IConstArr (t,l))
+                }
   | VALUE LPAREN
                 TVECT LPAREN t=i_ftype COMMA s=UINT RPAREN COMMA
                 LBRACKET l=separated_nonempty_list(COMMA, i_fconst) RBRACKET RPAREN
-                { mkrvalue $symbolstartpos $endpos (FConstVec (t,l)) }
-                /* TODO: check vector size to match list size */
+                {
+                    if (int_of_string s) <> (List.length l) then
+                        raise (Syntaxerr.Error "list size mismatch")
+                    else
+                        mkrvalue $symbolstartpos $endpos (FConstVec (t,l))
+                }
   | VALUE LPAREN
                 TVECT LPAREN t=i_itype COMMA s=UINT RPAREN COMMA
                 LBRACKET l=separated_nonempty_list(COMMA, i_iconst) RBRACKET RPAREN
-                { mkrvalue $symbolstartpos $endpos (IConstVec (t,l)) }
-                /* TODO: check vector size to match list size */                
+                {
+                    if (int_of_string s) <> (List.length l) then
+                        raise (Syntaxerr.Error "list size mismatch")
+                    else
+                        mkrvalue $symbolstartpos $endpos (IConstVec (t,l))
+                }
   | VPARAM LPAREN LBRACKET l=separated_nonempty_list(COMMA, i_vparamelem) RBRACKET RPAREN
                 { mkrvalue $symbolstartpos $endpos (IConstArr (UInt8Type, l)) }
   | VHEX LPAREN LBRACKET l=separated_nonempty_list(COMMA, STRING) RBRACKET RPAREN

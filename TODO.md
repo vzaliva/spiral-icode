@@ -12,4 +12,3 @@ Define in Coq and Extract
 
 Check length in const array/vec type matches number of elemens.
 Check iconst type and U/I64 value match
-Check fconst type and literal range for float/double match

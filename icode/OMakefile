@@ -17,7 +17,7 @@ OCAMLFINDFLAGS =
 
 OCAMLPACKS[] = core uint ppx_jane sexplib ppx_sexp_conv ppx_compare getopt
 
-FILES =  getoptext utils parser lexer ast config typechecker main
+FILES =  syntaxerr getoptext utils parser lexer ast config typechecker main
 
 OCamlGeneratedFiles(lexer.ml parser.ml parser.mli)
 

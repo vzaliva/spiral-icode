@@ -48,6 +48,8 @@ let _ =
        Format.eprintf "%a Syntax error (lexing error)\n" pr_pos (Lexing.lexeme_start_p lineBuffer)
     | Parser.Error ->
        Format.eprintf "%a Syntax error (parsing error)\n" pr_pos (Lexing.lexeme_start_p lineBuffer)
+    | Syntaxerr.Error msg ->
+       Format.eprintf "%a %s\n" pr_pos (Lexing.lexeme_start_p lineBuffer) msg
   in
   parse_cmdline ();
   List.map ~f:process_file !input_files
