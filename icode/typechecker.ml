@@ -398,6 +398,11 @@ let builtins_map =
       ("vpermf128_4x64f", func_type_vbinop_with_vparam (VecType (F DoubleType, 4))) ;
       ("vpermf128_8x32f", func_type_vbinop_with_vparam (VecType (F FloatType, 8))) ;
 
+      ("vload_2l_4x32f", a_func_type [VecType (F FloatType, 4); PtrType (VecType (F FloatType, 2) , None)] (VecType (F FloatType, 4))); (* TODO: problem with matching Ptr alignment *)
+      ("vload_2h_4x32f", a_func_type [VecType (F FloatType, 4); PtrType (VecType (F FloatType, 2) , None)] (VecType (F FloatType, 4))); (* TODO: problem with matching Ptr alignment *)
+
+      ("vloadu_4x32f", a_func_type [PtrType (A (F FloatType), None)] (VecType (F FloatType, 4);))  (* TODO: problem with matching Ptr alignment *)
+
     ]
 
 let build_var_map l =
