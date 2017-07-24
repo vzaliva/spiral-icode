@@ -242,7 +242,7 @@ let rec pr_itype ppf = function
 
 let itype_as_string = Format.asprintf "%a" pr_itype
 
-let type_list_fmt = Format.pp_print_list ~pp_sep:(fun fmt () -> Format.fprintf fmt ";") pr_itype
+let type_list_fmt sep = Format.pp_print_list ~pp_sep:(fun fmt () -> Format.fprintf fmt sep) pr_itype
 
 let pr_err_loc ppf (l:Loc.t) =
   fprintf ppf "%a: error:" Utils.pr_pos l.Loc.loc_start

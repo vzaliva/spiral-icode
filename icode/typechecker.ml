@@ -501,9 +501,9 @@ let rec lvalue_type vmap (x:lvalue) =
        with
        | TypeError msg ->
           let open Format in
-          eprintf "%a Error resolving lvalue function @[<h>%s(%s)@]@\n"
+          eprintf "%a  @[<h>Error resolving lvalue function: @[<h>%s(%a)@]@]\n"
                   pr_err_loc x.loc
-                  n (Sexp.to_string (Ast.sexp_of_lvalue_node x.node))
+                  n (type_list_fmt ", ") al
          ; raise (TypeError msg)
        ) in
      ft (* TODO: how do we make sure it is lvalue? *)
@@ -547,9 +547,9 @@ and rvalue_type vmap rv =
        with
        | TypeError msg ->
           let open Format in
-          eprintf "%a Error resolving rvalue function @[<h>%s(%s)@]@\n"
+          eprintf "%a  @[<h>Error resolving rvalue function: @[<h>%s(%a)@]@]\n"
                   pr_err_loc rv.loc
-                  n (Sexp.to_string (Ast.sexp_of_rvalue_node rv.node))
+                  n (type_list_fmt ", ") al
          ; raise (TypeError msg)
        ) in
      ft
