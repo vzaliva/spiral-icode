@@ -145,7 +145,7 @@ type rvalue = {
     loc: Loc.t
 } [@@deriving compare, sexp]
 and rvalue_node =
-  | FunCall of string*(rvalue list)
+  | RFunCall of string*(rlvalue list)
   | VarRValue of ivar
   | VHex of (string list)
   | FConst of fconst
@@ -158,16 +158,19 @@ and rvalue_node =
   | NthRvalue of rvalue*rvalue (* 'int' type for index will be checked later *)
   | RCast of IType.t*rvalue
   | RDeref of rvalue [@@deriving compare, sexp]
-
-type lvalue = {
+and lvalue = {
     node: lvalue_node;
     loc: Loc.t
 } [@@deriving compare, sexp]
 and lvalue_node =
+  | LFunCall of string*(rlvalue list)
   | VarLValue of ivar
   | NthLvalue of lvalue*rvalue
   | LDeref of rvalue
   | LCast of IType.t*lvalue [@@deriving compare, sexp]
+and rlvalue =
+  | Rvalue of rvalue
+  | Lvalue of lvalue [@@deriving compare, sexp]
 
 type istmt = {
     node: istmt_node;

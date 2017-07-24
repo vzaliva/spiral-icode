@@ -427,9 +427,12 @@ let check_never_decl vmap used =
      msg "Warning: following variables definded in 'let' but never declared: %s\n" (String.concat ~sep:" " (to_list unused)))
   ; unused
 
-let rec check_vars_in_rvalue s (x:rvalue) =
+let rec check_vars_in_rlvalue s = function
+  | Rvalue r -> check_vars_in_rvalue s r
+  | Lvalue l -> check_vars_in_lvalue s l
+and check_vars_in_rvalue s (x:rvalue) =
   match x.node with
-  | FunCall (_,rl) -> ignore (List.map ~f:(check_vars_in_rvalue s) rl)
+  | RFunCall (_,rl) -> ignore (List.map ~f:(check_vars_in_rlvalue s) rl)
   | VarRValue v -> var_in_scope s v
   | NthRvalue (r1,r2) ->   (check_vars_in_rvalue s r1) ;
                            (check_vars_in_rvalue s r2)
@@ -439,6 +442,7 @@ let rec check_vars_in_rvalue s (x:rvalue) =
   | FConstArr _  | IConstArr _ | FConstVec _  | IConstVec _ | FConst _  | IConst _ | VHex _ -> ()
 and check_vars_in_lvalue s (x:lvalue) =
   match x.node with
+  | LFunCall (_,rl) -> ignore (List.map ~f:(check_vars_in_rlvalue s) rl)
   | VarLValue v -> var_in_scope s v
   | NthLvalue (l, r) -> (check_vars_in_lvalue s l) ;
                         (check_vars_in_rvalue s r)
