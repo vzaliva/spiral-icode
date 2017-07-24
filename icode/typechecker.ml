@@ -493,6 +493,20 @@ let uint16_cast : Ast.Int_or_uint_64.t -> int option = function
 
 let rec lvalue_type vmap (x:lvalue) =
   match x.node with
+  | LFunCall (n,a) ->
+     let al = (List.map ~f:(rlvalue_type vmap) a) in
+     let ft =
+       (try
+         func_type n al
+       with
+       | TypeError msg ->
+          let open Format in
+          eprintf "%a Error resolving lvalue function @[<h>%s(%s)@]@\n"
+                  pr_err_loc x.loc
+                  n (Sexp.to_string (Ast.sexp_of_lvalue_node x.node))
+         ; raise (TypeError msg)
+       ) in
+     ft (* TODO: how do we make sure it is lvalue? *)
   | VarLValue v -> var_type vmap v
   | LCast (t,lv) ->
      let lt = lvalue_type vmap lv in
@@ -515,7 +529,7 @@ let rec lvalue_type vmap (x:lvalue) =
        | ArrType (t,_) | PtrType (t,_) -> t
        | _ -> raise (TypeError (Format.asprintf "Invalid type %a in NTH" pr_itype vt))
 and rvalue_type vmap rv =
-  let fconst_type (f:fconst) =
+  (let fconst_type (f:fconst) =
     match f.node with
     | FPLiteral (t,_) -> t
     | FloatEPS -> FloatType
@@ -526,16 +540,16 @@ and rvalue_type vmap rv =
   match rv.node with
   | VarRValue v -> var_type vmap v
   | RFunCall (n,a) ->
-     let al = (List.map ~f:(rvalue_type vmap) a) in
+     let al = (List.map ~f:(rlvalue_type vmap) a) in
      let ft =
        (try
          func_type n al
        with
        | TypeError msg ->
           let open Format in
-          eprintf "%a Error resolving function @[<h>%s(%s)@]@\n"
+          eprintf "%a Error resolving rvalue function @[<h>%s(%s)@]@\n"
                   pr_err_loc rv.loc
-                  n (Sexp.to_string (Ast.sexp_of_rvalue rv))
+                  n (Sexp.to_string (Ast.sexp_of_rvalue_node rv.node))
          ; raise (TypeError msg)
        ) in
      ft
@@ -610,8 +624,10 @@ and rvalue_type vmap rv =
 
 
                 | None -> raise (TypeError "Could invalid size in VDUP"))
-     | t -> raise (TypeError (Format.asprintf "Invalid value type %a in VDUP" pr_itype t))
-
+     | t -> raise (TypeError (Format.asprintf "Invalid value type %a in VDUP" pr_itype t)))
+and rlvalue_type vmap = function
+  | RValue r -> rvalue_type vmap r
+  | LValue l -> lvalue_type vmap l
 
 (*
    Peforms various type and strcutural correctness checks:
@@ -649,6 +665,28 @@ let typecheck vmap prog =
   let add_vars s vl = List.fold ~init:s ~f:add_var vl in
   let rec typecheck (fstack:(string * Ast.IType.t) list) u x =
     match x.node with
+    | Vstore_2l_4x32f (l,r) | Vstore_2h_4x32f (l,r) ->
+       (match lvalue_type vmap l, rvalue_type vmap r with
+        | PtrType(VecType(F FloatType,2),_), VecType(F FloatType,4) ->
+           check_vars_in_lvalue u l;
+           check_vars_in_rvalue u r;
+           u
+        | lt, rt ->
+           raise (TypeError (Format.asprintf "Incompatible types in Vstore_2l_4x32f %a=[%a]."
+                                             pr_itype lt
+                                             pr_itype rt
+       )))
+    | Vstoreu_4x32f (l,r) ->
+       (match lvalue_type vmap l, rvalue_type vmap r with
+        | PtrType(A (F FloatType), _), VecType(F FloatType,4) ->
+           check_vars_in_lvalue u l;
+           check_vars_in_rvalue u r;
+           u
+        | lt, rt ->
+           raise (TypeError (Format.asprintf "Incompatible types in Vstore_2l_4x32f %a=[%a]."
+                                             pr_itype lt
+                                             pr_itype rt
+       )))
     | Function (fn,fr,params,body) ->
        typecheck ((fn,fr)::fstack) (add_vars u params) body
     | Decl (params,body) ->
