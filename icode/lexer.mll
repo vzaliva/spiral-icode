@@ -1,20 +1,50 @@
 {
-  open Parser
-  exception Error of string
+    open Parser
+    exception Error of string
 
-  let next_line lexbuf =
-      let pos = lexbuf.Lexing.lex_curr_p in
-           lexbuf.Lexing.lex_curr_p <-
-               { pos with
-                       Lexing.pos_bol  = pos.Lexing.pos_cnum; 
-                       Lexing.pos_lnum = pos.Lexing.pos_lnum + 1
-               }
-}
+    let next_line lexbuf =
+    let pos = lexbuf.Lexing.lex_curr_p in
+    lexbuf.Lexing.lex_curr_p <-
+    { pos with
+      Lexing.pos_bol  = pos.Lexing.pos_cnum;
+      Lexing.pos_lnum = pos.Lexing.pos_lnum + 1
+    }
 
-let lowercase = ['a'-'z' '\223'-'\246' '\248'-'\255' '_'] 
-let uppercase = ['A'-'Z' '\192'-'\214' '\216'-'\222'] 
+    let keyword_table = Hashtbl.create 53
+    let _ =  List.iter (fun (kwd, tok) -> Hashtbl.add keyword_table kwd tok)
+    [
+        "decl"             , DECL ;
+        "chain"            , CHAIN ;
+        "program"          , PROGRAM ;
+        "ivenv"            , IVENV ;
+        "data"             , DATA ;
+        "assign"           , ASSIGN ;
+        "loop"             , LOOP ;
+        "func"             , FUNC ;
+        "nth"              , NTH ;
+        "Value"            , VALUE ;
+        "skip"             , SKIP ;
+        "if"               , IF ;
+        "creturn"          , CRETURN ;
+        "let"              , LET ;
+        "var"              , VAR ;
+        "aligned"          , ALIGNED ;
+        "vparam"           , VPARAM ;
+        "vhex"             , VHEX ;
+        "RealEPS"          , REALEPS ;
+        "tcast"            , TCAST ;
+        "deref"            , DEREF ;
+        "vdup"             , VDUP ;
+        "vstore_2l_4x32f"  , VSTORE_2L_4X32F ;
+        "vstore_2h_4x32f"  , VSTORE_2H_4X32F ;
+        "vstoreu_4x32f"    , VSTOREU_4X32F
+    ]
+    }
+
+let lowercase = ['a'-'z' '\223'-'\246' '\248'-'\255' '_']
+let uppercase = ['A'-'Z' '\192'-'\214' '\216'-'\222']
 let identchar =
-    ['A'-'Z' 'a'-'z' '_' '\192'-'\214' '\216'-'\246' '\248'-'\255' '\'' '0'-'9']
+['A'-'Z' 'a'-'z' '_' '\192'-'\214' '\216'-'\246' '\248'-'\255' '\'' '0'-'9']
 
 let white = [' ' '\t']+
 let newline = '\r' | '\n' | "\r\n"
@@ -26,9 +56,9 @@ rule main = parse
 
 (* numeric literals *)
 | '-'?['0'-'9']*'.'['0'-'9']+ as f
-    { FLOAT (float_of_string f) }
+{ FLOAT (float_of_string f) }
 | ['0'-'9']+ as i
-    { UINT (i) }
+{ UINT (i) }
 
 (* special characters *)
 | ','  { COMMA    }
@@ -40,25 +70,6 @@ rule main = parse
 | ']'  { RBRACKET }
 | ":=" { DEF      }
 
-(* some reserved words below *)    
-| "decl"    { DECL    }
-| "chain"   { CHAIN   }
-| "program" { PROGRAM }
-| "ivenv"   { IVENV   }
-| "data"    { DATA    }
-| "assign"  { ASSIGN  }
-| "loop"    { LOOP    }
-| "func"    { FUNC    }
-| "nth"     { NTH     }
-| "Value"   { VALUE   }
-| "skip"    { SKIP    }
-| "if"      { IF      }
-| "creturn" { CRETURN }
-| "let"     { LET     }
-| "var"     { VAR     }
-| "aligned" { ALIGNED }
-| "vparam"  { VPARAM  }
-| "vhex"    { VHEX    }
 
 (* type names *)
 | "TVoid"      { TVOID   }
@@ -80,51 +91,41 @@ rule main = parse
 | "TVect"      { TVECT   }
 | "TArray"     { TARR    }
 
-(* Special values *)
-| "RealEPS" { REALEPS }
-
-(* Special functions *)
-| "tcast"   { TCAST   }
-| "deref"   { DEREF   }
-| "vdup"    { VDUP    }
-
-(* Vector operators *)
-| "vstore_2l_4x32f" { VSTORE_2L_4X32F }
-| "vstore_2h_4x32f" { VSTORE_2H_4X32F }
-| "vstoreu_4x32f"   { VSTOREU_4X32F   }
-
 (* string literals *)
 | '"'
-     { let buffer = Buffer.create 10 in
-         STRING (stringl buffer lexbuf)
-     }
+{ let buffer = Buffer.create 10 in
+    STRING (stringl buffer lexbuf)
+    }
 
 | "/*"
-    { comment lexbuf }
-     
+{ comment lexbuf }
+
 | ((lowercase | uppercase) (identchar*)) as i
-    { IDENTIFIER i }
-    
+{
+    try Hashtbl.find keyword_table i
+    with Not_found -> IDENTIFIER i
+    }
+
 | eof
-    { EOF }
+{ EOF }
 | _
-    { raise (Error (Printf.sprintf "At offset %d: unexpected character.\n" (Lexing.lexeme_start lexbuf))) }
+{ raise (Error (Printf.sprintf "At offset %d: unexpected character.\n" (Lexing.lexeme_start lexbuf))) }
 
 and stringl buffer = parse
- | '"' { Buffer.contents buffer }
- | "\\t" { Buffer.add_char buffer '\t'; stringl buffer lexbuf }
- | "\\n" { Buffer.add_char buffer '\n'; stringl buffer lexbuf }
- | '\\' '"' { Buffer.add_char buffer '"'; stringl buffer lexbuf }
- | '\\' '\\' { Buffer.add_char buffer '\\'; stringl buffer lexbuf }
- | newline {  next_line lexbuf; stringl buffer lexbuf }
- | eof { raise End_of_file }
- | _ as char { Buffer.add_char buffer char; stringl buffer lexbuf }
+| '"' { Buffer.contents buffer }
+    | "\\t" { Buffer.add_char buffer '\t'; stringl buffer lexbuf }
+    | "\\n" { Buffer.add_char buffer '\n'; stringl buffer lexbuf }
+    | '\\' '"' { Buffer.add_char buffer '"'; stringl buffer lexbuf }
+    | '\\' '\\' { Buffer.add_char buffer '\\'; stringl buffer lexbuf }
+    | newline {  next_line lexbuf; stringl buffer lexbuf }
+    | eof { raise End_of_file }
+    | _ as char { Buffer.add_char buffer char; stringl buffer lexbuf }
 
-and comment = parse
+    and comment = parse
 | "*/"
     { main lexbuf }
-| eof
-    { raise (Error "Unterminated comment") }
-| newline {  next_line lexbuf; comment lexbuf }
-| _
-    { comment lexbuf }
+        | eof
+        { raise (Error "Unterminated comment") }
+        | newline {  next_line lexbuf; comment lexbuf }
+        | _
+        { comment lexbuf }
