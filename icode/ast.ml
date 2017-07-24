@@ -224,21 +224,21 @@ let realType () = A (realAType ())
 open Format
 
 let rec pr_itype ppf = function
-  | A I Int8Type -> fprintf ppf "@[TInt8@]"
-  | A I Int16Type -> fprintf ppf "@[TInt16@]"
-  | A I Int32Type -> fprintf ppf "@[TInt32@]"
-  | A I Int64Type -> fprintf ppf "@[TInt64@]"
-  | A I UInt8Type -> fprintf ppf "@[TUInt8@]"
+  | A I Int8Type   -> fprintf ppf "@[TInt8@]"
+  | A I Int16Type  -> fprintf ppf "@[TInt16@]"
+  | A I Int32Type  -> fprintf ppf "@[TInt32@]"
+  | A I Int64Type  -> fprintf ppf "@[TInt64@]"
+  | A I UInt8Type  -> fprintf ppf "@[TUInt8@]"
   | A I UInt16Type -> fprintf ppf "@[TUInt16@]"
   | A I UInt32Type -> fprintf ppf "@[TUInt32@]"
   | A I UInt64Type -> fprintf ppf "@[TUInt64@]"
-  | A I BoolType -> fprintf ppf "@[TBool@]"
-  | A F FloatType -> fprintf ppf "@[Float@]"
+  | A I BoolType   -> fprintf ppf "@[TBool@]"
+  | A F FloatType  -> fprintf ppf "@[Float@]"
   | A F DoubleType -> fprintf ppf "@[Double@]"
-  | VoidType -> fprintf ppf "@[TVoid@]"
-  | ArrType (t,s) -> fprintf ppf "@[<h>Arr(%a,%d)@]" pr_itype t s
-  | VecType (t,s) -> fprintf ppf "@[<h>Vec(%a,%d)@]" pr_itype (A t) s
-  | PtrType (t,_) -> fprintf ppf "@[<h>Ptr(%a)@]" pr_itype t
+  | VoidType       -> fprintf ppf "@[TVoid@]"
+  | ArrType (t,s)  -> fprintf ppf "@[<h>Arr(%a,%d)@]" pr_itype t s
+  | VecType (t,s)  -> fprintf ppf "@[<h>Vec(%a,%d)@]" pr_itype (A t) s
+  | PtrType (t,_)  -> fprintf ppf "@[<h>Ptr(%a)@]" pr_itype t
 
 let itype_as_string = Format.asprintf "%a" pr_itype
 
