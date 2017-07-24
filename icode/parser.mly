@@ -170,7 +170,7 @@ i_lvalue:
     | TCAST LPAREN t=i_type COMMA v=i_lvalue RPAREN { mklvalue $symbolstartpos $endpos (LCast (t,v)) }
     | n=IDENTIFIER LPAREN a=separated_list(COMMA, i_rlvalue) RPAREN
                 {
-                    mkrvalue $symbolstartpos $endpos (LFunCall (n,a))
+                    mklvalue $symbolstartpos $endpos (LFunCall (n,a))
                 }
   ;
 

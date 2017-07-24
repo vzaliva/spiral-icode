@@ -428,8 +428,8 @@ let check_never_decl vmap used =
   ; unused
 
 let rec check_vars_in_rlvalue s = function
-  | Rvalue r -> check_vars_in_rvalue s r
-  | Lvalue l -> check_vars_in_lvalue s l
+  | RValue r -> check_vars_in_rvalue s r
+  | LValue l -> check_vars_in_lvalue s l
 and check_vars_in_rvalue s (x:rvalue) =
   match x.node with
   | RFunCall (_,rl) -> ignore (List.map ~f:(check_vars_in_rlvalue s) rl)
@@ -525,7 +525,7 @@ and rvalue_type vmap rv =
     | ILiteral (t,_) -> t  in
   match rv.node with
   | VarRValue v -> var_type vmap v
-  | FunCall (n,a) ->
+  | RFunCall (n,a) ->
      let al = (List.map ~f:(rvalue_type vmap) a) in
      let ft =
        (try

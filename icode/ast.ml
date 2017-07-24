@@ -169,8 +169,8 @@ and lvalue_node =
   | LDeref of rvalue
   | LCast of IType.t*lvalue [@@deriving compare, sexp]
 and rlvalue =
-  | Rvalue of rvalue
-  | Lvalue of lvalue [@@deriving compare, sexp]
+  | RValue of rvalue
+  | LValue of lvalue [@@deriving compare, sexp]
 
 type istmt = {
     node: istmt_node;
