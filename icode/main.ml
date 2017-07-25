@@ -24,7 +24,7 @@ let specs =
       "Show program version");
     ( 'h', "help", Some usage_action, None,         "Show this help");
     ( 'd', "debug", (set Config.debug true), None,  "Debug");
-    ( 'e', "stop-on-err", (set Config.stop_on_err true), None,  "Stop on first error");
+    ( 'e', "stop",  (set Config.stop_on_err true), None,  "Stop on first error");
     ( 'f', "float", (set Config.isDouble false), None,  "32-bit (4-byte) floating point mode");
     ( 'd', "double", (set Config.isDouble true), None, "64-bit (8-byte) floating point mode mode");
     ( '4', "32", (set Config.is64bit false), None,  "32-bit (4-byte) addressing");

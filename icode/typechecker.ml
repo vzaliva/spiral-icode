@@ -457,7 +457,21 @@ let rec check_vars_in_rvalue s (x:rvalue) =
   | VdupRvalue (a,_) -> (check_vars_in_rvalue s a) ; ()
   | RCast (_,r) -> check_vars_in_rvalue s r
   | RDeref r -> check_vars_in_rvalue s r
-  | FConstArr _  | IConstArr _ | FConstVec _  | IConstVec _ | FConst _  | IConst _ | VHex _ -> ()
+  | FConstArr (_,l) | FConstVec (_,l) ->
+     ignore (List.map ~f:(fun x -> check_vars_in_rvalue s
+                                                        {rloc = x.loc;
+                                                         rnode =FConst x }) l)
+  | IConstArr (_,l) | IConstVec (_,l)->
+     ignore (List.map ~f:(fun x -> check_vars_in_rvalue s
+                                                        {rloc = x.loc;
+                                                         rnode =IConst x}) l)
+  | IConst {node = ILiteral (t,v)} ->
+     if int_const_in_range t v then ()
+     else raise (TypeError (Format.asprintf "Illegal value %s for type %a."
+                                            (Int_or_uint_64.to_string v)
+                                            pr_itype (A (I t))))
+  | FConst _ -> () (* TODO: range check  *)
+  | VHex _ -> ()
 and check_vars_in_lvalue s (x:lvalue) =
   match x.lnode with
   | VarLValue v -> var_in_scope s v
