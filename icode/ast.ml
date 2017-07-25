@@ -145,7 +145,7 @@ type rvalue = {
     rloc: Loc.t
 } [@@deriving compare, sexp]
 and rvalue_node =
-  | FunCall of string*(rvalue list)
+  | FunCallValue of string*(rvalue list)
   | VarRValue of ivar
   | VHex of (string list)
   | FConst of fconst
@@ -182,9 +182,7 @@ and istmt_node =
   | Assign of lvalue*rvalue
   | Loop of ivar*Int_or_uint_64.t*Int_or_uint_64.t*istmt (* 'int' type for bounds, and a<=b will be checked later *)
   | If of rvalue*istmt*istmt
-  | Vstore_2l_4x32f of rvalue*rvalue
-  | Vstore_2h_4x32f of rvalue*rvalue
-  | Vstoreu_4x32f of rvalue*rvalue
+  | FunCallStmt of string*(rvalue list)
   | Return of rvalue [@@deriving compare, sexp]
 
 type iprogram = Program of ((ivar*IType.t) list)*istmt [@@deriving compare, sexp]

@@ -401,8 +401,11 @@ let builtins_map =
       ("vload_2l_4x32f", a_func_type [VecType (F FloatType, 4); PtrType (VecType (F FloatType, 2) , None)] (VecType (F FloatType, 4))); (* TODO: problem with matching Ptr alignment *)
       ("vload_2h_4x32f", a_func_type [VecType (F FloatType, 4); PtrType (VecType (F FloatType, 2) , None)] (VecType (F FloatType, 4))); (* TODO: problem with matching Ptr alignment *)
 
-      ("vloadu_4x32f", a_func_type [PtrType (A (F FloatType), None)] (VecType (F FloatType, 4);))  (* TODO: problem with matching Ptr alignment *)
+      ("vloadu_4x32f", a_func_type [PtrType (A (F FloatType), None)] (VecType (F FloatType, 4);));  (* TODO: problem with matching Ptr alignment *)
 
+      ("vstore_2l_4x32f", a_func_type [PtrType(VecType(F FloatType,2), None); VecType(F FloatType,4)] VoidType); (* TODO: problem with matching Ptr alignment *)
+      ("vstore_2h_4x32f", a_func_type [PtrType(VecType(F FloatType,2), None); VecType(F FloatType,4)] VoidType);(* TODO: problem with matching Ptr alignment *)
+      ("vstoreu_4x32f", a_func_type [PtrType(A (F FloatType), None); VecType(F FloatType,4)] VoidType); (* TODO: problem with matching Ptr alignment *)
     ]
 
 let build_var_map l =
@@ -434,7 +437,7 @@ let check_never_decl vmap used =
 
 let rec check_vars_in_rvalue s (x:rvalue) =
   match x.rnode with
-  | FunCall (_,rl) -> ignore (List.map ~f:(check_vars_in_rvalue s) rl)
+  | FunCallValue (_,rl) -> ignore (List.map ~f:(check_vars_in_rvalue s) rl)
   | VarRValue v -> var_in_scope s v
   | NthRvalue (r1,r2) ->   (check_vars_in_rvalue s r1) ;
                            (check_vars_in_rvalue s r2)
@@ -526,7 +529,7 @@ and rvalue_type vmap rv =
     | ILiteral (t,_) -> t  in
   match rv.rnode with
   | VarRValue v -> var_type vmap v
-  | FunCall (n,a) ->
+  | FunCallValue (n,a) ->
      let al = (List.map ~f:(rvalue_type vmap) a) in
      let ft =
        (try
@@ -649,28 +652,23 @@ let typecheck vmap prog =
   let add_vars s vl = List.fold ~init:s ~f:add_var vl in
   let rec typecheck (fstack:(string * Ast.IType.t) list) u x =
     match x.node with
-    | Vstore_2l_4x32f (l,r) | Vstore_2h_4x32f (l,r) ->
-       (match rvalue_type vmap l, rvalue_type vmap r with
-        | PtrType(VecType(F FloatType,2),_), VecType(F FloatType,4) ->
-           check_vars_in_rvalue u l;
-           check_vars_in_rvalue u r;
-           u
-        | lt, rt ->
-           raise (TypeError (Format.asprintf "Incompatible types in Vstore_2l_4x32f %a=[%a]."
-                                             pr_itype lt
-                                             pr_itype rt
-       )))
-    | Vstoreu_4x32f (l,r) ->
-       (match rvalue_type vmap l, rvalue_type vmap r with
-        | PtrType(A (F FloatType), _), VecType(F FloatType,4) ->
-           check_vars_in_rvalue u l;
-           check_vars_in_rvalue u r;
-           u
-        | lt, rt ->
-           raise (TypeError (Format.asprintf "Incompatible types in Vstore_2l_4x32f %a=[%a]."
-                                             pr_itype lt
-                                             pr_itype rt
-       )))
+    | FunCallStmt (n,a) ->
+       ignore(List.map ~f:(check_vars_in_rvalue u) a) ;
+       let al = (List.map ~f:(rvalue_type vmap) a) in
+       let ft =
+         (try
+            func_type n al
+          with
+          | TypeError msg ->
+             let open Format in
+             eprintf "%a  @[<h>Error resolving function call type: @[<h>%s(%a)@]@]\n"
+                     pr_err_loc x.loc
+                     n (type_list_fmt ", ") al
+             ; raise (TypeError msg)
+         ) in
+       (match ft with
+       | VoidType -> u
+       | _ ->  raise (TypeError (Format.asprintf "Calling function %s which returns %a instead of void " n pr_itype ft)))
     | Function (fn,fr,params,body) ->
        typecheck ((fn,fr)::fstack) (add_vars u params) body
     | Decl (params,body) ->

@@ -10,7 +10,7 @@ Frontent TODO:
 * Check iconst type and U/I64 value match
 * Reduce/reduce conflicts in grammar
 * Matching PTR w/o regard for alighment
-* Generalize function calls for statements, instead of using specific AST nodes
+* Try to add locations in TypeError exceptions thrown
 
 Backend TODO:
 

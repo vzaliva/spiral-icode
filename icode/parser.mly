@@ -21,7 +21,6 @@
 
 %token LET VAR ALIGNED
 %token VALUE DECL CHAIN IVENV PROGRAM DATA ASSIGN LOOP FUNC NTH SKIP IF CRETURN EOF
-%token VSTORE_2L_4X32F  VSTORE_2H_4X32F VSTOREU_4X32F 
 %token TVOID TREAL TDOUBLE TFLOAT TBOOL TPTR TVECT TARR
 %token TINT TINT8 TINT16 TINT32 TINT64
 %token TUINT TUINT8 TUINT16 TUINT32 TUINT64
@@ -157,7 +156,7 @@ i_rvalue:
   | TCAST LPAREN t=i_type COMMA v=i_rvalue RPAREN { mkrvalue $symbolstartpos $endpos (RCast (t,v)) }
   | n=IDENTIFIER LPAREN a=separated_list(COMMA, i_rvalue) RPAREN
                 {
-                    mkrvalue $symbolstartpos $endpos (FunCall (n,a))
+                    mkrvalue $symbolstartpos $endpos (FunCallValue (n,a))
                 }
   | v=IDENTIFIER { mkrvalue $symbolstartpos $endpos (VarRValue v) }
   | DEREF LPAREN v=i_rvalue RPAREN { mkrvalue $symbolstartpos $endpos (RDeref v) }
@@ -194,12 +193,10 @@ i_stmt:
                 {
                     mkstmt $symbolstartpos $endpos (Loop (v,f,t,b))
                 }
-  | VSTORE_2L_4X32F LPAREN n=i_rvalue COMMA e=i_rvalue RPAREN
-                { mkstmt $symbolstartpos $endpos (Vstore_2l_4x32f (n,e)) }
-  | VSTORE_2H_4X32F LPAREN n=i_rvalue COMMA e=i_rvalue RPAREN
-                { mkstmt $symbolstartpos $endpos (Vstore_2h_4x32f (n,e)) }
-  | VSTOREU_4X32F LPAREN n=i_rvalue COMMA e=i_rvalue RPAREN
-                { mkstmt $symbolstartpos $endpos (Vstoreu_4x32f (n,e)) }
+  | n=IDENTIFIER LPAREN a=separated_list(COMMA, i_rvalue) RPAREN
+                {
+                    mkstmt $symbolstartpos $endpos (FunCallStmt (n,a))
+                }
   ;
 
 /* Top level: definitions single 'func' or 'program' of func */

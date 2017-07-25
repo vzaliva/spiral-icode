@@ -10,7 +10,7 @@
       Lexing.pos_lnum = pos.Lexing.pos_lnum + 1
     }
 
-    let keyword_table = Hashtbl.create 53
+    let keyword_table = Hashtbl.create 64
     let _ =  List.iter (fun (kwd, tok) -> Hashtbl.add keyword_table kwd tok)
     [
         "decl"             , DECL ;
@@ -35,9 +35,6 @@
         "tcast"            , TCAST ;
         "deref"            , DEREF ;
         "vdup"             , VDUP ;
-        "vstore_2l_4x32f"  , VSTORE_2L_4X32F ;
-        "vstore_2h_4x32f"  , VSTORE_2H_4X32F ;
-        "vstoreu_4x32f"    , VSTOREU_4X32F
     ]
     }
 
