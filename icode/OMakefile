@@ -36,8 +36,8 @@ SCRIPTSF[] = dft16.g dft48.g dft16-SSE_4x32f.g dft32-SSE_4x32f.g dft48-SSE_4x32f
 SCRIPTSD[] = dwmonitor.g  
 
 run: $(EXE)
-	./$(EXE) --float --64 -e -d $(addprefix ../samples/, $(SCRIPTSF))
-	./$(EXE) --double --64 -e -d $(addprefix ../samples/, $(SCRIPTSD))
+	./$(EXE) --float --64 -d -e $(addprefix ../samples/, $(SCRIPTSF))
+	./$(EXE) --double --64 -d -e $(addprefix ../samples/, $(SCRIPTSD))
 
 parser.dot.png:
 	dot -Tpng -O parser.dot

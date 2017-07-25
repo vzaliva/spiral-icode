@@ -155,9 +155,9 @@ i_rvalue:
   | NTH  LPAREN a=i_rvalue COMMA i=i_rvalue RPAREN { mkrvalue $symbolstartpos $endpos (NthRvalue (a,i)) }
   | VDUP LPAREN a=i_rvalue COMMA i=i_int RPAREN { mkrvalue $symbolstartpos $endpos (VdupRvalue (a,i)) }
   | TCAST LPAREN t=i_type COMMA v=i_rvalue RPAREN { mkrvalue $symbolstartpos $endpos (RCast (t,v)) }
-  | n=IDENTIFIER LPAREN a=separated_list(COMMA, i_rlvalue) RPAREN
+  | n=IDENTIFIER LPAREN a=separated_list(COMMA, i_rvalue) RPAREN
                 {
-                    mkrvalue $symbolstartpos $endpos (RFunCall (n,a))
+                    mkrvalue $symbolstartpos $endpos (FunCall (n,a))
                 }
   | v=IDENTIFIER { mkrvalue $symbolstartpos $endpos (VarRValue v) }
   | DEREF LPAREN v=i_rvalue RPAREN { mkrvalue $symbolstartpos $endpos (RDeref v) }
@@ -168,16 +168,7 @@ i_lvalue:
     | NTH LPAREN a=i_lvalue COMMA i=i_rvalue RPAREN { mklvalue $symbolstartpos $endpos (NthLvalue (a,i)) }
     | DEREF LPAREN v=i_rvalue RPAREN { mklvalue $symbolstartpos $endpos (LDeref v) }
     | TCAST LPAREN t=i_type COMMA v=i_lvalue RPAREN { mklvalue $symbolstartpos $endpos (LCast (t,v)) }
-    | n=IDENTIFIER LPAREN a=separated_list(COMMA, i_rlvalue) RPAREN
-                {
-                    mklvalue $symbolstartpos $endpos (LFunCall (n,a))
-                }
   ;
-
-i_rlvalue:
-    | l=i_lvalue  { LValue l}
-    | r=i_rvalue  { RValue r}
-    ;
 
 i_rvalue_comma: v=i_rvalue COMMA { v }
 
@@ -203,11 +194,11 @@ i_stmt:
                 {
                     mkstmt $symbolstartpos $endpos (Loop (v,f,t,b))
                 }
-  | VSTORE_2L_4X32F LPAREN n=i_lvalue COMMA e=i_rvalue RPAREN
+  | VSTORE_2L_4X32F LPAREN n=i_rvalue COMMA e=i_rvalue RPAREN
                 { mkstmt $symbolstartpos $endpos (Vstore_2l_4x32f (n,e)) }
-  | VSTORE_2H_4X32F LPAREN n=i_lvalue COMMA e=i_rvalue RPAREN
+  | VSTORE_2H_4X32F LPAREN n=i_rvalue COMMA e=i_rvalue RPAREN
                 { mkstmt $symbolstartpos $endpos (Vstore_2h_4x32f (n,e)) }
-  | VSTOREU_4X32F LPAREN n=i_lvalue COMMA e=i_rvalue RPAREN
+  | VSTOREU_4X32F LPAREN n=i_rvalue COMMA e=i_rvalue RPAREN
                 { mkstmt $symbolstartpos $endpos (Vstoreu_4x32f (n,e)) }
   ;
 

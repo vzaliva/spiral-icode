@@ -432,12 +432,9 @@ let check_never_decl vmap used =
      msg "Warning: following variables definded in 'let' but never declared: %s\n" (String.concat ~sep:" " (to_list unused)))
   ; unused
 
-let rec check_vars_in_rlvalue s = function
-  | RValue r -> check_vars_in_rvalue s r
-  | LValue l -> check_vars_in_lvalue s l
-and check_vars_in_rvalue s (x:rvalue) =
+let rec check_vars_in_rvalue s (x:rvalue) =
   match x.rnode with
-  | RFunCall (_,rl) -> ignore (List.map ~f:(check_vars_in_rlvalue s) rl)
+  | FunCall (_,rl) -> ignore (List.map ~f:(check_vars_in_rvalue s) rl)
   | VarRValue v -> var_in_scope s v
   | NthRvalue (r1,r2) ->   (check_vars_in_rvalue s r1) ;
                            (check_vars_in_rvalue s r2)
@@ -447,7 +444,6 @@ and check_vars_in_rvalue s (x:rvalue) =
   | FConstArr _  | IConstArr _ | FConstVec _  | IConstVec _ | FConst _  | IConst _ | VHex _ -> ()
 and check_vars_in_lvalue s (x:lvalue) =
   match x.lnode with
-  | LFunCall (_,rl) -> ignore (List.map ~f:(check_vars_in_rlvalue s) rl)
   | VarLValue v -> var_in_scope s v
   | NthLvalue (l, r) -> (check_vars_in_lvalue s l) ;
                         (check_vars_in_rvalue s r)
@@ -498,20 +494,6 @@ let uint16_cast : Ast.Int_or_uint_64.t -> int option = function
 
 let rec lvalue_type vmap (x:lvalue) =
   match x.lnode with
-  | LFunCall (n,a) ->
-     let al = (List.map ~f:(rlvalue_type vmap) a) in
-     let ft =
-       (try
-         func_type n al
-       with
-       | TypeError msg ->
-          let open Format in
-          eprintf "%a  @[<h>Error resolving lvalue function: @[<h>%s(%a)@]@]\n"
-                  pr_err_loc x.lloc
-                  n (type_list_fmt ", ") al
-         ; raise (TypeError msg)
-       ) in
-     ft (* TODO: how do we make sure it is lvalue? *)
   | VarLValue v -> var_type vmap v
   | LCast (t,lv) ->
      let lt = lvalue_type vmap lv in
@@ -544,8 +526,8 @@ and rvalue_type vmap rv =
     | ILiteral (t,_) -> t  in
   match rv.rnode with
   | VarRValue v -> var_type vmap v
-  | RFunCall (n,a) ->
-     let al = (List.map ~f:(rlvalue_type vmap) a) in
+  | FunCall (n,a) ->
+     let al = (List.map ~f:(rvalue_type vmap) a) in
      let ft =
        (try
          func_type n al
@@ -630,9 +612,6 @@ and rvalue_type vmap rv =
 
                 | None -> raise (TypeError "Could invalid size in VDUP"))
      | t -> raise (TypeError (Format.asprintf "Invalid value type %a in VDUP" pr_itype t)))
-and rlvalue_type vmap = function
-  | RValue r -> rvalue_type vmap r
-  | LValue l -> lvalue_type vmap l
 
 (*
    Peforms various type and strcutural correctness checks:
@@ -671,9 +650,9 @@ let typecheck vmap prog =
   let rec typecheck (fstack:(string * Ast.IType.t) list) u x =
     match x.node with
     | Vstore_2l_4x32f (l,r) | Vstore_2h_4x32f (l,r) ->
-       (match lvalue_type vmap l, rvalue_type vmap r with
+       (match rvalue_type vmap l, rvalue_type vmap r with
         | PtrType(VecType(F FloatType,2),_), VecType(F FloatType,4) ->
-           check_vars_in_lvalue u l;
+           check_vars_in_rvalue u l;
            check_vars_in_rvalue u r;
            u
         | lt, rt ->
@@ -682,9 +661,9 @@ let typecheck vmap prog =
                                              pr_itype rt
        )))
     | Vstoreu_4x32f (l,r) ->
-       (match lvalue_type vmap l, rvalue_type vmap r with
+       (match rvalue_type vmap l, rvalue_type vmap r with
         | PtrType(A (F FloatType), _), VecType(F FloatType,4) ->
-           check_vars_in_lvalue u l;
+           check_vars_in_rvalue u l;
            check_vars_in_rvalue u r;
            u
         | lt, rt ->
