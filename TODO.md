@@ -6,8 +6,7 @@ Frontent TODO:
 * Sort out VPARAM subtypes.
 * Clarify vec/array casts in `check_coercion`
 * Define in Coq and Extract
-* Check length in const array/vec type matches number of elemens.
-* Check iconst type and U/I64 value match
+* Check iconst type and U/I64 value range match
 * Reduce/reduce conflicts in grammar
 * Matching PTR w/o regard for alighment
 * Try to add locations in TypeError exceptions thrown

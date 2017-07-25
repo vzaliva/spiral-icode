@@ -39,17 +39,25 @@ i_ftype:
   | TREAL    { realFType () }
   ;
 
-i_itype:
+i_signed_itype:
   | TINT     { Int32Type  }
   | TINT8    { Int8Type   }
   | TINT16   { Int16Type  }
   | TINT32   { Int32Type  }
   | TINT64   { Int64Type  }
+  ;
+
+i_unsigned_itype:
   | TUINT    { UInt32Type }
   | TUINT8   { UInt8Type  }
   | TUINT16  { UInt16Type }
   | TUINT32  { UInt32Type }
   | TUINT64  { UInt64Type }
+  ;
+
+i_itype:
+  | s = i_signed_itype { s }
+  | u = i_unsigned_itype { u }
   ;
 
 i_arith_type:
@@ -94,7 +102,9 @@ i_int:
   | MINUS x = UINT { Int_or_uint_64.I64 (Int64.of_string ("-" ^ x)) }
 
 i_iconst:
-  | VALUE LPAREN t=i_itype COMMA i=i_int RPAREN { mkiconst $symbolstartpos $endpos
+  | VALUE LPAREN t=i_unsigned_itype COMMA i=i_uint RPAREN { mkiconst $symbolstartpos $endpos
+                                                  (ILiteral (t,i)) }
+  | VALUE LPAREN t=i_signed_itype COMMA i=i_int RPAREN { mkiconst $symbolstartpos $endpos
                                                   (ILiteral (t,i)) }
   ;
 
@@ -177,8 +187,6 @@ i_chain_kw:
 
 i_func:
   | FUNC LPAREN t=i_type COMMA n=STRING COMMA LBRACKET a=separated_list(COMMA, IDENTIFIER) RBRACKET COMMA b=i_stmt RPAREN { mkstmt $symbolstartpos $endpos (Function (n,t,a,b)) }
-
-
                                 
 i_stmt:
   | SKIP { mkstmt $symbolstartpos $endpos Skip}
