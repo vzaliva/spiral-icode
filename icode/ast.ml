@@ -212,7 +212,7 @@ let mkiconst s e (d:iconst_node): iconst  = { node = d; loc = symbol_rloc s e}
 
 (* Mapping of generic numeric types to actual machine types. It is hardcoded now, but will be managed via config file or command line options later *)
 
-let realFType () = if !Config.is64bit then DoubleType else FloatType
+let realFType () = if !Config.isDouble then DoubleType else FloatType
 let realAType () = F (realFType ())
 let prtSizeOf () = if !Config.is64bit then 8 else 4
 

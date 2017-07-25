@@ -12,7 +12,6 @@ TODO:
 * Define in Coq and Extract
 * Check length in const array/vec type matches number of elemens.
 ( Check iconst type and U/I64 value match
-* 32/64 and float/double flags
 * Matching PTR w/o regard for alighment
 * Generalize function calls for statements, instead of using specific AST nodes
 * Reduce/reduce conflicts in grammar

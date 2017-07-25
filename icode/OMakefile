@@ -30,16 +30,14 @@ OCamlProgram($(PROGRAM), $(FILES))
 .DEFAULT: $(EXE)
 
 
-# these are supposed to work in 32 and 64 bit modes
-SCRIPTS[] =  
-# additionally, these are supposed to work only in 32
-SCRIPTS32[] = $(SCRIPTS) dft16.g dft48.g dft16-SSE_4x32f.g dft32-SSE_4x32f.g dft48-SSE_4x32f.g dft64-SSE_4x32f.g dft128-AVX_4x64f.g dft128-AVX_4x64f.g # dft16.g dft32.g dft48.g dft16avx.g dft64avx8.g 
-# additionally, these are supposed to work only in 64
-SCRIPTS64[] = $(SCRIPTS) dwmonitor.g  #dwmonitor_interval.g
+# these are supposed to work only on floats
+SCRIPTSF[] = dft16.g dft48.g dft16-SSE_4x32f.g dft32-SSE_4x32f.g dft48-SSE_4x32f.g dft64-SSE_4x32f.g dft128-AVX_4x64f.g dft128-AVX_4x64f.g
+# these are supposed to work only on doubles
+SCRIPTSD[] = dwmonitor.g  
 
 run: $(EXE)
-	./$(EXE) --32 -e -d $(addprefix ../samples/, $(SCRIPTS32))
-	./$(EXE) --64 -e -d $(addprefix ../samples/, $(SCRIPTS64))
+	./$(EXE) --float --64 -e -d $(addprefix ../samples/, $(SCRIPTSF))
+	./$(EXE) --double --64 -e -d $(addprefix ../samples/, $(SCRIPTSD))
 
 parser.dot.png:
 	dot -Tpng -O parser.dot

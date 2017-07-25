@@ -25,8 +25,10 @@ let specs =
     ( 'h', "help", Some usage_action, None,         "Show this help");
     ( 'd', "debug", (set Config.debug true), None,  "Debug");
     ( 'e', "stop-on-err", (set Config.stop_on_err true), None,  "Stop on first error");
-    ( '4', "32", (set Config.is64bit false), None,  "32-bit (4-byte) mode");
-    ( '8', "64", (set Config.is64bit true), None,   "64-bit (8-byte) mode");
+    ( 'f', "float", (set Config.isDouble false), None,  "32-bit (4-byte) floating point mode");
+    ( 'd', "double", (set Config.isDouble true), None, "64-bit (8-byte) floating point mode mode");
+    ( '4', "32", (set Config.is64bit false), None,  "32-bit (4-byte) addressing");
+    ( '8', "64", (set Config.is64bit true), None,   "64-bit (8-byte) addressing");
   ]
 
 let parse_cmdline () =
