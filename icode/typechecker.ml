@@ -605,16 +605,15 @@ and rvalue_type vmap rv =
        (match rvalue_type vmap v with
         | ArrType (t,_) | PtrType (t,_) -> t
         | t -> raise (TypeError (Format.asprintf "Invalid value type %a in NTH" pr_itype t)))
-  | VdupRvalue (v, i) ->
-     match rvalue_type vmap v with
-     | A vt -> (match uint16_cast i with
-                | Some i -> (* I arbitrary decided that max vector length should fit in 16 bit. *)
-                   if is_power_of_2 i then VecType (vt, i)
-                   else raise (TypeError ("Size in VDUP must be power of 2. Got: " ^ (string_of_int i)))
+  | VdupRvalue (v, il) ->
+     match rvalue_type vmap v, il.node with
+     | A vt, ILiteral (_,i) -> (match uint16_cast i with
+                                | Some i -> (* I arbitrary decided that max vector length should fit in 16 bit. *)
+                                   if is_power_of_2 i then VecType (vt, i)
+                                   else raise (TypeError ("Size in VDUP must be power of 2. Got: " ^ (string_of_int i)))
 
-
-                | None -> raise (TypeError "Could invalid size in VDUP"))
-     | t -> raise (TypeError (Format.asprintf "Invalid value type %a in VDUP" pr_itype t)))
+                                | None -> raise (TypeError "Could invalid size in VDUP"))
+     | t,_ -> raise (TypeError (Format.asprintf "Invalid value type %a in VDUP" pr_itype t)))
 
 (*
    Peforms various type and strcutural correctness checks:

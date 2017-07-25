@@ -154,7 +154,7 @@ and rvalue_node =
   | IConstArr of (IIntType.t   * (iconst list))
   | FConstVec of (IFloatType.t * (fconst list))
   | IConstVec of (IIntType.t   * (iconst list))
-  | VdupRvalue of rvalue*Int_or_uint_64.t
+  | VdupRvalue of rvalue*iconst
   | NthRvalue of rvalue*rvalue (* 'int' type for index will be checked later *)
   | RCast of IType.t*rvalue
   | RDeref of rvalue [@@deriving compare, sexp]

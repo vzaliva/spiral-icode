@@ -152,7 +152,7 @@ i_rvalue:
   | f=i_fconst { mkrvalue $symbolstartpos $endpos (FConst f) }
   | i=i_iconst { mkrvalue $symbolstartpos $endpos (IConst i) }
   | NTH  LPAREN a=i_rvalue COMMA i=i_rvalue RPAREN { mkrvalue $symbolstartpos $endpos (NthRvalue (a,i)) }
-  | VDUP LPAREN a=i_rvalue COMMA i=i_int RPAREN { mkrvalue $symbolstartpos $endpos (VdupRvalue (a,i)) }
+  | VDUP LPAREN a=i_rvalue COMMA i=i_iconst RPAREN { mkrvalue $symbolstartpos $endpos (VdupRvalue (a,i)) }
   | TCAST LPAREN t=i_type COMMA v=i_rvalue RPAREN { mkrvalue $symbolstartpos $endpos (RCast (t,v)) }
   | n=IDENTIFIER LPAREN a=separated_list(COMMA, i_rvalue) RPAREN
                 {
