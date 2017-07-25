@@ -41,35 +41,57 @@ module Int_or_uint_64 = struct
     Int64.compare x (Int64.of_string f) >= 0 &&
       Int64.compare x (Int64.of_string t) <= 0
 
-  let in_int8_range = in_range64 "-128" "127"
-  let in_int16_range = in_range64 "-32768" "32767"
-  let in_int32_range = in_range64 "-2147483648" "2147483647"
-
   (* inclusive *)
   let in_rangeU64 f t x =
-    Uint64.compare x (Uint64.of_string f) >= 0 &&
-      Uint64.compare x (Uint64.of_string t) <= 0
+    try
+      Uint64.compare x (Uint64.of_string f) >= 0 &&
+        Uint64.compare x (Uint64.of_string t) <= 0
+    with
+    | _ -> false
 
-  let in_uint8_range = in_rangeU64 "0" "255"
-  let in_uint16_range = in_rangeU64 "0" "65535"
-  let in_uint32_range = in_rangeU64 "0" "4294967295"
+  let in_int8_range = function
+    | I64 s -> in_range64 "-128" "127" s
+    | U64 u -> in_rangeU64 "0" "127" u
 
-  let uint16_cast : t -> int option = function
-    | U64 x -> if in_uint16_range x then Some (to_int x) else None
-    | I64 x -> if in_range64 "0" "65535" x then Int64.to_int x else None
+  let in_int16_range = function
+    | I64 s -> in_range64 "-32768" "32767" s
+    | U64 u -> in_rangeU64 "0" "32767" u
 
+  let in_int32_range = function
+    | I64 s -> in_range64 "-2147483648" "2147483647" s
+    | U64 u -> in_rangeU64 "0" "2147483647" u
 
-(*  let int_const_in_range t c =
-   match t with
-   | Int8Type   -> in_int8_range c
-   | Int16Type  -> in_int16_range c
-   | Int32Type  -> in_int32_range c
-   | Int64Type  -> true (\* TODO *\)
-   | UInt8Type  -> in_uint8_range c
-   | UInt16Type -> in_uint16_range c
-   | UInt32Type -> in_uint32_range c
-   | UInt64Type -> true
-   | BoolType   -> true (\* TODO *\) *)
+  let in_int64_range = function
+    | I64 _ -> true
+    | U64 u -> in_rangeU64 "0"  (Int64.to_string (Int64.max_value)) u
 
+  let in_uint8_range = function
+    | U64 u -> in_rangeU64 "0" "255" u
+    | I64 s -> in_range64 "0" "255" s
+
+  let in_uint16_range = function
+    | U64 u -> in_rangeU64 "0" "65535" u
+    | I64 s -> in_range64  "0" "65535" s
+
+  let in_uint32_range = function
+    | U64 u -> in_rangeU64 "0" "4294967295" u
+    | I64 s -> in_range64  "0" "65535" s
+
+  let in_uint64_range = function
+    | U64 _ -> true
+    | I64 s -> Int64.compare s (Int64.of_string "0") >= 0
+
+  let to_int = function
+    | U64 x -> if in_rangeU64 "0" (string_of_int (Pervasives.max_int)) x
+               then Some (to_int x)
+               else None
+    | I64 x -> Int64.to_int x
+
+  let in_bool_range = function
+    | I64 s -> in_range64 "0" "1" s
+    | U64 u -> in_rangeU64 "0" "1" u
+
+  let uint16_cast x =
+    if in_uint16_range x then to_int x else None
 
 end

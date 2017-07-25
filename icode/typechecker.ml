@@ -81,6 +81,18 @@ let unsigned_type = function
   | Int64Type -> UInt64Type
   | _ as t -> t
 
+let int_const_in_range t c =
+  match t with
+  | Int8Type   -> in_int8_range c
+  | Int16Type  -> in_int16_range c
+  | Int32Type  -> in_int32_range c
+  | Int64Type  -> in_int64_range c
+  | UInt8Type  -> in_uint8_range c
+  | UInt16Type -> in_uint16_range c
+  | UInt32Type -> in_uint32_range c
+  | UInt64Type -> in_uint64_range c
+  | BoolType   -> in_bool_range c
+
 let integer_promotion t =
   let i = if is_signed_integer t then Int32Type else UInt32Type in
   if integer_type_rank t < integer_type_rank i then i else t
@@ -591,7 +603,7 @@ and rvalue_type vmap rv =
                                    if is_power_of_2 i then VecType (vt, i)
                                    else raise (TypeError ("Size in VDUP must be power of 2. Got: " ^ (string_of_int i)))
 
-                                | None -> raise (TypeError "Could invalid size in VDUP"))
+                                | None -> raise (TypeError "Invalid size in VDUP"))
      | t,_ -> raise (TypeError (Format.asprintf "Invalid value type %a in VDUP" pr_itype t)))
 
 (*
