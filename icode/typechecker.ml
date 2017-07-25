@@ -5,6 +5,7 @@ open IType
 open IIntType
 open IFloatType
 open IArithType
+open Ints
 open Int_or_uint_64
 open Uint64
 open Utils
@@ -472,28 +473,6 @@ let func_type n a =
     | Some bf -> let res = bf n a in
                  msg "\t'%s' return type: %a\n" n pr_itype res
                  ; res
-
-(* inclusive *)
-let in_range64 f t x =
-  Int64.compare x (Int64.of_string f) >= 0 &&
-    Int64.compare x (Int64.of_string t) <= 0
-
-let in_int8_range = in_range64 "-128" "127"
-let in_int16_range = in_range64 "-32768" "32767"
-let in_int32_range = in_range64 "-2147483648" "2147483647"
-
-(* inclusive *)
-let in_rangeU64 f t x =
-  Uint64.compare x (Uint64.of_string f) >= 0 &&
-    Uint64.compare x (Uint64.of_string t) <= 0
-
-let in_uint8_range = in_rangeU64 "0" "255"
-let in_uint16_range = in_rangeU64 "0" "65535"
-let in_uint32_range = in_rangeU64 "0" "4294967295"
-
-let uint16_cast : Ast.Int_or_uint_64.t -> int option = function
-  | U64 x -> if in_uint16_range x then Some (to_int x) else None
-  | I64 x -> if in_range64 "0" "65535" x then Int64.to_int x else None
 
 let rec lvalue_type vmap (x:lvalue) =
   match x.lnode with

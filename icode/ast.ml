@@ -4,6 +4,7 @@ open Core
 open Sexplib
 open Uint64
 open Lexing
+open Ints
 
 let sexp_of_position p =
   let sexp_kv k v = Sexp.List [ Sexp.Atom k; Sexp.Atom v] in
@@ -42,43 +43,6 @@ let compare_position x y =
 module Loc = struct
   type t = { loc_start: position; loc_end: position; loc_ghost: bool } [@@deriving compare, sexp]
 end
-
-(* Machine-safe int to hold any int value, signed or unsiged *)
-module Int_or_uint_64 = struct
-  type t =
-    | I64 of int64
-    | U64 of uint64
-
-  let to_string = function
-    | I64 x -> Int64.to_string x
-    | U64 x -> Uint64.to_string x ^ "u"
-
-  let sexp_of_t = function
-    | I64 x as v -> Sexp.List [Sexp.Atom "I64"; Sexp.Atom (to_string v)]
-    | U64 x as v -> Sexp.List [Sexp.Atom "U64"; Sexp.Atom (to_string v)]
-
-  let t_of_sexp = function
-    | Sexp.List l as s ->
-       let open List in
-       if 2 <> length l then
-         of_sexp_error "Int_or_uint_64: List too short" s
-       else
-         let l0 = nth_exn l 0 in
-         let l1 = nth_exn l 1 in
-         (match l0 , l1 with
-         | Sexp.Atom "U64", Sexp.Atom x -> U64 (Uint64.of_string x)
-         | Sexp.Atom "I64", Sexp.Atom x -> I64 (Int64.of_string x)
-         | _, _ -> of_sexp_error "Int_or_uint_64: must be 2 atoms" s)
-    | x  -> of_sexp_error "Int_or_uint_64: must be List" x
-
-  let compare a b =
-    match a, b with
-    | I64 x, I64 y -> Int64.compare x y
-    | U64 x, U64 y -> Uint64.compare x y
-    | _, _ -> invalid_arg "Int_or_uint_64: not comparable"
-
-end
-
 
 module IIntType = struct
   type t =

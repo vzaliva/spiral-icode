@@ -5,6 +5,7 @@
     open IFloatType
     open IType
     open Config
+    open Ints
 
     open Uint
 %}
