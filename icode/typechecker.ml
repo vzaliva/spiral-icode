@@ -436,7 +436,7 @@ let rec check_vars_in_rlvalue s = function
   | RValue r -> check_vars_in_rvalue s r
   | LValue l -> check_vars_in_lvalue s l
 and check_vars_in_rvalue s (x:rvalue) =
-  match x.node with
+  match x.rnode with
   | RFunCall (_,rl) -> ignore (List.map ~f:(check_vars_in_rlvalue s) rl)
   | VarRValue v -> var_in_scope s v
   | NthRvalue (r1,r2) ->   (check_vars_in_rvalue s r1) ;
@@ -446,7 +446,7 @@ and check_vars_in_rvalue s (x:rvalue) =
   | RDeref r -> check_vars_in_rvalue s r
   | FConstArr _  | IConstArr _ | FConstVec _  | IConstVec _ | FConst _  | IConst _ | VHex _ -> ()
 and check_vars_in_lvalue s (x:lvalue) =
-  match x.node with
+  match x.lnode with
   | LFunCall (_,rl) -> ignore (List.map ~f:(check_vars_in_rlvalue s) rl)
   | VarLValue v -> var_in_scope s v
   | NthLvalue (l, r) -> (check_vars_in_lvalue s l) ;
@@ -497,7 +497,7 @@ let uint16_cast : Ast.Int_or_uint_64.t -> int option = function
   | I64 x -> if in_range64 "0" "65535" x then Int64.to_int x else None
 
 let rec lvalue_type vmap (x:lvalue) =
-  match x.node with
+  match x.lnode with
   | LFunCall (n,a) ->
      let al = (List.map ~f:(rlvalue_type vmap) a) in
      let ft =
@@ -507,7 +507,7 @@ let rec lvalue_type vmap (x:lvalue) =
        | TypeError msg ->
           let open Format in
           eprintf "%a  @[<h>Error resolving lvalue function: @[<h>%s(%a)@]@]\n"
-                  pr_err_loc x.loc
+                  pr_err_loc x.lloc
                   n (type_list_fmt ", ") al
          ; raise (TypeError msg)
        ) in
@@ -542,7 +542,7 @@ and rvalue_type vmap rv =
   let iconst_type (i:iconst) =
     match i.node with
     | ILiteral (t,_) -> t  in
-  match rv.node with
+  match rv.rnode with
   | VarRValue v -> var_type vmap v
   | RFunCall (n,a) ->
      let al = (List.map ~f:(rlvalue_type vmap) a) in
@@ -553,7 +553,7 @@ and rvalue_type vmap rv =
        | TypeError msg ->
           let open Format in
           eprintf "%a  @[<h>Error resolving rvalue function: @[<h>%s(%a)@]@]\n"
-                  pr_err_loc rv.loc
+                  pr_err_loc rv.rloc
                   n (type_list_fmt ", ") al
          ; raise (TypeError msg)
        ) in
@@ -565,25 +565,25 @@ and rvalue_type vmap rv =
      if List.for_all flt (eq_float_type at) then
        ArrType (A (F at) , List.length fl)
      else
-       raise (TypeError (Format.asprintf "%a Mismatch between float array type and its value types\n" pr_err_loc rv.loc))
+       raise (TypeError (Format.asprintf "%a Mismatch between float array type and its value types\n" pr_err_loc rv.rloc))
   | IConstArr (at, il) ->
      let ilt = List.map ~f:iconst_type il in
      if List.for_all ilt (eq_int_type at) then
        ArrType (A (I at) , List.length il)
      else
-       raise (TypeError (Format.asprintf "%a Mismatch between int array type and its value types\n" pr_err_loc rv.loc))
+       raise (TypeError (Format.asprintf "%a Mismatch between int array type and its value types\n" pr_err_loc rv.rloc))
   | FConstVec (at, fl) ->
      let flt = List.map ~f:fconst_type fl in
      if List.for_all flt (eq_float_type at) then
        VecType (F at , List.length fl)
      else
-       raise (TypeError (Format.asprintf "%a Mismatch between float vector type and its value types\n" pr_err_loc rv.loc))
+       raise (TypeError (Format.asprintf "%a Mismatch between float vector type and its value types\n" pr_err_loc rv.rloc))
   | IConstVec (at, il) ->
      let ilt = List.map ~f:iconst_type il in
      if List.for_all ilt (eq_int_type at) then
        VecType (I at , List.length il)
      else
-       raise (TypeError (Format.asprintf "%a Mismatch between int vector type and its value types\n" pr_err_loc rv.loc))
+       raise (TypeError (Format.asprintf "%a Mismatch between int vector type and its value types\n" pr_err_loc rv.rloc))
   | VHex sl ->
      let tHARDCODED = Int32Type in (* TODO: ask Franz to print type *)
      let iconst_of_hex s : iconst =
@@ -598,11 +598,11 @@ and rvalue_type vmap rv =
                Int_or_uint_64.U64 (Uint64.of_string s)
            with
            | Failure _ -> raise (TypeError (Format.asprintf "Invalid hex string \"%s\" in 'vhex'" s))
-       in {node = ILiteral (tHARDCODED, v); loc = rv.loc } (* TODO: loc for ech number *)
+       in {node = ILiteral (tHARDCODED, v); loc = rv.rloc } (* TODO: loc for ech number *)
      in
      rvalue_type vmap
-                 { node = IConstArr (tHARDCODED, List.map ~f:iconst_of_hex sl);
-                   loc = rv.loc }
+                 { rnode = IConstArr (tHARDCODED, List.map ~f:iconst_of_hex sl);
+                   rloc = rv.rloc }
   | RCast (t,rv) ->
      let rt = rvalue_type vmap rv in
      if check_cast rt t then t

@@ -141,8 +141,8 @@ and iconst_node =
   | ILiteral of (IIntType.t * Int_or_uint_64.t) [@@deriving compare, sexp]
 
 type rvalue = {
-    node: rvalue_node;
-    loc: Loc.t
+    rnode: rvalue_node;
+    rloc: Loc.t
 } [@@deriving compare, sexp]
 and rvalue_node =
   | RFunCall of string*(rlvalue list)
@@ -159,8 +159,8 @@ and rvalue_node =
   | RCast of IType.t*rvalue
   | RDeref of rvalue [@@deriving compare, sexp]
 and lvalue = {
-    node: lvalue_node;
-    loc: Loc.t
+    lnode: lvalue_node;
+    lloc: Loc.t
 } [@@deriving compare, sexp]
 and lvalue_node =
   | LFunCall of string*(rlvalue list)
@@ -205,8 +205,8 @@ let symbol_rloc s e = {
   }
 
 let mkstmt   s e (d:istmt_node ): istmt   = { node = d; loc = symbol_rloc s e}
-let mkrvalue s e (d:rvalue_node): rvalue  = { node = d; loc = symbol_rloc s e}
-let mklvalue s e (d:lvalue_node): lvalue  = { node = d; loc = symbol_rloc s e}
+let mkrvalue s e (d:rvalue_node): rvalue  = { rnode = d; rloc = symbol_rloc s e}
+let mklvalue s e (d:lvalue_node): lvalue  = { lnode = d; lloc = symbol_rloc s e}
 let mkfconst s e (d:fconst_node): fconst  = { node = d; loc = symbol_rloc s e}
 let mkiconst s e (d:iconst_node): iconst  = { node = d; loc = symbol_rloc s e}
 
