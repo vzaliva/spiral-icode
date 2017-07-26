@@ -94,17 +94,31 @@ i_fconst:
   ;
 
 i_uint:
-  | x=UINT { Int_or_uint_64.U64 (Uint64.of_string x) }
+  | x=UINT { x }
 
 i_int:
-  | x=UINT { Int_or_uint_64.U64 (Uint64.of_string x) }
-  | MINUS x = UINT { Int_or_uint_64.I64 (Int64.of_string ("-" ^ x)) }
+  | x=UINT { x }
+  | MINUS x = UINT { ("-" ^ x) }
 
 i_iconst:
-  | VALUE LPAREN t=i_unsigned_itype COMMA i=i_uint RPAREN { mkiconst $symbolstartpos $endpos
-                                                  (ILiteral (t,i)) }
-  | VALUE LPAREN t=i_signed_itype COMMA i=i_int RPAREN { mkiconst $symbolstartpos $endpos
-                                                  (ILiteral (t,i)) }
+  | VALUE LPAREN t=i_unsigned_itype COMMA i=i_uint RPAREN
+                {
+                    match t with
+                    | UInt8Type  -> mkiconst $symbolstartpos $endpos (UInt8Const  (Uint8Ex.of_string i))
+                    | UInt16Type -> mkiconst $symbolstartpos $endpos (UInt16Const (Uint16Ex.of_string i))
+                    | UInt32Type -> mkiconst $symbolstartpos $endpos (UInt32Const (Uint32Ex.of_string i))
+                    | UInt64Type -> mkiconst $symbolstartpos $endpos (UInt64Const (Uint64Ex.of_string i))
+                    | _ -> raise (Syntaxerr.Error "Internal error")
+                }
+  | VALUE LPAREN t=i_signed_itype COMMA i=i_int RPAREN
+                {
+                    match t with
+                    | Int8Type  -> mkiconst $symbolstartpos $endpos (Int8Const  (Int8Ex.of_string i))
+                    | Int16Type -> mkiconst $symbolstartpos $endpos (Int16Const (Int16Ex.of_string i))
+                    | Int32Type -> mkiconst $symbolstartpos $endpos (Int32Const (Int32Ex.of_string i))
+                    | Int64Type -> mkiconst $symbolstartpos $endpos (Int64Const (Int64Ex.of_string i))
+                    | _ -> raise (Syntaxerr.Error "Internal error")
+                }
   ;
 
 /*i_uiconst:
@@ -114,7 +128,7 @@ i_iconst:
 */
 
 i_vparamelem:
-  | i=i_uint { mkiconst $symbolstartpos $endpos (ILiteral (UInt8Type,i)) }
+  | i=i_uint { mkiconst $symbolstartpos $endpos (UInt16Const (Uint16Ex.of_string i)) }
   ;
 
 i_rvalue:
@@ -155,7 +169,7 @@ i_rvalue:
                         mkrvalue $symbolstartpos $endpos (IConstVec (t,l))
                 }
   | VPARAM LPAREN LBRACKET l=separated_nonempty_list(COMMA, i_vparamelem) RBRACKET RPAREN
-                { mkrvalue $symbolstartpos $endpos (IConstArr (UInt8Type, l)) }
+                { mkrvalue $symbolstartpos $endpos (IConstArr (UInt16Type, l)) }
   | VHEX LPAREN LBRACKET l=separated_nonempty_list(COMMA, STRING) RBRACKET RPAREN
               { mkrvalue $symbolstartpos $endpos (VHex l) }
   | f=i_fconst { mkrvalue $symbolstartpos $endpos (FConst f) }
@@ -198,7 +212,7 @@ i_stmt:
   | IF LPAREN v=i_rvalue COMMA t=i_stmt COMMA e=i_stmt RPAREN { mkstmt $symbolstartpos $endpos (If (v,t,e)) }
   | LOOP LPAREN v=IDENTIFIER COMMA LBRACKET f=i_int TWODOT t=i_int RBRACKET COMMA b=i_stmt RPAREN
                 {
-                    mkstmt $symbolstartpos $endpos (Loop (v,f,t,b))
+                    mkstmt $symbolstartpos $endpos (Loop (v,Int64Ex.of_string f,Int64Ex.of_string t,b))
                 }
   | n=IDENTIFIER LPAREN a=separated_list(COMMA, i_rvalue) RPAREN
                 {

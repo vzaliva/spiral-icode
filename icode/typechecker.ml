@@ -578,7 +578,7 @@ and rvalue_type vmap rv =
            | Failure _ -> raise (TypeError (Format.asprintf "Invalid hex string \"%s\" in 'vhex'" s))
        in {node = v; loc = rv.rloc } (* TODO: loc for ech number *)
      in
-     let tHARDCODED = Int64Type in (* TODO: ask Franz to print type *)
+     let tHARDCODED = UInt64Type in (* TODO: ask Franz to print type *)
      rvalue_type vmap
                  { rnode = IConstArr (tHARDCODED, List.map ~f:iconst_of_hex sl);
                    rloc = rv.rloc }
@@ -601,7 +601,7 @@ and rvalue_type vmap rv =
         | t -> raise (TypeError (Format.asprintf "Invalid value type %a in NTH" pr_itype t)))
   | VdupRvalue (v, il) ->
      match rvalue_type vmap v, il.node with
-     | A vt, UInt16Const ic -> let i = Uint16Ex.to_int ic in
+     | A vt, Int32Const ic -> let i = Int32Ex.to_int ic in
                                if is_power_of_2 i then VecType (vt, i)
                                else raise (TypeError ("Size in VDUP must be power of 2. Got: " ^ (string_of_int i)))
      | t,_ -> raise (TypeError (Format.asprintf "Invalid value type %a in VDUP" pr_itype t)))

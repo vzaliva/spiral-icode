@@ -11,6 +11,8 @@ Frontent TODO:
 * Try to add locations in TypeError exceptions thrown
 * FConst range check (as we did for IConst)
 * Consider https://github.com/andrenth/ocaml-stdint instead of `uint`
+* Boolean literals in parser?
+* VHEX
 
 Backend TODO:
 
