@@ -11,6 +11,6 @@ SPIRAL iCode compiler
 
 To install all required dependenceis:
 
-    opam install menhir core omake uint ppx_jane sexplib ppx_sexp_conv ppx_compare ppx_deriving sexp_pretty getopt
+    opam install menhir core omake stdint ppx_jane sexplib ppx_sexp_conv ppx_compare ppx_deriving sexp_pretty getopt
 
 Questions: [Vadim Zaliva](mailto:vzaliva@cmu.edu)
