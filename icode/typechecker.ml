@@ -564,7 +564,6 @@ and rvalue_type vmap rv =
      else
        raise (TypeError (Format.asprintf "%a Mismatch between int vector type and its value types\n" pr_err_loc rv.rloc))
   | VHex sl ->
-     let tHARDCODED = Int32Type in (* TODO: ask Franz to print type *)
      let iconst_of_hex s : iconst =
        let v =
          if String.is_empty s then
@@ -572,13 +571,14 @@ and rvalue_type vmap rv =
          else
            try
              if String.prefix s 1 = "-" then
-               Int_or_uint_64.I64 (Int64.of_string s)
+               Int64Const (Int64Ex.of_string s)
              else
-               Int_or_uint_64.U64 (Uint64.of_string s)
+               UInt64Const (Uint64Ex.of_string s)
            with
            | Failure _ -> raise (TypeError (Format.asprintf "Invalid hex string \"%s\" in 'vhex'" s))
-       in {node = ILiteral (tHARDCODED, v); loc = rv.rloc } (* TODO: loc for ech number *)
+       in {node = v; loc = rv.rloc } (* TODO: loc for ech number *)
      in
+     let tHARDCODED = Int64Type in (* TODO: ask Franz to print type *)
      rvalue_type vmap
                  { rnode = IConstArr (tHARDCODED, List.map ~f:iconst_of_hex sl);
                    rloc = rv.rloc }
@@ -601,12 +601,9 @@ and rvalue_type vmap rv =
         | t -> raise (TypeError (Format.asprintf "Invalid value type %a in NTH" pr_itype t)))
   | VdupRvalue (v, il) ->
      match rvalue_type vmap v, il.node with
-     | A vt, ILiteral (_,i) -> (match uint16_cast i with
-                                | Some i -> (* I arbitrary decided that max vector length should fit in 16 bit. *)
-                                   if is_power_of_2 i then VecType (vt, i)
-                                   else raise (TypeError ("Size in VDUP must be power of 2. Got: " ^ (string_of_int i)))
-
-                                | None -> raise (TypeError "Invalid size in VDUP"))
+     | A vt, UInt16Const ic -> let i = Uint16Ex.to_int ic in
+                               if is_power_of_2 i then VecType (vt, i)
+                               else raise (TypeError ("Size in VDUP must be power of 2. Got: " ^ (string_of_int i)))
      | t,_ -> raise (TypeError (Format.asprintf "Invalid value type %a in VDUP" pr_itype t)))
 
 (*
@@ -673,7 +670,7 @@ let typecheck vmap prog =
        typecheck fstack (add_var u v) body
     | Loop (v,f,t,body) ->
        if f>t then
-         raise (TypeError (Printf.sprintf "Invalid loop index range: %s .. %s  " (Int_or_uint_64.to_string f) (Int_or_uint_64.to_string t) ))
+         raise (TypeError (Printf.sprintf "Invalid loop index range: %s .. %s  " (Int64Ex.to_string f) (Int64Ex.to_string t) ))
        else
          typecheck fstack (add_var u v) body
     | If (r,bt,bf) ->
