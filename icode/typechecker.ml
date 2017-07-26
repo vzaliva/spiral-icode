@@ -6,8 +6,6 @@ open IIntType
 open IFloatType
 open IArithType
 open Ints
-open Int_or_uint_64
-open Uint64
 open Utils
 
 exception TypeError of string
@@ -80,18 +78,6 @@ let unsigned_type = function
   | Int32Type -> UInt32Type
   | Int64Type -> UInt64Type
   | _ as t -> t
-
-let int_const_in_range t c =
-  match t with
-  | Int8Type   -> in_int8_range c
-  | Int16Type  -> in_int16_range c
-  | Int32Type  -> in_int32_range c
-  | Int64Type  -> in_int64_range c
-  | UInt8Type  -> in_uint8_range c
-  | UInt16Type -> in_uint16_range c
-  | UInt32Type -> in_uint32_range c
-  | UInt64Type -> in_uint64_range c
-  | BoolType   -> in_bool_range c
 
 let integer_promotion t =
   let i = if is_signed_integer t then Int32Type else UInt32Type in
@@ -465,11 +451,7 @@ let rec check_vars_in_rvalue s (x:rvalue) =
      ignore (List.map ~f:(fun x -> check_vars_in_rvalue s
                                                         {rloc = x.loc;
                                                          rnode =IConst x}) l)
-  | IConst {node = ILiteral (t,v)} ->
-     if int_const_in_range t v then ()
-     else raise (TypeError (Format.asprintf "Illegal value %s for type %a."
-                                            (Int_or_uint_64.to_string v)
-                                            pr_itype (A (I t))))
+  | IConst _ -> () (* Correct by construction *)
   | FConst _ -> () (* TODO: range check  *)
   | VHex _ -> ()
 and check_vars_in_lvalue s (x:lvalue) =
@@ -529,9 +511,16 @@ and rvalue_type vmap rv =
     | FPLiteral (t,_) -> t
     | FloatEPS -> FloatType
     | DoubleEPS -> DoubleType  in
-  let iconst_type (i:iconst) =
-    match i.node with
-    | ILiteral (t,_) -> t  in
+   let iconst_type (c:iconst) = match c.node with
+    | Int8Const   _ -> Int8Type
+    | Int16Const  _ -> Int16Type
+    | Int32Const  _ -> Int32Type
+    | Int64Const  _ -> Int64Type
+    | UInt8Const  _ -> UInt8Type
+    | UInt16Const _ -> UInt16Type
+    | UInt32Const _ -> UInt32Type
+    | UInt64Const _ -> UInt64Type
+    | BoolConst   _ -> BoolType in
   match rv.rnode with
   | VarRValue v -> var_type vmap v
   | FunCallValue (n,a) ->

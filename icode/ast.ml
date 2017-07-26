@@ -2,8 +2,8 @@
 
 open Core
 open Sexplib
-open Uint64
 open Lexing
+open Stdint
 open Ints
 
 let sexp_of_position p =
@@ -102,7 +102,15 @@ type iconst = {
     loc: Loc.t
 } [@@deriving compare, sexp]
 and iconst_node =
-  | ILiteral of (IIntType.t * Int_or_uint_64.t) [@@deriving compare, sexp]
+    | Int8Const   of Int8Ex.t
+    | Int16Const  of Int16Ex.t
+    | Int32Const  of Int32Ex.t
+    | Int64Const  of Int64Ex.t
+    | UInt8Const  of Uint8Ex.t
+    | UInt16Const of Uint16Ex.t
+    | UInt32Const of Uint32Ex.t
+    | UInt64Const of Uint64Ex.t
+    | BoolConst of bool [@@deriving compare, sexp]
 
 type rvalue = {
     rnode: rvalue_node;
@@ -144,7 +152,7 @@ and istmt_node =
   | Chain of (istmt list)
   | Data of ivar*(rvalue list)*istmt (* homogenity of rvalues to be checked later *)
   | Assign of lvalue*rvalue
-  | Loop of ivar*Int_or_uint_64.t*Int_or_uint_64.t*istmt (* 'int' type for bounds, and a<=b will be checked later *)
+  | Loop of ivar*Int64Ex.t*Int64Ex.t*istmt (* 'int' type for bounds, and a<=b will be checked later *)
   | If of rvalue*istmt*istmt
   | FunCallStmt of string*(rvalue list)
   | Return of rvalue [@@deriving compare, sexp]

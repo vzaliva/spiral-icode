@@ -6,8 +6,6 @@
     open IType
     open Config
     open Ints
-
-    open Uint
 %}
 
 %token <float> FLOAT
