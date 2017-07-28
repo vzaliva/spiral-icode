@@ -8,9 +8,9 @@
     open Ints
 %}
 
-%token <float> FLOAT
 %token <string> UINT
 %token <string> STRING
+%token <string> FP
 
 %token MINUS COMMA
 %token DOT TWODOT
@@ -87,7 +87,7 @@ i_var:
    ;
 
 i_fconst:
-  | VALUE LPAREN t=i_ftype COMMA f=FLOAT RPAREN { mkfconst $symbolstartpos $endpos
+  | VALUE LPAREN t=i_ftype COMMA f=FP RPAREN { mkfconst $symbolstartpos $endpos
                                                  (FPLiteral (t,f)) }
   | REALEPS LPAREN TFLOAT RPAREN { mkfconst $symbolstartpos $endpos FloatEPS }
   | REALEPS LPAREN TDOUBLE RPAREN { mkfconst $symbolstartpos $endpos DoubleEPS }

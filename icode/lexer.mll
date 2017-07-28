@@ -53,7 +53,7 @@ rule main = parse
 
 (* numeric literals *)
 | '-'?['0'-'9']*'.'['0'-'9']+ as f
-{ FLOAT (float_of_string f) }
+{ FP f }
 | ['0'-'9']+ as i
 { UINT (i) }
 

@@ -93,7 +93,7 @@ type fconst = {
     loc: Loc.t
 } [@@deriving compare, sexp]
 and fconst_node =
-  | FPLiteral of (IFloatType.t * float)
+  | FPLiteral of (IFloatType.t * string) (* Since OCaml does not have single precision floats to avoid rounding and casting problems we represent them as strings *)
   | FloatEPS
   | DoubleEPS [@@deriving compare, sexp]
 
