@@ -9,7 +9,6 @@ Frontent TODO:
 * Clarify vec/array casts in `check_coercion`
 * Define in Coq and Extract
 * Reduce/reduce conflicts in grammar using `parser.conflicts`
-* Matching PTR w/o regard for alighment
 * Try to add locations in TypeError exceptions thrown
 * Boolean literals in parser?
 * VHEX

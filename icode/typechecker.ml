@@ -334,15 +334,33 @@ let func_type_vbinop_with_vparam t name a =
                   (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
                                    pr_itype a0 pr_itype a1 name))
 
-let a_func_type eargs ret name args =
-  if List.length eargs <> List.length args then
+(** Mechanism for matching types with holes *)
+
+(* type matching predicate *)
+type a_type_p = Ast.IType.t -> bool
+(* exact match *)
+let exact_type_p t = fun x -> x = t
+(* coercion match *)
+let coerced_type_p t = fun x -> check_coercion x t
+(* match pointer without taking into account alighment *)
+let ptr_noalign_p t = function
+  | PtrType (t , _) -> true
+  | _ -> false
+
+(* function type match using `a_type_p` *)
+let a_func_type_m eargs_p ret name args =
+  if List.length eargs_p <> List.length args then
     raise (TypeError (Format.asprintf "Unexpected number of arguments for '%s'" name))
   else
-    if not (List.map2_exn ~f:check_coercion eargs args |>
+    if not (List.map2_exn ~f:(fun p a -> p a) eargs_p args |>
               List.fold ~f:(&&) ~init:true) then
       raise (TypeError (Format.asprintf "Incompatible arguments for '%s'" name))
     else
       ret
+
+(* Shortcut to `a_func_type_m` using `coerced_type_p` for all arguments *)
+let a_func_type eargs =
+  a_func_type_m (List.map ~f:coerced_type_p eargs)
 
 let builtins_map =
   String.Map.Tree.of_alist_exn
@@ -397,14 +415,34 @@ let builtins_map =
       ("vpermf128_4x64f", func_type_vbinop_with_vparam (VecType (F DoubleType, 4))) ;
       ("vpermf128_8x32f", func_type_vbinop_with_vparam (VecType (F FloatType, 8))) ;
 
-      ("vload_2l_4x32f", a_func_type [VecType (F FloatType, 4); PtrType (VecType (F FloatType, 2) , None)] (VecType (F FloatType, 4))); (* TODO: problem with matching Ptr alignment *)
-      ("vload_2h_4x32f", a_func_type [VecType (F FloatType, 4); PtrType (VecType (F FloatType, 2) , None)] (VecType (F FloatType, 4))); (* TODO: problem with matching Ptr alignment *)
+      ("vload_2l_4x32f", a_func_type_m [
+                             coerced_type_p (VecType (F FloatType, 4));
+                             ptr_noalign_p (VecType (F FloatType, 2))
+                           ] (VecType (F FloatType, 4)));
 
-      ("vloadu_4x32f", a_func_type [PtrType (A (F FloatType), None)] (VecType (F FloatType, 4);));  (* TODO: problem with matching Ptr alignment *)
+      ("vload_2h_4x32f", a_func_type_m [
+                             coerced_type_p (VecType (F FloatType, 4));
+                             ptr_noalign_p (VecType (F FloatType, 2))
+                           ] (VecType (F FloatType, 4)));
 
-      ("vstore_2l_4x32f", a_func_type [PtrType(VecType(F FloatType,2), None); VecType(F FloatType,4)] VoidType); (* TODO: problem with matching Ptr alignment *)
-      ("vstore_2h_4x32f", a_func_type [PtrType(VecType(F FloatType,2), None); VecType(F FloatType,4)] VoidType);(* TODO: problem with matching Ptr alignment *)
-      ("vstoreu_4x32f", a_func_type [PtrType(A (F FloatType), None); VecType(F FloatType,4)] VoidType); (* TODO: problem with matching Ptr alignment *)
+      ("vloadu_4x32f", a_func_type_m [
+                           ptr_noalign_p (A (F FloatType))
+                         ] (VecType (F FloatType, 4)));
+
+      ("vstore_2l_4x32f", a_func_type_m [
+                              ptr_noalign_p (VecType(F FloatType,2));
+                              coerced_type_p (VecType(F FloatType,4))
+                            ] VoidType);
+
+      ("vstore_2h_4x32f", a_func_type_m [
+                              ptr_noalign_p (VecType(F FloatType,2));
+                              coerced_type_p (VecType(F FloatType,4))
+                            ] VoidType);
+
+      ("vstoreu_4x32f", a_func_type_m [
+                            ptr_noalign_p (A (F FloatType));
+                            coerced_type_p (VecType(F FloatType,4))
+                          ] VoidType);
     ]
 
 let build_var_map l =
