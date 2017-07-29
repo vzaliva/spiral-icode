@@ -139,12 +139,19 @@ let rec check_coercion tfrom tto =
 (* check if 'r' could be explicitly casted to 'l' even with possible loss of precision.
    Our rules may be stricter than in C99 *)
 let rec check_cast tfrom tto =
-  match tto, tfrom with
-  | PtrType _, PtrType _       -> true (* TODO: check alightment? *)
-  | VecType (lt,ll), VecType (rt,rl) ->
+  let rec align_compare a b =
+    match a, b with
+    | None, None -> true
+    | Some a, None -> a=1
+    | None, Some a -> a=1
+    | Some a1, Some a2 -> a1 = a2 in
+  match tfrom, tto with
+  | PtrType (_,a1), PtrType (_, None) -> true
+  | PtrType (_, a1), PtrType (_, Some a2) ->  a2 = 1 || align_compare a1 (Some a2)
+  | VecType (rt,rl), VecType (lt,ll) ->
      (* we allow to convert vectors as long as they are same byte size *)
      ll*(arith_sizeof lt) = rl*(arith_sizeof rt)
-  | a ,b ->check_coercion a b
+  | a, b -> check_coercion b a
 
 let rec func_type_arith_binop name al =
   let open List in

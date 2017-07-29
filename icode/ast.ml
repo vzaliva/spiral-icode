@@ -205,7 +205,8 @@ let rec pr_itype ppf = function
   | VoidType       -> fprintf ppf "@[TVoid@]"
   | ArrType (t,s)  -> fprintf ppf "@[<h>Arr(%a,%d)@]" pr_itype t s
   | VecType (t,s)  -> fprintf ppf "@[<h>Vec(%a,%d)@]" pr_itype (A t) s
-  | PtrType (t,_)  -> fprintf ppf "@[<h>Ptr(%a)@]" pr_itype t
+  | PtrType (t, None)   -> fprintf ppf "@[<h>Ptr(%a)@]" pr_itype t
+  | PtrType (t, Some a) -> fprintf ppf "@[<h>Ptr(%a, %d)@]" pr_itype t a
 
 let itype_as_string = Format.asprintf "%a" pr_itype
 
