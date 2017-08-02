@@ -111,47 +111,52 @@ let is_void = function
   | _ -> false
 
 
-(* check if 'r' could be coerced (implictly casted) to 'l' even with possible loss of precision.  Our rules are stricter than in C99 *)
+let align_compare a b =
+  match a, b with
+  | None, None -> true
+  | Some a, None -> a=1
+  | None, Some a -> a=1
+  | Some a1, Some a2 -> a1=a2
+
+(* check if 'r' could be coerced (implictly casted) to 'l' even with possible loss of precision. Our rules are stricter than in C99 *)
 let rec check_coercion tfrom tto =
   match tto, tfrom with
   | VoidType , _         -> true
   | _        , VoidType  -> false
   | A _      , A _       -> true
-  | A _      , PtrType _ -> false (* unlike C we do not allow cast between ints and ptr *)
+  | A _      , PtrType _ -> false (* unlike C we do not allow implicit coercions between ints and ptr *)
   | A _      , ArrType _ -> false
   | A _      , VecType _ -> false
-  | PtrType _, A _       -> false (* unlike C we do not allow cast between ints and ptr *)
+  | PtrType _, A _       -> false (* unlike C we do not allow implicit coercions between ints and ptr *)
   | ArrType _, A _       -> false
   | VecType _, A _       -> false
   | ArrType (lt,ll), ArrType (rt,rl) -> ll = rl && check_coercion rt lt
-  | VecType (lt,ll), VecType (rt,rl) ->
-     arith_sizeof lt = arith_sizeof rt
-     && ll = rl
-     && check_coercion (A rt) (A lt)
-  | PtrType (lt, la), PtrType (rt, ra) -> lt=rt (* TODO: alignment? *)
-  | ArrType (lt,ll), PtrType (rt, ra) -> lt=rt (* TODO: Check with Franz *)
-  | PtrType (lt, la), ArrType (rt,rl) -> lt=rt (* TODO: Check with Franz *)
+  | PtrType (lt, _), PtrType (rt, None) -> lt=rt
+  | PtrType (lt, la), PtrType (rt, Some ra) ->
+     (lt = VoidType || rt = VoidType) (* for void pointers we do not check alignment *)
+     || (lt=rt && (ra = 1 || align_compare la (Some ra)))
+
+  | ArrType (lt,ll), PtrType (rt, ra) -> lt=rt (* TODO: Check with Franz. Alignthment? *)
+  | PtrType (lt, la), ArrType (rt,rl) -> lt=rt (* TODO: Check with Franz. Alignthment? *)
   | VecType _, PtrType _ -> false
   | PtrType _, VecType _ -> false
   | ArrType (lt,ll), VecType (rt,rl) -> ll = rl && is_power_of_2 ll && check_coercion (A rt) lt
   | VecType (lt,ll), ArrType (rt,rl) -> ll = rl && check_coercion rt (A lt)
+  | a, b -> a = b
 
 (* check if 'r' could be explicitly casted to 'l' even with possible loss of precision.
    Our rules may be stricter than in C99 *)
 let rec check_cast tfrom tto =
-  let rec align_compare a b =
-    match a, b with
-    | None, None -> true
-    | Some a, None -> a=1
-    | None, Some a -> a=1
-    | Some a1, Some a2 -> a1 = a2 in
-  match tfrom, tto with
-  | PtrType (_,a1), PtrType (_, None) -> true
-  | PtrType (_, a1), PtrType (_, Some a2) ->  a2 = 1 || align_compare a1 (Some a2)
-  | VecType (rt,rl), VecType (lt,ll) ->
-     (* we allow to convert vectors as long as they are same byte size *)
-     ll*(arith_sizeof lt) = rl*(arith_sizeof rt)
-  | a, b -> check_coercion b a
+  if check_coercion tfrom tto then true
+  else
+    (* additional casting rules, on top of default coercion rules *)
+    match tfrom, tto with
+    | PtrType (_, a1), PtrType (_, None) -> true
+    | PtrType (_, a1), PtrType (_, Some a2) ->  a2 = 1 || align_compare a1 (Some a2)
+    | VecType (rt,rl), VecType (lt,ll) ->
+       (* we allow to convert vectors as long as they are same bit length *)
+       ll*(arith_sizeof lt) = rl*(arith_sizeof rt)
+    | _, _ -> false
 
 let rec func_type_arith_binop name al =
   let open List in
