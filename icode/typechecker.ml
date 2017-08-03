@@ -1,6 +1,7 @@
 open Core
 
 open Ast
+open Typetools
 open IType
 open IIntType
 open IFloatType
@@ -11,80 +12,6 @@ open Utils
 exception TypeError of string
 
 let is_power_of_2 n =  n <> 0 && (n land (n - 1) = 0)
-
-let signed_integer_types = IIntTypeSet.of_list [
-                               Int8Type ;
-                               Int16Type ;
-                               Int32Type ;
-                               Int64Type]
-let is_signed_integer = IIntTypeSet.mem signed_integer_types
-
-let unsigned_integer_types = IIntTypeSet.of_list [
-                                 BoolType ;
-                                 UInt8Type ;
-                                 UInt16Type ;
-                                 UInt32Type ;
-                                 UInt64Type ]
-let is_unsigned_integer = IIntTypeSet.mem unsigned_integer_types
-
-let integer_types = IIntTypeSet.of_list IIntType.all
-
-let signed_arith_types = ITypeSet.union
-                           (ITypeSet.of_list [
-                                A (F FloatType) ;
-                                A (F DoubleType) ; ])
-                           (ITypeSet.map ~f:iType_of_IntType signed_integer_types)
-
-
-let arith_types = IArithTypeSet.of_list IArithType.all
-
-let is_integer = function
-  | A I _ -> true
-  | _ -> false
-
-let is_arith = function
-  | A _ -> true
-  | _ -> false
-
-let is_signed_arith = function
-  | I t -> IIntTypeSet.mem signed_integer_types t
-  | F _ -> true
-
-let is_unsigned_arith = function
-  | I t -> IIntTypeSet.mem unsigned_integer_types t
-  | F _ -> false
-
-let integer_type_rank = function
-  | BoolType                -> 0
-  | Int8Type  | UInt8Type   -> 1
-  | Int16Type | UInt16Type  -> 2
-  | Int32Type | UInt32Type  -> 3
-  | Int64Type | UInt64Type  -> 4
-
-let int_sizeof = function
-  | BoolType | Int8Type  | UInt8Type   -> 1
-  | Int16Type | UInt16Type  -> 2
-  | Int32Type | UInt32Type  -> 4
-  | Int64Type | UInt64Type  -> 8
-
-let arith_sizeof = function
-  | I i -> int_sizeof i
-  | F FloatType -> 4
-  | F DoubleType -> 8
-
-let rec sizeof = function
-  | VoidType -> 0
-  | A t -> arith_sizeof t
-  | ArrType (t,l) -> sizeof t * l
-  | VecType (at,l) -> arith_sizeof at *l
-  | PtrType _ -> if !Config.is64bit then 8 else 4
-
-let unsigned_type = function
-  | Int8Type -> UInt8Type
-  | Int16Type -> UInt16Type
-  | Int32Type -> UInt32Type
-  | Int64Type -> UInt64Type
-  | _ as t -> t
 
 let integer_promotion t =
   let i = if is_signed_integer t then Int32Type else UInt32Type in
@@ -117,12 +44,7 @@ let is_void = function
   | VoidType -> true
   | _ -> false
 
-let align_compare a b =
-  match a, b with
-  | None, None -> true
-  | Some a, None -> a=1
-  | None, Some a -> a=1
-  | Some a1, Some a2 -> a1=a2
+let align_coercable afrom ato = ato mod afrom = 0
 
 (* check if 'r' could be coerced (implictly casted) to 'l' even with possible loss of precision. Our rules are stricter than in C99 *)
 let rec check_coercion tfrom tto =
@@ -136,18 +58,15 @@ let rec check_coercion tfrom tto =
   | PtrType _, A _       -> false (* unlike C we do not allow implicit coercions between ints and ptr *)
   | ArrType _, A _       -> false
   | VecType _, A _       -> false
-  | ArrType (lt,ll), ArrType (rt,rl) -> ll = rl && check_coercion rt lt
-  | PtrType (lt, _), PtrType (rt, None) -> lt=rt
-  | PtrType (lt, la), PtrType (rt, Some ra) ->
-     (lt = VoidType || rt = VoidType) (* for void pointers we do not check alignment *)
-     || (lt=rt && (ra = 1 || align_compare la (Some ra)))
+  | ArrType (lt,ll), ArrType (rt,rl) -> ll=rl && check_coercion rt lt (* TODO: false? *)
+  | PtrType (lt, la), PtrType (rt, ra) -> lt=rt && align_coercable la ra
 
-  | ArrType (lt,ll), PtrType (rt, ra) -> lt=rt (* TODO: Check with Franz. Alignthment? *)
-  | PtrType (lt, la), ArrType (rt,rl) -> lt=rt (* TODO: Check with Franz. Alignthment? *)
+  | ArrType (lt,_), PtrType (rt, ra) -> lt=rt && align_coercable (natural_alignment lt) ra
+  | PtrType (lt, la), ArrType (rt,_) -> lt=rt && align_coercable la (natural_alignment rt)
   | VecType _, PtrType _ -> false
   | PtrType _, VecType _ -> false
-  | ArrType (lt,ll), VecType (rt,rl) -> ll = rl && is_power_of_2 ll && check_coercion (A rt) lt
-  | VecType (lt,ll), ArrType (rt,rl) -> ll = rl && check_coercion rt (A lt)
+  | ArrType (lt,ll), VecType (rt,rl) -> ll = rl && is_power_of_2 ll && (A rt) = lt
+  | VecType (lt,ll), ArrType (rt,rl) -> ll = rl && rt = (A lt)
   | a, b -> a = b
 
 (* check if 'r' could be explicitly casted to 'l' even with possible loss of precision.
@@ -157,10 +76,8 @@ let rec check_cast tfrom tto =
   else
     (* additional casting rules, on top of default coercion rules *)
     match tfrom, tto with
-    | PtrType (_, a1), PtrType (_, None) -> true
-    | PtrType (_, a1), PtrType (_, Some a2) ->  a2 = 1 || align_compare a1 (Some a2)
     | VecType (rt,rl), VecType (lt,ll) ->
-       (* we allow to convert vectors as long as they are same bit length *)
+       (* we allow to convert vectors as long as they are same bit length. TODO: check with Franz *)
        ll*(arith_sizeof lt) = rl*(arith_sizeof rt)
     | _, _ -> false
 
@@ -219,11 +136,9 @@ let func_type_arith_nop name al =
 
 let func_type_bool_arith_binop name al = ignore ( func_type_arith_binop name al) ; A (I BoolType)
 
-let ptr_attr_combine a1 a2 =
-  match a1, a2 with
-  | None, al2 -> al2
-  | al1, None -> al1
-  | Some n1, Some n2 -> Some (max n1 n2)
+let coercion_combine a1 a2 =
+  if a1 mod a2 = 0 || a2 mod a1 = 0 then Some (min a1 a2)
+  else None
 
 let rec type_combine ty1 ty2 =
   match ty1, ty2 with
@@ -235,7 +150,10 @@ let rec type_combine ty1 ty2 =
      then Some (A (I t1)) else None
   | PtrType (t1,a1), PtrType (t2, a2) ->
      (match type_combine t1 t2 with
-      | Some t -> Some (PtrType (t, ptr_attr_combine a1 a2))
+      | Some t ->
+         (match coercion_combine a1 a2 with
+         | Some ca -> Some (PtrType (t, ca))
+         | None -> None)
       | None -> None
      )
   | ArrType (t1,s1), ArrType (t2, s2) ->
@@ -256,17 +174,15 @@ let type_conditional ty1 ty2 =
   | A ia0 , A ia1 -> A (usual_arithmetic_conversion true ia0 ia1)
   | PtrType (t1,a1), PtrType (t2, a2) ->
      let t =
-       if is_void t1 || is_void t2 then VoidType else
-         match type_combine t1 t2 with
-         | Some t -> t
-         | None -> VoidType
-     in PtrType (t, None)
-  | PtrType (_,_) as t, A (I _) -> t
-  | A (I _), (PtrType (_,_) as t) -> t
-  | t1, t2 -> match type_combine t1 t2 with
+       if is_void t1 || is_void t2 then VoidType
+       else Option.value ~default:VoidType (type_combine t1 t2)
+     in PtrType (t, 0)
+  | PtrType (_,_), A (I _) -> ty1
+  | A (I _), PtrType (_,_) -> ty2
+  | _, _ -> match type_combine ty1 ty2 with
               | Some t -> t
               | None -> raise (TypeError
-                                 (Format.asprintf "Incompatible arguments for conditional operator:  %a and %a" pr_itype t1 pr_itype t2))
+                                 (Format.asprintf "Incompatible arguments for conditional operator:  %a and %a" pr_itype ty1 pr_itype ty2))
 
 let func_type_cond name a =
   let open List in

@@ -1,5 +1,6 @@
 %{
     open Ast
+    open Typetools
     open IIntType
     open IArithType
     open IFloatType
@@ -75,7 +76,7 @@ i_type:
                      element of alignment in Spiral and will use only first one 
                      *)
                     let open Core in
-                    let a = if List.is_empty l then None else Some (List.hd_exn l) in
+                    let a = if List.is_empty l then natural_alignment t else List.hd_exn l in
                     PtrType (t, a)
                 }
   | TARR  LPAREN t=i_type COMMA s=UINT RPAREN { ArrType (t, int_of_string s) }

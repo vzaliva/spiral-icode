@@ -81,7 +81,7 @@ module IType = struct
     | VoidType
     | ArrType of t*int
     | VecType of IArithType.t*int
-    | PtrType of t*(int option) (* type, optional alignment *) [@@deriving compare, sexp]
+    | PtrType of t*int (* type, alignment *) [@@deriving compare, sexp]
 end
 open IType
 module ITypeSet = Set.Make(IType)
@@ -179,38 +179,3 @@ let mkiconst s e (d:iconst_node): iconst  = { node = d; loc = symbol_rloc s e}
 
 (* Mapping of generic numeric types to actual machine types. It is hardcoded now, but will be managed via config file or command line options later *)
 
-let realFType () = if !Config.isDouble then DoubleType else FloatType
-let realAType () = F (realFType ())
-let prtSizeOf () = if !Config.is64bit then 8 else 4
-
-(* --- helper functoin, in IArithType *)
-let realType () = A (realAType ())
-
-
-(* -- Formatting --- *)
-open Format
-
-let rec pr_itype ppf = function
-  | A I Int8Type   -> fprintf ppf "@[TInt8@]"
-  | A I Int16Type  -> fprintf ppf "@[TInt16@]"
-  | A I Int32Type  -> fprintf ppf "@[TInt32@]"
-  | A I Int64Type  -> fprintf ppf "@[TInt64@]"
-  | A I UInt8Type  -> fprintf ppf "@[TUInt8@]"
-  | A I UInt16Type -> fprintf ppf "@[TUInt16@]"
-  | A I UInt32Type -> fprintf ppf "@[TUInt32@]"
-  | A I UInt64Type -> fprintf ppf "@[TUInt64@]"
-  | A I BoolType   -> fprintf ppf "@[TBool@]"
-  | A F FloatType  -> fprintf ppf "@[Float@]"
-  | A F DoubleType -> fprintf ppf "@[Double@]"
-  | VoidType       -> fprintf ppf "@[TVoid@]"
-  | ArrType (t,s)  -> fprintf ppf "@[<h>Arr(%a,%d)@]" pr_itype t s
-  | VecType (t,s)  -> fprintf ppf "@[<h>Vec(%a,%d)@]" pr_itype (A t) s
-  | PtrType (t, None)   -> fprintf ppf "@[<h>Ptr(%a)@]" pr_itype t
-  | PtrType (t, Some a) -> fprintf ppf "@[<h>Ptr(%a, %d)@]" pr_itype t a
-
-let itype_as_string = Format.asprintf "%a" pr_itype
-
-let type_list_fmt sep = Format.pp_print_list ~pp_sep:(fun fmt () -> Format.fprintf fmt sep) pr_itype
-
-let pr_err_loc ppf (l:Loc.t) =
-  fprintf ppf "%a: error:" Utils.pr_pos l.Loc.loc_start
