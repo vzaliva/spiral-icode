@@ -8,6 +8,7 @@ open IFloatType
 open IArithType
 open Ints
 open Utils
+open Option
 
 exception TypeError of string
 
@@ -149,21 +150,12 @@ let rec type_combine ty1 ty2 =
      if is_signed_integer t1 = is_signed_integer t2 && int_sizeof t1 = int_sizeof t2
      then Some (A (I t1)) else None
   | PtrType (t1,a1), PtrType (t2, a2) ->
-     (match type_combine t1 t2 with
-      | Some t ->
-         (match coercion_combine a1 a2 with
-         | Some ca -> Some (PtrType (t, ca))
-         | None -> None)
-      | None -> None
-     )
+     type_combine t1 t2 >>= (fun t ->
+      coercion_combine a1 a2 >>= (fun ca ->
+                               Some (PtrType (t, ca))))
   | ArrType (t1,s1), ArrType (t2, s2) ->
-     (match type_combine t1 t2 with
-      | Some t -> if s1 = s2 then
-                    Some (ArrType (t,s1))
-                  else
-                    None
-      | None -> None
-     )
+     type_combine t1 t2 >>= (fun t ->
+      if s1 = s2 then Some (ArrType (t,s1)) else None)
   | _, _ -> None
 
 (* Lifted from http://compcert.inria.fr/doc/html/Ctyping.html
@@ -175,7 +167,7 @@ let type_conditional ty1 ty2 =
   | PtrType (t1,a1), PtrType (t2, a2) ->
      let t =
        if is_void t1 || is_void t2 then VoidType
-       else Option.value ~default:VoidType (type_combine t1 t2)
+       else value ~default:VoidType (type_combine t1 t2)
      in PtrType (t, 0)
   | PtrType (_,_), A (I _) -> ty1
   | A (I _), PtrType (_,_) -> ty2
