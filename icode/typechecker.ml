@@ -72,6 +72,13 @@ let arith_sizeof = function
   | F FloatType -> 4
   | F DoubleType -> 8
 
+let rec sizeof = function
+  | VoidType -> 0
+  | A t -> arith_sizeof t
+  | ArrType (t,l) -> sizeof t * l
+  | VecType (at,l) -> arith_sizeof at *l
+  | PtrType _ -> if !Config.is64bit then 8 else 4
+
 let unsigned_type = function
   | Int8Type -> UInt8Type
   | Int16Type -> UInt16Type
@@ -109,7 +116,6 @@ let usual_arithmetic_conversion promote t1 t2 =
 let is_void = function
   | VoidType -> true
   | _ -> false
-
 
 let align_compare a b =
   match a, b with
