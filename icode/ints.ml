@@ -31,3 +31,8 @@ module Uint32Ex = IntEx(Uint32)
 open Uint32Ex
 module Uint64Ex = IntEx(Uint64)
 open Uint64Ex
+
+let in_range f t x = Uint64Ex.compare x f >= 0 && Uint64Ex.compare x t <= 0
+let in_int32_range x = in_range Uint64Ex.zero (Int32Ex.to_uint64 Int32Ex.max_int) x
+let in_uint32_range x = in_range (Uint32Ex.to_uint64 Uint32Ex.min_int) (Uint32Ex.to_uint64 Uint32Ex.max_int) x
+let in_int64_range x = in_range Uint64Ex.zero (Int64Ex.to_uint64 Int64Ex.max_int) x

@@ -451,6 +451,38 @@ let func_type n a =
                  msg "\t'%s' return type: %a\n" n pr_itype res
                  ; res
 
+(* Generally follows C99 §6.4.4.1 *)
+let iconst_of_hex l s : iconst =
+  let (c:iconst_node) =
+    if String.is_empty s then
+      raise (TypeError ("Empty hex string in 'vhex'", Some l))
+    else
+      try
+        let v = Uint64Ex.of_string s in
+        if String.suffix s 1 = "ul" then
+          UInt64Const v
+        else if String.suffix s 1 = "l" then
+          begin
+            if in_int64_range v then Int64Const (Int64Ex.of_uint64 v)
+            else UInt64Const v (* always fits *)
+          end
+        else if String.suffix s 1 = "u" then
+          begin
+            if in_uint32_range v then UInt32Const (Uint32Ex.of_uint64 v)
+            else UInt64Const v (* always fits *)
+          end
+        else
+          begin
+            if in_int32_range v then Int32Const (Int32Ex.of_uint64 v)
+            else if in_uint32_range v then UInt32Const (Uint32Ex.of_uint64 v)
+            else if in_int64_range v then Int64Const (Int64Ex.of_uint64 v)
+            else UInt64Const v (* always fits *)
+          end
+      with
+      | Failure _ -> raise (TypeError (Format.asprintf "Invalid hex string \"%s\" in 'vhex'" s, Some l))
+  in {node = c; loc = l }
+
+
 let rec lvalue_type vmap (x:lvalue) =
   match x.lnode with
   | VarLValue v -> var_type vmap v
@@ -528,27 +560,7 @@ and rvalue_type vmap rv =
      else
        raise (TypeError ("Mismatch between int vector type and its value types\n", Some rv.rloc))
   | VHex sl ->
-     let iconst_of_hex s : iconst =
-       let v =
-         if String.is_empty s then
-           raise (TypeError ("Empty hex string in 'vhex'", Some rv.rloc))
-         else
-           try
-             if String.prefix s 1 = "-" then
-               if String.suffix s 1 = "l" then
-                 Int64Const (Int64Ex.of_string s)
-               else
-                 Int32Const (Int32Ex.of_string s)
-             else
-               if String.suffix s 1 = "l" then
-                 UInt64Const (Uint64Ex.of_string s)
-               else
-                 UInt32Const (Uint32Ex.of_string s)
-           with
-           | Failure _ -> raise (TypeError (Format.asprintf "Invalid hex string \"%s\" in 'vhex'" s, Some rv.rloc))
-       in {node = v; loc = rv.rloc }
-     in
-     let consts = List.map ~f:iconst_of_hex sl in
+     let consts = List.map ~f:(iconst_of_hex rv.rloc) sl in
      rvalue_type vmap
                  { rnode = IConstArr (type_of_const (List.hd_exn consts).node, consts);
                    rloc = rv.rloc }
