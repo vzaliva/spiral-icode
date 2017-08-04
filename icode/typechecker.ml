@@ -231,7 +231,7 @@ let func_type_vushuffle name a =
     | VecType (_, vl), ArrType (A (I _), al) ->
        if al <> vl then
          raise_TypeError (Format.asprintf "Unexpected number size of vparam array for '%s'" name)
-       else a1
+       else a0
     | _, _ -> raise_TypeError
                        (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
                                         pr_itype a0 pr_itype a1 name)
