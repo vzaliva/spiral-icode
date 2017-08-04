@@ -46,7 +46,7 @@ let is_void = function
   | VoidType -> true
   | _ -> false
 
-let align_coercable afrom ato = ato mod afrom = 0
+let align_coercable afrom ato = afrom mod ato = 0
 
 (* check if 'r' could be coerced (implictly casted) to 'l' even with possible loss of precision. Our rules are stricter than in C99 *)
 let rec check_coercion tfrom tto =
@@ -73,7 +73,7 @@ let rec check_coercion tfrom tto =
 
 (* check if 'r' could be explicitly casted to 'l' even with possible loss of precision.
    Our rules may be stricter than in C99 *)
-let rec check_cast tfrom tto =
+let check_cast tfrom tto =
   if check_coercion tfrom tto then true
   else
     (* additional casting rules, on top of default coercion rules *)
@@ -81,6 +81,7 @@ let rec check_cast tfrom tto =
     | VecType (rt,rl), VecType (lt,ll) ->
        (* we allow to convert vectors as long as they are same bit length. TODO: check with Franz *)
        ll*(arith_sizeof lt) = rl*(arith_sizeof rt)
+    | PtrType (A lt, la), PtrType (VecType (rt, rl), ra) -> lt=rt && align_coercable la ra
     | _, _ -> false
 
 let rec func_type_arith_binop name al =
