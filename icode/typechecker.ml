@@ -10,7 +10,8 @@ open Ints
 open Utils
 open Option
 
-exception TypeError of string
+exception TypeError of (string * Loc.t option)
+let raise_TypeError msg = raise (TypeError (msg,None))
 
 let is_power_of_2 n =  n <> 0 && (n land (n - 1) = 0)
 
@@ -85,7 +86,7 @@ let rec check_cast tfrom tto =
 let rec func_type_arith_binop name al =
   let open List in
   if 2 <> length al then
-    raise (TypeError (Format.asprintf "Invalid number of arguments for '%s'" name))
+    raise_TypeError (Format.asprintf "Invalid number of arguments for '%s'" name)
   else
     let a0 = nth_exn al 0 in
     let a1 = nth_exn al 1 in
@@ -95,9 +96,9 @@ let rec func_type_arith_binop name al =
        if l1=l2 && check_coercion a0 a1 then
          VecType (usual_arithmetic_conversion true vt1 vt2, l1)
        else
-         raise (TypeError
+         raise_TypeError
                   (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
-                                   pr_itype a0 pr_itype a1 name))
+                                   pr_itype a0 pr_itype a1 name)
 
     | ArrType (A vt1, l1), ArrType (A vt2, l2) ->
        let va0 = VecType (vt1, l1) in
@@ -105,16 +106,16 @@ let rec func_type_arith_binop name al =
        if check_coercion a0 va0 && check_coercion a1 va1 then
          func_type_arith_binop name [va0; va1]
        else
-         raise (TypeError (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
-                                           pr_itype a0 pr_itype a1 name))
-    | _ , _ -> raise (TypeError
+         raise_TypeError (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
+                                           pr_itype a0 pr_itype a1 name)
+    | _ , _ -> raise_TypeError
                         (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
-                                         pr_itype a0 pr_itype a1 name))
+                                         pr_itype a0 pr_itype a1 name)
 
 let rec func_type_add name al =
   let open List in
   if 2 <> length al then
-    raise (TypeError (Format.asprintf "Invalid number of arguments for '%s'" name))
+    raise_TypeError (Format.asprintf "Invalid number of arguments for '%s'" name)
   else
     let a0 = nth_exn al 0 in
     let a1 = nth_exn al 1 in
@@ -122,14 +123,14 @@ let rec func_type_add name al =
     | A _ , A _ | VecType _, ArrType (A _,_) | ArrType (A _,_), VecType (_, _) | VecType (_,_), VecType (_, _) | ArrType (A _, _), ArrType (A _, _) -> func_type_arith_binop name al
     | PtrType _, A (I _) -> a0
     | A (I _), PtrType _ -> a1
-    | _ , _ -> raise (TypeError
+    | _ , _ -> raise_TypeError
                         (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
-                                         pr_itype a0 pr_itype a1 name))
+                                         pr_itype a0 pr_itype a1 name)
 
 let func_type_arith_nop name al =
   let open List in
   if length al < 2 then
-    raise (TypeError (Format.asprintf "Invalid number of arguments for '%s'" name))
+    raise_TypeError (Format.asprintf "Invalid number of arguments for '%s'" name)
   else if length al = 2 then func_type_arith_binop name al
   else fold ~init:(hd_exn al)
             ~f:(fun a b -> func_type_arith_binop name [a;b])
@@ -173,18 +174,18 @@ let type_conditional ty1 ty2 =
   | A (I _), PtrType (_,_) -> ty2
   | _, _ -> match type_combine ty1 ty2 with
               | Some t -> t
-              | None -> raise (TypeError
-                                 (Format.asprintf "Incompatible arguments for conditional operator:  %a and %a" pr_itype ty1 pr_itype ty2))
+              | None -> raise_TypeError
+                                 (Format.asprintf "Incompatible arguments for conditional operator:  %a and %a" pr_itype ty1 pr_itype ty2)
 
 let func_type_cond name a =
   let open List in
   if length a <> 3 then
-    raise (TypeError (Format.asprintf "Invalid number of arguments for '%s'" name))
+    raise_TypeError (Format.asprintf "Invalid number of arguments for '%s'" name)
   else
     let a0 = hd_exn a in
     (* first argument should be interpretable as boolean *)
     match a0 with
-    | VecType _ | ArrType _ | VoidType -> raise (TypeError (Format.asprintf "Could not coerce 1st argument of '%s' to boolean type. Actual types: [%a]." name pr_itype a0))
+    | VecType _ | ArrType _ | VoidType -> raise_TypeError (Format.asprintf "Could not coerce 1st argument of '%s' to boolean type. Actual types: [%a]." name pr_itype a0)
     | A _ | PtrType _ ->
        (match nth_exn a 1, nth_exn a 2 with
         | _,_ -> func_type_arith_binop name (tl_exn a)
@@ -194,33 +195,33 @@ let func_type_cond name a =
 let func_type_neg name a =
   let open List in
   if length a <> 1 then
-    raise (TypeError (Format.asprintf "Invalid number of arguments for '%s'" name))
+    raise_TypeError (Format.asprintf "Invalid number of arguments for '%s'" name)
   else
     let a0 = hd_exn a in
     match a0 with
     | VecType _ -> a0
     | A I it -> A (I (integer_promotion it))
     | A _ -> a0 (* floats negated to the same type. Not dealing with signedness *)
-    | _ -> raise (TypeError (Format.asprintf "Could not apply negation to non-arithmetic type [%a]." pr_itype a0))
+    | _ -> raise_TypeError (Format.asprintf "Could not apply negation to non-arithmetic type [%a]." pr_itype a0)
 
 (* 'abs' is polymorphic version of C99 abs, labs, fabsf, fabs*)
 let func_type_abs name a =
   let open List in
   if length a <> 1 then
-    raise (TypeError (Format.asprintf "Invalid number of arguments for '%s'" name))
+    raise_TypeError (Format.asprintf "Invalid number of arguments for '%s'" name)
   else
     let a0 = hd_exn a in
     match a0 with
     | A I it as t -> if is_signed_integer it then t
-                     else raise (TypeError (Format.asprintf "Could not apply 'abs' to unsigned type [%a]." pr_itype a0))
+                     else raise_TypeError (Format.asprintf "Could not apply 'abs' to unsigned type [%a]." pr_itype a0)
     | A _ as t -> t (* floats negated to the same type. Not dealing with signedness *)
-    | _ -> raise (TypeError (Format.asprintf "Could not apply 'abs' to non-arithmetic type [%a]." pr_itype a0))
+    | _ -> raise_TypeError (Format.asprintf "Could not apply 'abs' to non-arithmetic type [%a]." pr_itype a0)
 
 
 let func_type_vushuffle name a =
   let open List in
   if 2 <> length a then
-    raise (TypeError (Format.asprintf "Invalid number of arguments for '%s'" name))
+    raise_TypeError (Format.asprintf "Invalid number of arguments for '%s'" name)
   else
     let a0 = nth_exn a 0 in
     let a1 = nth_exn a 1 in
@@ -228,37 +229,37 @@ let func_type_vushuffle name a =
     | VecType (_, _), A (I _) -> a1
     | VecType (_, vl), ArrType (A (I _), al) ->
        if al <> vl then
-         raise (TypeError (Format.asprintf "Unexpected number size of vparam array for '%s'" name))
+         raise_TypeError (Format.asprintf "Unexpected number size of vparam array for '%s'" name)
        else a1
-    | _, _ -> raise (TypeError
+    | _, _ -> raise_TypeError
                        (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
-                                        pr_itype a0 pr_itype a1 name))
+                                        pr_itype a0 pr_itype a1 name)
 
 let func_type_vbinop t name a =
   let open List in
   if 2 <> length a then
-    raise (TypeError (Format.asprintf "Invalid number of arguments for '%s'" name))
+    raise_TypeError (Format.asprintf "Invalid number of arguments for '%s'" name)
   else
     let a0 = nth_exn a 0 in
     let a1 = nth_exn a 1 in
     if check_coercion a0 t && check_coercion a1 t then t
-    else raise (TypeError
+    else raise_TypeError
                   (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
-                                   pr_itype a0 pr_itype a1 name))
+                                   pr_itype a0 pr_itype a1 name)
 
 let func_type_vbinop_with_vparam t name a =
   let open List in
   if 3 <> length a then
-    raise (TypeError (Format.asprintf "Invalid number of arguments for '%s'" name))
+    raise_TypeError (Format.asprintf "Invalid number of arguments for '%s'" name)
   else
     let a0 = nth_exn a 0 in
     let a1 = nth_exn a 1 in
     let a2 = nth_exn a 2 in
     if check_coercion a0 t && check_coercion a1 t (* TODO: enforce VPRAM type &&
          check_coercion a2  (A (I UInt16Type)) *) then t
-    else raise (TypeError
+    else raise_TypeError
                   (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
-                                   pr_itype a0 pr_itype a1 name))
+                                   pr_itype a0 pr_itype a1 name)
 
 (** Mechanism for matching types with holes *)
 
@@ -276,11 +277,11 @@ let ptr_noalign_p t = function
 (* function type match using `a_type_p` *)
 let a_func_type_m eargs_p ret name args =
   if List.length eargs_p <> List.length args then
-    raise (TypeError (Format.asprintf "Unexpected number of arguments for '%s'" name))
+    raise_TypeError (Format.asprintf "Unexpected number of arguments for '%s'" name)
   else
     if not (List.map2_exn ~f:(fun p a -> p a) eargs_p args |>
               List.fold ~f:(&&) ~init:true) then
-      raise (TypeError (Format.asprintf "Incompatible arguments for '%s'" name))
+      raise_TypeError (Format.asprintf "Incompatible arguments for '%s'" name)
     else
       ret
 
@@ -377,11 +378,11 @@ let build_var_map l =
                      | VecType (_, n) ->
                         if is_power_of_2 n then ()
                         else
-                          raise (TypeError ("Size of vector must be power of 2. Got: " ^ (string_of_int n)))
+                          raise_TypeError ("Size of vector must be power of 2. Got: " ^ (string_of_int n))
                      | _ -> ()
                    ) l) ;
   match String.Map.Tree.of_alist l with
-  | `Duplicate_key k -> raise (TypeError ("duplicate variable '" ^ k ^ "' in 'let'" ))
+  | `Duplicate_key k -> raise_TypeError ("duplicate variable '" ^ k ^ "' in 'let'" )
   | `Ok m -> m
 
 (* Check that all variabels defined in 'let' appear in at least on
@@ -427,12 +428,12 @@ and check_vars_in_lvalue s (x:lvalue) =
   | LDeref v -> check_vars_in_rvalue s v
 and var_in_scope s v =
   if not (String.Set.Tree.mem s v) then
-    raise (TypeError ("Variable '" ^ v ^ "' is not in scope" ))
+    raise_TypeError ("Variable '" ^ v ^ "' is not in scope" )
   else ()
 
 let var_type vmap v =
   match (String.Map.Tree.find vmap v) with
-  | None -> raise (TypeError ("Unknown variable '" ^ v ^ "'" ))
+  | None -> raise_TypeError ("Unknown variable '" ^ v ^ "'" )
   | Some t -> t
 
 let func_type n a =
@@ -441,7 +442,7 @@ let func_type n a =
           (pp_print_list ~pp_sep:(fun x _ -> pp_print_text x ", ") pr_itype) a
   ;
     match (String.Map.Tree.find builtins_map n) with
-    | None -> raise (TypeError ("Unknown function '" ^ n ^ "'" ))
+    | None -> raise_TypeError ("Unknown function '" ^ n ^ "'" )
     | Some bf -> let res = bf n a in
                  msg "\t'%s' return type: %a\n" n pr_itype res
                  ; res
@@ -454,21 +455,21 @@ let rec lvalue_type vmap (x:lvalue) =
      if check_cast lt t then t
      else raise (TypeError (Format.asprintf "Illegal lvalue cast from %a to %a."
                                             pr_itype lt
-                                            pr_itype t ));
+                                            pr_itype t, Some x.lloc));
   | LDeref v ->
      (match rvalue_type vmap v with
       | PtrType (t,_) -> t
       | _ as vt ->
-         raise (TypeError (Format.asprintf "Dereferencing non-pointer type %a" pr_itype vt)))
+         raise (TypeError (Format.asprintf "Dereferencing non-pointer type %a" pr_itype vt, Some x.lloc)))
   | NthLvalue (v, i) ->
      let it = rvalue_type vmap i in
      if not (is_integer it) then
-       raise (TypeError (Format.asprintf "Invalid index type %a in NTH" pr_itype it))
+       raise (TypeError (Format.asprintf "Invalid index type %a in NTH" pr_itype it, Some x.lloc))
      else
        let vt = lvalue_type vmap v in
        match vt with
        | ArrType (t,_) | PtrType (t,_) -> t
-       | _ -> raise (TypeError (Format.asprintf "Invalid type %a in NTH" pr_itype vt))
+       | _ -> raise (TypeError (Format.asprintf "Invalid type %a in NTH" pr_itype vt, Some x.lloc))
 and rvalue_type vmap rv =
   (let fconst_type (f:fconst) =
     match f.node with
@@ -493,12 +494,7 @@ and rvalue_type vmap rv =
        (try
          func_type n al
        with
-       | TypeError msg ->
-          let open Format in
-          eprintf "%a  @[<h>Error resolving rvalue function: @[<h>%s(%a)@]@]\n"
-                  pr_err_loc rv.rloc
-                  n (type_list_fmt ", ") al
-         ; raise (TypeError msg)
+       | TypeError (msg, None) -> raise (TypeError (msg, Some rv.rloc))
        ) in
      ft
   | FConst fc -> A (F (fconst_type fc))
@@ -508,30 +504,30 @@ and rvalue_type vmap rv =
      if List.for_all flt (eq_float_type at) then
        ArrType (A (F at) , List.length fl)
      else
-       raise (TypeError (Format.asprintf "%a Mismatch between float array type and its value types\n" pr_err_loc rv.rloc))
+       raise (TypeError ("Mismatch between float array type and its value types", Some rv.rloc))
   | IConstArr (at, il) ->
      let ilt = List.map ~f:iconst_type il in
      if List.for_all ilt (eq_int_type at) then
        ArrType (A (I at) , List.length il)
      else
-       raise (TypeError (Format.asprintf "%a Mismatch between int array type and its value types\n" pr_err_loc rv.rloc))
+       raise (TypeError ("Mismatch between int array type and its value types\n", Some rv.rloc))
   | FConstVec (at, fl) ->
      let flt = List.map ~f:fconst_type fl in
      if List.for_all flt (eq_float_type at) then
        VecType (F at , List.length fl)
      else
-       raise (TypeError (Format.asprintf "%a Mismatch between float vector type and its value types\n" pr_err_loc rv.rloc))
+       raise (TypeError ("Mismatch between float vector type and its value types\n", Some rv.rloc))
   | IConstVec (at, il) ->
      let ilt = List.map ~f:iconst_type il in
      if List.for_all ilt (eq_int_type at) then
        VecType (I at , List.length il)
      else
-       raise (TypeError (Format.asprintf "%a Mismatch between int vector type and its value types\n" pr_err_loc rv.rloc))
+       raise (TypeError ("Mismatch between int vector type and its value types\n", Some rv.rloc))
   | VHex sl ->
      let iconst_of_hex s : iconst =
        let v =
          if String.is_empty s then
-           raise (TypeError (Format.asprintf "Empty hex string in 'vhex'"))
+           raise (TypeError ("Empty hex string in 'vhex'", Some rv.rloc))
          else
            try
              if String.prefix s 1 = "-" then
@@ -539,7 +535,7 @@ and rvalue_type vmap rv =
              else
                UInt64Const (Uint64Ex.of_string s)
            with
-           | Failure _ -> raise (TypeError (Format.asprintf "Invalid hex string \"%s\" in 'vhex'" s))
+           | Failure _ -> raise (TypeError (Format.asprintf "Invalid hex string \"%s\" in 'vhex'" s, Some rv.rloc))
        in {node = v; loc = rv.rloc } (* TODO: loc for ech number *)
      in
      let tHARDCODED = UInt64Type in (* TODO: ask Franz to print type *)
@@ -551,24 +547,24 @@ and rvalue_type vmap rv =
      if check_cast rt t then t
      else raise (TypeError (Format.asprintf "Illegal rvalue cast from %a to %a."
                                             pr_itype rt
-                                            pr_itype t ));
+                                            pr_itype t, Some rv.rloc));
   | RDeref v -> (match rvalue_type vmap v with
                  | PtrType (t,_) -> t
-                 | t -> raise (TypeError (Format.asprintf "Dereferencing non-pointer type %a" pr_itype t)))
+                 | t -> raise (TypeError (Format.asprintf "Dereferencing non-pointer type %a" pr_itype t, Some rv.rloc)))
   | NthRvalue (v, i) ->
      let it = rvalue_type vmap i in
      if not (is_integer it) then
-       raise (TypeError (Format.asprintf "Invalid index type %a in NTH" pr_itype it))
+       raise (TypeError (Format.asprintf "Invalid index type %a in NTH" pr_itype it, Some rv.rloc))
      else
        (match rvalue_type vmap v with
         | ArrType (t,_) | PtrType (t,_) -> t
-        | t -> raise (TypeError (Format.asprintf "Invalid value type %a in NTH" pr_itype t)))
+        | t -> raise (TypeError (Format.asprintf "Invalid value type %a in NTH" pr_itype t, Some rv.rloc)))
   | VdupRvalue (v, il) ->
      match rvalue_type vmap v, il.node with
      | A vt, Int32Const ic -> let i = Int32Ex.to_int ic in
                                if is_power_of_2 i then VecType (vt, i)
-                               else raise (TypeError ("Size in VDUP must be power of 2. Got: " ^ (string_of_int i)))
-     | t,_ -> raise (TypeError (Format.asprintf "Invalid value type %a in VDUP" pr_itype t)))
+                               else raise (TypeError ("Size in VDUP must be power of 2. Got: " ^ (string_of_int i), Some il.loc))
+     | t,_ -> raise (TypeError (Format.asprintf "Invalid value type %a in VDUP" pr_itype t, Some v.rloc)))
 
 (*
    Peforms various type and strcutural correctness checks:
@@ -600,7 +596,7 @@ and rvalue_type vmap rv =
 let typecheck vmap prog =
   let open String.Set.Tree in
   let add_var s v =
-    if mem s v then raise (TypeError ("duplicate declaration of '" ^ v ^ "'" ))
+    if mem s v then raise_TypeError ("duplicate declaration of '" ^ v ^ "'")
     else add s v
   in
   let add_vars s vl = List.fold ~init:s ~f:add_var vl in
@@ -622,7 +618,7 @@ let typecheck vmap prog =
          ) in
        (match ft with
        | VoidType -> u
-       | _ ->  raise (TypeError (Format.asprintf "Calling function %s which returns %a instead of void " n pr_itype ft)))
+       | _ ->  raise (TypeError (Format.asprintf "Calling function %s which returns %a instead of void " n pr_itype ft, Some x.loc)))
     | Function (fn,fr,params,body) ->
        typecheck ((fn,fr)::fstack) (add_vars u params) body
     | Decl (params,body) ->
@@ -634,7 +630,7 @@ let typecheck vmap prog =
        typecheck fstack (add_var u v) body
     | Loop (v,f,t,body) ->
        if f>t then
-         raise (TypeError (Printf.sprintf "Invalid loop index range: %s .. %s  " (Int64Ex.to_string f) (Int64Ex.to_string t) ))
+         raise (TypeError (Printf.sprintf "Invalid loop index range: %s .. %s  " (Int64Ex.to_string f) (Int64Ex.to_string t), Some x.loc))
        else
          typecheck fstack (add_var u v) body
     | If (r,bt,bf) ->
@@ -650,33 +646,34 @@ let typecheck vmap prog =
          raise (TypeError (Format.asprintf "Incompatible types in assignment %a=[%a]."
                                            pr_itype lt
                                            pr_itype rt
-               ));
+               , Some x.loc));
        check_vars_in_lvalue u l;
        check_vars_in_rvalue u r;
        u
     | Return r -> check_vars_in_rvalue u r ;
                   (match List.hd fstack with
-                   | None -> raise (TypeError "Return outsude of function")
+                   | None -> raise (TypeError ("Return outsude of function", Some x.loc))
                    | Some (fn,ft) ->
                       let at = rvalue_type vmap r in
                       if not (check_coercion at ft) then
-                        raise (TypeError (Format.asprintf "Incompatible types in return from functon '%s'. Actual: %a. Expected: %a." fn  pr_itype at pr_itype ft))
+                        raise (TypeError (Format.asprintf "Incompatible types in return from functon '%s'. Actual: %a. Expected: %a." fn  pr_itype at pr_itype ft, Some r.rloc))
                       else u)
   in
   (* check top-level program structure *)
   ignore(
       let rec is_func x =
         match x.node with
-        | Function _ -> true
+        | Function _ -> ()
         | Chain x -> is_all_func x
-        | _ -> false
-      and is_all_func l = List.for_all l is_func
-      in
+        | _ -> raise (TypeError ("'program' must contain only function definitions", Some x.loc))
+      and is_all_func = function
+        | [] -> ()
+        | (x::xs) -> is_func x ; is_all_func xs in
       match prog.node with
-      | Chain body -> if not (is_all_func body) then
-                        raise (TypeError "'program' must contain only function definitions")
+      | Chain body -> is_all_func body
+
       | Function _ -> ()
-      | _ -> raise (TypeError "'program' must contain only function definitions")
+      | _ -> raise (TypeError ("'program' must contain only function definitions", Some prog.loc))
     );
   (* build list of used variables *)
   let used = typecheck [] String.Set.Tree.empty prog in

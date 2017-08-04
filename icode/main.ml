@@ -1,6 +1,7 @@
 open Typechecker
 open Config
 open Utils
+open Typetools
 
 open Format
 open Core
@@ -49,8 +50,11 @@ let _ =
       msg "*** %s compiled OK\n" filename;
       exitOK
     with
-    | Typechecker.TypeError msg ->
-       eprintf "Type check failed: %s%!\n" msg ;
+    | Typechecker.TypeError (msg, l) ->
+       (match l with
+       | None ->  eprintf "Type check failed: %s%!\n" msg
+       | Some loc -> Format.eprintf "%a Type check failed: %s%!\n" pr_err_loc loc msg
+       ) ;
        exitErr
     | Lexer.Error msg ->
        Format.eprintf "%a Syntax error (lexing error)\n" pr_pos (Lexing.lexeme_start_p lineBuffer);
