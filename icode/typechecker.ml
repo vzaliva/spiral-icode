@@ -277,14 +277,17 @@ let ptr_noalign_p t = function
 
 (* function type match using `a_type_p` *)
 let a_func_type_m eargs_p ret name args =
-  if List.length eargs_p <> List.length args then
-    raise_TypeError (Format.asprintf "Unexpected number of arguments for '%s'" name)
-  else
-    if not (List.map2_exn ~f:(fun p a -> p a) eargs_p args |>
-              List.fold ~f:(&&) ~init:true) then
-      raise_TypeError (Format.asprintf "Incompatible arguments for '%s'" name)
-    else
-      ret
+  let rec check_arg n e a =
+    match e,a with
+    | [],[] -> ret
+    | (e::es), (a::rs) ->
+       if not (e a) then
+         raise_TypeError (Format.asprintf "Incompatible arguments #%d for '%s'. Actual type %a" n name pr_itype a)
+       else
+         check_arg (n+1) es rs
+    | _, _ -> raise_TypeError (Format.asprintf "Unexpected number of arguments for '%s'" name)
+  in
+  check_arg 1 eargs_p args
 
 (* Shortcut to `a_func_type_m` using `coerced_type_p` for all arguments *)
 let a_func_type eargs =
