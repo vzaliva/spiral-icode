@@ -9,12 +9,15 @@ Frontent TODO:
 * Define in Coq and Extract
 * Reduce/reduce conflicts in grammar using `parser.conflicts`
 * Boolean literals in parser?
-* VHEX
 * Check float and double constant validity
 * FConst range check (as we did for IConst)
 
 Backend TODO:
 
 * Check vpara/vshuffle mask types to be immediate values during code generation (not checked at typecheck step)
+
+In progress:
+
+* VHEX constants per C99 6.4.4.1
 
 

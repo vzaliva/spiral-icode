@@ -98,6 +98,17 @@ let natural_alignment = function
   | ArrType _ -> ptrSizeOf ()
   | t -> sizeof t
 
+let type_of_const = function
+    | Int8Const   _ -> Int8Type
+    | Int16Const  _ -> Int16Type
+    | Int32Const  _ -> Int32Type
+    | Int64Const  _ -> Int64Type
+    | UInt8Const  _ -> UInt8Type
+    | UInt16Const _ -> UInt16Type
+    | UInt32Const _ -> UInt32Type
+    | UInt64Const _ -> UInt64Type
+    | BoolConst   _ -> BoolType
+
 (* -- Formatting --- *)
 open Format
 

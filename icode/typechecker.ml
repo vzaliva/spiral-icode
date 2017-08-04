@@ -535,16 +535,22 @@ and rvalue_type vmap rv =
          else
            try
              if String.prefix s 1 = "-" then
-               Int64Const (Int64Ex.of_string s)
+               if String.suffix s 1 = "l" then
+                 Int64Const (Int64Ex.of_string s)
+               else
+                 Int32Const (Int32Ex.of_string s)
              else
-               UInt64Const (Uint64Ex.of_string s)
+               if String.suffix s 1 = "l" then
+                 UInt64Const (Uint64Ex.of_string s)
+               else
+                 UInt32Const (Uint32Ex.of_string s)
            with
            | Failure _ -> raise (TypeError (Format.asprintf "Invalid hex string \"%s\" in 'vhex'" s, Some rv.rloc))
-       in {node = v; loc = rv.rloc } (* TODO: loc for ech number *)
+       in {node = v; loc = rv.rloc }
      in
-     let tHARDCODED = UInt64Type in (* TODO: ask Franz to print type *)
+     let consts = List.map ~f:iconst_of_hex sl in
      rvalue_type vmap
-                 { rnode = IConstArr (tHARDCODED, List.map ~f:iconst_of_hex sl);
+                 { rnode = IConstArr (type_of_const (List.hd_exn consts).node, consts);
                    rloc = rv.rloc }
   | RCast (t,rv) ->
      let rt = rvalue_type vmap rv in
