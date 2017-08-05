@@ -53,14 +53,15 @@ let rec check_coercion tfrom tto =
   match tto, tfrom with
   | VoidType , _         -> true
   | _        , VoidType  -> false
-  | A _      , A _       -> true
+  | A x      , A y       -> true
   | A _      , PtrType _ -> false (* unlike C we do not allow implicit coercions between ints and ptr *)
   | A _      , ArrType _ -> false
   | A _      , VecType _ -> false
   | PtrType _, A _       -> false (* unlike C we do not allow implicit coercions between ints and ptr *)
   | ArrType _, A _       -> false
   | VecType _, A _       -> false
-  | ArrType (lt,ll), ArrType (rt,rl) -> ll=rl && check_coercion rt lt (* TODO: false? *)
+  | VecType (lt,ll), VecType (rt,rl) -> ll=rl && check_coercion (A lt) (A rt) && sizeof tfrom = sizeof tto (* TODO: check with Franz. Use case argument of signed with VHex of usnigned integers *)
+  | ArrType (lt,ll), ArrType (rt,rl) -> ll=rl && check_coercion lt rt
   | PtrType (lt, la), PtrType (rt, ra) -> lt=rt && align_coercable la ra
 
   | ArrType (lt,_), PtrType (rt, ra) -> lt=rt && align_coercable (natural_alignment lt) ra
@@ -69,7 +70,6 @@ let rec check_coercion tfrom tto =
   | PtrType _, VecType _ -> false
   | ArrType (lt,ll), VecType (rt,rl) -> ll = rl && is_power_of_2 ll && (A rt) = lt
   | VecType (lt,ll), ArrType (rt,rl) -> ll = rl && rt = (A lt)
-  | a, b -> a = b
 
 (* check if 'r' could be explicitly casted to 'l' even with possible loss of precision.
    Our rules may be stricter than in C99 *)
@@ -561,9 +561,8 @@ and rvalue_type vmap rv =
        raise (TypeError ("Mismatch between int vector type and its value types\n", Some rv.rloc))
   | VHex sl ->
      let consts = List.map ~f:(iconst_of_hex rv.rloc) sl in
-     rvalue_type vmap
-                 { rnode = IConstArr (type_of_const (List.hd_exn consts).node, consts);
-                   rloc = rv.rloc }
+     let it = type_of_const (List.hd_exn consts).node in
+     VecType (I it, List.length consts)
   | RCast (t,rv) ->
      let rt = rvalue_type vmap rv in
      if check_cast rt t then t

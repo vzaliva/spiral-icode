@@ -6,7 +6,6 @@
   * Introduce actual VPARAM type similar to vector. Also could have altenative int representation (2 constructors) VParam = | Array | Int
   * Functions can have approriate subtypes
   * INT constant coercion in VPARAM.
-* Clarify vec/array casts in `check_coercion`
 * Reduce/reduce conflicts in grammar using `parser.conflicts`
 * Boolean literals in parser?
 * Check float and double constant validity
