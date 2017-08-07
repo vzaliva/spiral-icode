@@ -228,13 +228,13 @@ let func_type_vushuffle name a =
     let a1 = nth_exn a 1 in
     match a0 , a1 with
     | VecType (_, _), A (I _) -> a1
-    | VecType (_, vl), ArrType (A (I _), al) ->
+    | VecType (_, vl), ArrType (A (I UInt16Type), al) ->
        if al <> vl then
          raise_TypeError (Format.asprintf "Unexpected number size of vparam array for '%s'" name)
        else a0
     | _, _ -> raise_TypeError
-                       (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
-                                        pr_itype a0 pr_itype a1 name)
+                (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
+                                 pr_itype a0 pr_itype a1 name)
 
 let func_type_vbinop t name a =
   let open List in
@@ -256,11 +256,15 @@ let func_type_vbinop_with_vparam t name a =
     let a0 = nth_exn a 0 in
     let a1 = nth_exn a 1 in
     let a2 = nth_exn a 2 in
-    if check_coercion a0 t && check_coercion a1 t (* TODO: enforce VPRAM type &&
-         check_coercion a2  (A (I UInt16Type)) *) then t
+    if check_coercion a0 t && check_coercion a1 t then
+      match a2 with
+      | ArrType (A (I UInt16Type), l) -> t
+      | _ -> raise_TypeError
+               (Format.asprintf "Incompatible 3rd argument type %a for '%s'"
+                                pr_itype a2 name)
     else raise_TypeError
-                  (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
-                                   pr_itype a0 pr_itype a1 name)
+           (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
+                            pr_itype a0 pr_itype a1 name)
 
 (** Mechanism for matching types with holes *)
 
