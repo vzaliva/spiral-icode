@@ -1,7 +1,3 @@
-.omakedb
-.omakedb.lock
-OMakefile.omc
-OMakeroot.omc
 lexer.ml
 parser.ml
 parser.mli
@@ -11,3 +7,6 @@ parser.dot
 *.cmo
 *.cmi
 *.run
+extracted/*.ml
+extracted/*.mli
+extracted/STAMP

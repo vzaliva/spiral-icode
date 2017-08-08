@@ -1,0 +1,7 @@
+.depend
+_build
+coq/*.aux
+coq/*.vo
+doc/*.glob
+icodec
+main.native

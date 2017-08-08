@@ -4,13 +4,13 @@ SPIRAL iCode compiler
 
 ### Dependencies ###
 * OCaml 4.04+
-* OMake
 * ocamllex
 * menhir
 * Core
+* Coq-8.6
 
 To install all required dependenceis:
 
-    opam install menhir core omake stdint ppx_jane sexplib ppx_sexp_conv ppx_compare ppx_deriving sexp_pretty getopt
+    opam install menhir core stdint ppx_jane sexplib ppx_sexp_conv ppx_compare ppx_deriving sexp_pretty getopt coq
 
 Questions: [Vadim Zaliva](mailto:vzaliva@cmu.edu)
