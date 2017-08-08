@@ -35,9 +35,11 @@ SCRIPTSF[] = dft16.g dft48.g dft16-SSE_4x32f.g dft32-SSE_4x32f.g dft48-SSE_4x32f
 # these are supposed to work only on doubles
 SCRIPTSD[] = dwmonitor.g  
 
+SAMPLESDIR = ../../samples/
+
 run: $(EXE)
-	./$(EXE) --float --64 --debug --stop $(addprefix ../samples/, $(SCRIPTSF))
-	./$(EXE) --double --64 --debug --stop $(addprefix ../samples/, $(SCRIPTSD))
+	./$(EXE) --float --64 --debug --stop $(addprefix $(SAMPLESDIR), $(SCRIPTSF))
+	./$(EXE) --double --64 --debug --stop $(addprefix $(SAMPLESDIR), $(SCRIPTSD))
 
 parser.dot.png:
 	dot -Tpng -O parser.dot
