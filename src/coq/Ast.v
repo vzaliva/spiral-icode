@@ -79,4 +79,4 @@ Inductive istmt :=
 | Return (r:rvalue).
 
 Inductive iprogram :=
-| Program (bindings: list (ivar*IType)) (body:istmt). (* TODO: map? *)
+| Program (bindings: ivar -> option IType) (body:istmt). (* TODO: map? *)
