@@ -20,7 +20,7 @@ Inductive IIntType :=
 | UInt64Type
 | BoolType.
 
-Inductive IFloatType :+
+Inductive IFloatType :=
 | FloatType (* IEEE 32-bit float *)
 | DoubleType (* IEEE 64-bit float *).
 
@@ -32,11 +32,11 @@ Inductive IType :=
 | A (value:IArithType)
 | VoidType
 | ArrType (t:IType) (len:Z)
-| VecType (t:IArithType.t) (len:Z)
+| VecType (t:IArithType) (len:Z)
 | PtrType (t:IType) (alignment:Z).
 
-Definition ivar = string. (* TODO: Consider Z *)
-Definition float = string. (* TODO: Consider Z *)
+Definition ivar := string. (* TODO: Consider Z *)
+Definition float := string. (* TODO: Consider Z *)
 
 Inductive fconst :=
   | FPLiteral (t:IFloatType) (value:float)
@@ -52,18 +52,18 @@ Inductive iconst:=
 | UInt16Const (value:Z)
 | UInt32Const (value:Z)
 | UInt64Const (value:Z)
-| BoolConst bool.
+| BoolConst (value:bool).
 
 Inductive rvalue :=
-  | FunCallValue (name:string) (rvalue list)
+  | FunCallValue (name:string) (params:list rvalue)
   | VarRValue (var:ivar)
-  | VHex (values:string list)
+  | VHex (values: list string)
   | FConst (value:fconst)
   | IConst (value:iconst)
-  | FConstArr (type:IFloatType) (fconst list)
-  | IConstArr (type:IIntType  ) (iconst list)
-  | FConstVec (type:IFloatType) (fconst list)
-  | IConstVec (type:IIntType  ) (iconst list)
+  | FConstArr (type:IFloatType) (values: list fconst)
+  | IConstArr (type:IIntType  ) (values: list iconst)
+  | FConstVec (type:IFloatType) (values: list fconst)
+  | IConstVec (type:IIntType  ) (values: list iconst)
   | VdupRvalue (r:rvalue) (n:iconst)
   | NthRvalue (r:rvalue) (index:rvalue)
   | RCast (type:IType) (r:rvalue)
@@ -77,16 +77,16 @@ Inductive lvalue :=
 | LCast (type:IType) (l:lvalue).
 
 Inductive istmt :=
-| IFunction (name:string) (type:IType) (param:ivar list) (body:istmt)
+| IFunction (name:string) (type:IType) (param: list ivar) (body:istmt)
 | Skip
-| Decl (vars: ivar list) (body:istmt)
-| Chain (body: istmt list)
-| Data (var:ivar) (values: rvalue list) (body:istmt)
+| Decl (vars: list ivar) (body:istmt)
+| Chain (body: list istmt)
+| Data (var:ivar) (values: list rvalue) (body:istmt)
 | Assign (l:lvalue) (r:rvalue)
 | Loop (var:ivar) (from:Z) (to:Z) (body:istmt)
 | If (cond:rvalue) (thenbranch:istmt) (elsebranch:istmt)
-| FunCallStmt (name:string) (params:rvalue list)
+| FunCallStmt (name:string) (params: list rvalue)
 | Return (r:rvalue).
 
 Inductive iprogram :=
-  | Program (bindings: (ivar*IType) list) (body:istmt) (* TODO: map? *)
+  | Program (bindings: list (ivar*IType)) (body:istmt). (* TODO: map? *)
