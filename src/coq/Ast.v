@@ -36,39 +36,29 @@ Inductive IType :=
 | PtrType (t:IType) (alignment:Z).
 
 Definition ivar := string. (* TODO: Consider Z *)
-Definition float := string. (* TODO: Consider Z *)
+Definition float := string.
 
-Inductive fconst :=
-  | FPLiteral (t:IFloatType) (value:float)
-  | FloatEPS
-  | DoubleEPS.
+Inductive fconst (t:IFloatType) :=
+| FPLiteral (value:float)
+| EPS.
 
-Inductive iconst:=
-| Int8Const   (value:Z)
-| Int16Const  (value:Z)
-| Int32Const  (value:Z)
-| Int64Const  (value:Z)
-| UInt8Const  (value:Z)
-| UInt16Const (value:Z)
-| UInt32Const (value:Z)
-| UInt64Const (value:Z)
-| BoolConst (value:bool).
+Inductive iconst (type:IIntType) :=
+| ILiteral  (value:Z).
 
 Inductive rvalue :=
-  | FunCallValue (name:string) (params:list rvalue)
-  | VarRValue (var:ivar)
-  | VHex (values: list string)
-  | FConst (value:fconst)
-  | IConst (value:iconst)
-  | FConstArr (type:IFloatType) (values: list fconst)
-  | IConstArr (type:IIntType  ) (values: list iconst)
-  | FConstVec (type:IFloatType) (values: list fconst)
-  | IConstVec (type:IIntType  ) (values: list iconst)
-  | VdupRvalue (r:rvalue) (n:iconst)
-  | NthRvalue (r:rvalue) (index:rvalue)
-  | RCast (type:IType) (r:rvalue)
-  | RDeref (r:rvalue).
-
+| FunCallValue (name:string) (params:list rvalue)
+| VarRValue (var:ivar)
+| VHex (values: list string)
+| FConst (type:IFloatType) (value:fconst type)
+| IConst (type:IIntType) (value:iconst type)
+| FConstArr (type:IFloatType) (values: list (fconst type))
+| IConstArr (type:IIntType  ) (values: list (iconst type))
+| FConstVec (type:IFloatType) (values: list (fconst type))
+| IConstVec (type:IIntType  ) (values: list (iconst type))
+| VdupRvalue (r:rvalue) (n:Z)
+| NthRvalue (r:rvalue) (index:Z)
+| RCast (type:IType) (r:rvalue)
+| RDeref (r:rvalue).
 
 Inductive lvalue :=
 | VarLValue (var:ivar)
@@ -89,4 +79,4 @@ Inductive istmt :=
 | Return (r:rvalue).
 
 Inductive iprogram :=
-  | Program (bindings: list (ivar*IType)) (body:istmt). (* TODO: map? *)
+| Program (bindings: list (ivar*IType)) (body:istmt). (* TODO: map? *)
