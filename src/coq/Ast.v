@@ -43,7 +43,7 @@ Inductive fconst (t:IFloatType) :=
 | EPS.
 
 Inductive iconst (type:IIntType) :=
-| ILiteral  (value:Z).
+| ILiteral (value:Z).
 
 Inductive rvalue :=
 | FunCallValue (name:string) (params:list rvalue)
