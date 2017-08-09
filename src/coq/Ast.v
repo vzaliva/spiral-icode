@@ -38,7 +38,7 @@ Inductive IType :=
 Definition ivar := string. (* TODO: Consider Z *)
 Definition float := string.
 
-Inductive fconst (t:IFloatType) :=
+Inductive fconst (type:IFloatType) :=
 | FPLiteral (value:float)
 | EPS.
 

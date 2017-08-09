@@ -7,6 +7,7 @@ Extraction Language Ocaml.
 Extract Inlined Constant Ast.float => "float".
 
 Set Extraction AccessOpaque.
+
 (* NOTE: assumes that this file is compiled from /src *)
 Cd "ml/extracted".
 
