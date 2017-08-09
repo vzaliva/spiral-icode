@@ -9,4 +9,4 @@ parser.dot
 *.run
 extracted/*.ml
 extracted/*.mli
-extracted/STAMP
+extracted/.timestamp

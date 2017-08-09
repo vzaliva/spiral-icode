@@ -32,13 +32,15 @@ all:
 
 coq: $(VOFILES)
 
-extracted: $(EXTRACTDIR)/STAMP
+TSTAMP = $(EXTRACTDIR)/.timestamp
 
-$(EXTRACTDIR)/STAMP: $(VOFILES) $(EXTRACTDIR)/Extract.v
+extracted: $(TSTAMP)
+
+$(TSTAMP): $(VOFILES) $(EXTRACTDIR)/Extract.v
 	@echo "Extracting"
 	rm -f $(EXTRACTDIR)/*.ml $(EXTRACTDIR)/*.mli
 	$(COQEXEC) $(EXTRACTDIR)/Extract.v
-	touch $(EXTRACTDIR)/STAMP
+	touch $(TSTAMP)
 
 %.vo: %.v
 	@rm -f doc/$(*F).glob
@@ -84,7 +86,7 @@ clean:
 	rm -f .depend
 	rm -f $(VOFILES)
 	rm -rf doc/*.glob
-	rm -f $(EXTRACTDIR)/STAMP $(EXTRACTDIR)/*.ml $(EXTRACTDIR)/*.mli
+	rm -f $(TSTAMP) $(EXTRACTDIR)/*.ml $(EXTRACTDIR)/*.mli
 	ocamlbuild -clean
 	rm -rf output
 	rm -f $(EXE)
