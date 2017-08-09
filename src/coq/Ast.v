@@ -38,23 +38,27 @@ Inductive IType :=
 Definition ivar := string. (* TODO: Consider Z *)
 Definition float := string.
 
-Inductive fconst (type:IFloatType) :=
-| FPLiteral (value:float)
-| EPS.
+Inductive fconst :=
+| FLiteral (value:float)
+| FEPS.
 
-Inductive iconst (type:IIntType) :=
-| ILiteral (value:Z).
+Inductive dconst :=
+| DLiteral (value:float)
+| DEPS.
 
 Inductive rvalue :=
 | FunCallValue (name:string) (params:list rvalue)
 | VarRValue (var:ivar)
 | VHex (values: list string)
-| FConst (type:IFloatType) (value:fconst type)
-| IConst (type:IIntType) (value:iconst type)
-| FConstArr (type:IFloatType) (values: list (fconst type))
-| IConstArr (type:IIntType  ) (values: list (iconst type))
-| FConstVec (type:IFloatType) (values: list (fconst type))
-| IConstVec (type:IIntType  ) (values: list (iconst type))
+| FConst (value:fconst)
+| DConst (value:dconst)
+| IConst (type:IIntType) (value:Z)
+| IConstArr (type:IIntType) (values: list Z)
+| FConstArr (values: list fconst)
+| DConstArr (values: list dconst)
+| FConstVec (values: list fconst)
+| DConstVec (values: list dconst)
+| IConstVec (type:IIntType) (values: list Z)
 | VdupRvalue (r:rvalue) (n:Z)
 | NthRvalue (r:rvalue) (index:Z)
 | RCast (type:IType) (r:rvalue)
