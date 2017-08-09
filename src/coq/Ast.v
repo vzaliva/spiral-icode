@@ -39,7 +39,6 @@ Definition varname := Z.
 Definition funcname := Z.
 
 Definition float := string.
-Definition hexvalue := string.
 
 Inductive fconst :=
 | FLiteral (value:float)
@@ -52,7 +51,6 @@ Inductive dconst :=
 Inductive rvalue :=
 | FunCallValue (name:funcname) (params:list rvalue)
 | VarRValue (var:varname)
-| VHex (values: list hexvalue)
 | FConst (value:fconst)
 | DConst (value:dconst)
 | IConst (type:IIntType) (value:Z)
