@@ -2,11 +2,10 @@
 
 Require Import List.
 Require Import ZArith.
-Require Import String Ascii.
+Require Import String.
 
 Import ListNotations.
 
-Open Scope string_scope.
 Open Scope list_scope.
 
 Inductive IIntType :=
@@ -35,8 +34,12 @@ Inductive IType :=
 | VecType (t:IArithType) (len:Z)
 | PtrType (t:IType) (alignment:Z).
 
-Definition ivar := string. (* TODO: Consider Z *)
+(* Types for function and vairable names. For simplicity we will index them by integers *)
+Definition varname := Z.
+Definition funcname := Z.
+
 Definition float := string.
+Definition hexvalue := string.
 
 Inductive fconst :=
 | FLiteral (value:float)
@@ -47,9 +50,9 @@ Inductive dconst :=
 | DEPS.
 
 Inductive rvalue :=
-| FunCallValue (name:string) (params:list rvalue)
-| VarRValue (var:ivar)
-| VHex (values: list string)
+| FunCallValue (name:funcname) (params:list rvalue)
+| VarRValue (var:varname)
+| VHex (values: list hexvalue)
 | FConst (value:fconst)
 | DConst (value:dconst)
 | IConst (type:IIntType) (value:Z)
@@ -65,22 +68,22 @@ Inductive rvalue :=
 | RDeref (r:rvalue).
 
 Inductive lvalue :=
-| VarLValue (var:ivar)
+| VarLValue (var:varname)
 | NthLvalue (l:lvalue) (index:rvalue)
 | LDeref (r:rvalue)
 | LCast (type:IType) (l:lvalue).
 
 Inductive istmt :=
-| IFunction (name:string) (type:IType) (param: list ivar) (body:istmt)
+| IFunction (name: funcname) (type:IType) (param: list varname) (body:istmt)
 | Skip
-| Decl (vars: list ivar) (body:istmt)
+| Decl (vars: list varname) (body:istmt)
 | Chain (body: list istmt)
-| Data (var:ivar) (values: list rvalue) (body:istmt)
+| Data (var: varname) (values: list rvalue) (body:istmt)
 | Assign (l:lvalue) (r:rvalue)
-| Loop (var:ivar) (from:Z) (to:Z) (body:istmt)
+| Loop (var: varname) (from:Z) (to:Z) (body:istmt)
 | If (cond:rvalue) (thenbranch:istmt) (elsebranch:istmt)
-| FunCallStmt (name:string) (params: list rvalue)
+| FunCallStmt (name: funcname) (params: list rvalue)
 | Return (r:rvalue).
 
 Inductive iprogram :=
-| Program (bindings: ivar -> option IType) (body:istmt). (* TODO: map? *)
+| Program (bindings: varname -> option IType) (body:istmt). (* TODO: map? *)
