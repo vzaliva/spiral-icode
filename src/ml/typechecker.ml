@@ -319,9 +319,9 @@ let builtins_map =
       ("neg", func_type_neg) ;
       ("abs", func_type_abs) ;
 
+      (* non-polymorphic functions *)
       ("vcvt_64f32f", a_func_type [(VecType (F FloatType, 4))] (VecType (F DoubleType, 2))) ;
 
-      (* non-polymorphic functions *)
       ("addsub_4x32f", func_type_vbinop (VecType (F FloatType, 4))) ;
       ("addsub_2x64f", func_type_vbinop (VecType (F DoubleType, 2))) ;
 
