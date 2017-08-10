@@ -31,7 +31,7 @@ Inductive itype :=
 | A (value:arithtype)
 | VoidType
 | ArrType (t:itype) (len:Z)
-| VecType (t:arithtype) (len:Z)
+| VecType (t:arithtype) (sqrt_len:Z)
 | PtrType (t:itype) (alignment:Z).
 
 (* Types for function and vairable names. For simplicity we will index them by integers *)
@@ -68,9 +68,12 @@ with funcall :=
      (* polymorphic codnition operator *)
      | F_cond: rvalue -> rvalue -> rvalue -> funcall
 
+     (* polymorphic artihmetic n-nary (n >= 2) operators *)
+     | F_min: rvalue -> rvalue -> list rvalue -> funcall
+     | F_max : rvalue -> rvalue -> list rvalue -> funcall
+
      (* polymorphic artihmetic binary operators *)
-     | F_min: rvalue -> rvalue -> funcall
-     | F_max : rvalue -> rvalue -> funcall
+
      | F_add : rvalue -> rvalue -> funcall
      | F_sub : rvalue -> rvalue -> funcall
      | F_mul : rvalue -> rvalue -> funcall
