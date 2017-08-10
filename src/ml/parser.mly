@@ -80,7 +80,12 @@ i_type:
                     PtrType (t, a)
                 }
   | TARR  LPAREN t=i_type COMMA s=UINT RPAREN { ArrType (t, int_of_string s) }
-  | TVECT LPAREN t=i_arith_type COMMA s=UINT RPAREN { VecType (t, int_of_string s) }
+  | TVECT LPAREN t=i_arith_type COMMA s=UINT RPAREN
+                {
+                    let n = int_of_string s in
+                    if is_power_of_2 n then VecType (t, n) 
+                        else raise (Syntaxerr.Error ("Size of vector must be power of 2. Got: " ^ s))
+                }
   ;
 
 i_var:

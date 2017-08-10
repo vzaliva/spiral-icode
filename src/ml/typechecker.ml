@@ -13,8 +13,6 @@ open Option
 exception TypeError of (string * Loc.t option)
 let raise_TypeError msg = raise (TypeError (msg,None))
 
-let is_power_of_2 n =  n <> 0 && (n land (n - 1) = 0)
-
 let integer_promotion t =
   let i = if is_signed_integer t then Int32Type else UInt32Type in
   if integer_type_rank t < integer_type_rank i then i else t
@@ -381,14 +379,6 @@ let builtins_map =
     ]
 
 let build_var_map l =
-  ignore (List.map ~f:(fun (_,x) ->
-                     match x with
-                     | VecType (_, n) ->
-                        if is_power_of_2 n then ()
-                        else
-                          raise_TypeError ("Size of vector must be power of 2. Got: " ^ (string_of_int n))
-                     | _ -> ()
-                   ) l) ;
   match String.Map.Tree.of_alist l with
   | `Duplicate_key k -> raise_TypeError ("duplicate variable '" ^ k ^ "' in 'let'" )
   | `Ok m -> m
