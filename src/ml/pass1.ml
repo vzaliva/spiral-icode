@@ -74,7 +74,7 @@ let type_and_value_of_hex l s : (IAst.inttype * BinNums.coq_Z) =
   else
     try
       let v = Uint64Ex.of_string s in
-      let z = z in
+      let z = z_of_UInt64 v in
       if String.suffix s 1 = "ul" then
         (IAst.UInt64Type, z)
       else if String.suffix s 1 = "l" then
@@ -211,14 +211,8 @@ and compile_rvalue vmap vindex rv =
      IAst.IConstArr (it, List.map ~f:snd consts)
   | RCast (t,rv) -> IAst.RCast (compile_itype t, compile_rvalue vmap vindex rv)
   | RDeref v -> IAst.RDeref (compile_rvalue vmap vindex v)
-  | NthRvalue (v, i) ->
-     let it = rvalue_type vmap i in
-     if not (is_integer it) then
-       raise (CompileError1 (Format.asprintf "Invalid index type %a in NTH" pr_itype it, Some rv.rloc))
-     else
-       (match rvalue_type vmap v with
-        | ArrType (t,_) | PtrType (t,_) -> t
-        | t -> raise (CompileError1 (Format.asprintf "Invalid value type %a in NTH" pr_itype t, Some rv.rloc)))
+  | NthRvalue (v, i) -> IAst.NthRvalue (compile_rvalue vmap vindex v,
+                                        compile_rvalue vmap vindex i)
   | VdupRvalue (v, il) ->
      match rvalue_type vmap v, il.node with
      | A vt, Int32Const ic -> let i = Int32Ex.to_int ic in

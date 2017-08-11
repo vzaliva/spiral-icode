@@ -61,7 +61,7 @@ Inductive rvalue :=
 | DConstVec (values: list dconst)
 | IConstVec (type:inttype) (values: list Z)
 | VdupRvalue (r:rvalue) (n:Z)
-| NthRvalue (r:rvalue) (index:Z)
+| NthRvalue (r:rvalue) (index:rvalue)
 | RCast (type:itype) (r:rvalue)
 | RDeref (r:rvalue)
 with funcall :=

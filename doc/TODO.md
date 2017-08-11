@@ -16,10 +16,10 @@
 
 ## COQ Integration: ##
 
-* Coq-level typechecks
-  * check_cast in RCast
-  * check for pointer type 1st paramter of deref
-
+* check_cast in RCast
+* check for pointer type 1st paramter of deref
+* in nthrvalue check fist param to be int type and 2nd to be Arr or Ptr
+  
 ## Backend: ##
 
 * Check vpara/vshuffle mask types to be immediate values during code generation (not checked at typecheck step)
