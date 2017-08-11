@@ -1,6 +1,4 @@
-(*
-1-st pass: Convert AST to IAst
- *)
+(* 1-st pass: Convert ML Ast to Coq IAst *)
 
 open Core
 
@@ -18,15 +16,15 @@ open ExtrOcamlIntConv
 exception CompileError1 of (string * Loc.t option)
 let raise_CompileError1 msg = raise (CompileError1 (msg,None))
 
-let build_var_index l =
-  let il = List.mapi l ~f:(fun i (n,_) -> (n,i)) in
-  match String.Map.Tree.of_alist il with
-  | `Duplicate_key k -> raise_CompileError1 ("duplicate variable name '" ^ k ^ "' in 'let'" )
+let build_var_map (l:(ivar*IType.t) list) =
+  match String.Map.of_alist l with
+  | `Duplicate_key k -> raise_CompileError1 ("duplicate variable '" ^ k ^ "' in 'let'" )
   | `Ok m -> m
 
-let build_var_map l =
-  match String.Map.Tree.of_alist l with
-  | `Duplicate_key k -> raise_CompileError1 ("duplicate variable '" ^ k ^ "' in 'let'" )
+let build_var_index (l:(ivar*IType.t) list) =
+  let il = List.mapi l ~f:(fun i (n,_) -> (n, i)) in
+  match String.Map.of_alist il with
+  | `Duplicate_key k -> raise_CompileError1 ("duplicate variable name '" ^ k ^ "' in 'let'" )
   | `Ok m -> m
 
 let compile_int_type = function
@@ -53,7 +51,7 @@ let rec compile_itype = function
   | PtrType (t,l) -> IAst.ArrType (compile_itype t, z_of_int l)
 
 (* TODO: placeholder!!! *)
-let compile_func n al =
+let compile_func (n:string) (al:IAst.rvalue list) =
   IAst.FunCallValue (IAst.F_neg (IAst.IConst (IAst.Int8Type, z_of_int 1)))
 
 (* TODO: placeholders *)
@@ -100,7 +98,7 @@ let type_and_value_of_hex l s : (IAst.inttype * BinNums.coq_Z) =
 
 let rec compile_lvalue vmap vindex (x:lvalue) =
   match x.lnode with
-  | VarLValue v -> IAst.VarLValue (Map.find_exn vindex v)
+  | VarLValue v -> IAst.VarLValue (z_of_int (Map.find_exn vindex v))
   | LCast (t,lv) ->
      let lv = compile_lvalue vmap vindex lv in
      let t = compile_itype t in
@@ -142,7 +140,7 @@ and compile_rvalue vmap vindex rv =
     | UInt64Const _ -> UInt64Type
     | BoolConst   _ -> BoolType in
   match rv.rnode with
-  | VarRValue v -> IAst.VarRValue (Map.find_exn vindex v)
+  | VarRValue v -> IAst.VarRValue (z_of_int (Map.find_exn vindex v))
   | FunCallValue (n,a) ->
      let al = (List.map ~f:(compile_rvalue vmap vindex) a) in
      compile_func n al
@@ -219,22 +217,20 @@ and compile_rvalue vmap vindex rv =
                                          compile_iconst_z il)
      | t -> raise (CompileError1 ("Int32 constant expected as type in VDUP" , Some v.rloc))
 
-
 let pass1 valist body =
-  let vindex = build_var_index valist in
   let vmap = build_var_map valist in
-  let open String.Set.Tree in
+  let vindex = build_var_index valist in
   let add_var s v =
+    let open String.Set.Tree in
     if mem s v then raise_CompileError1 ("duplicate declaration of '" ^ v ^ "'")
     else add s v
   in
   let add_vars s vl = List.fold ~init:s ~f:add_var vl in
 
-  let rec pass1 (fstack:(string * Ast.IType.t) list) u x =
+  let rec pass1 (fstack:(int * Ast.IType.t) list) u x =
     match x.node with
     | FunCallStmt (n,a) ->
-       let al = (List.map ~f:(compile_rvalue vmap vindex) a) in
-       compile_func n al
+       compile_func n (List.map ~f:(compile_rvalue vmap vindex) a)
     | Function (fn,fr,params,body) ->
        pass1 ((fn,fr)::fstack) (add_vars u params) body
     | Decl (params,body) ->
