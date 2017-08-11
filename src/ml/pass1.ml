@@ -1,6 +1,6 @@
 (*
 1-st pass: Convert AST to IAst
-*)
+ *)
 
 open Core
 
@@ -30,15 +30,15 @@ let build_var_map l =
   | `Ok m -> m
 
 let compile_int_type = function
-    | Int8Type   -> IAst.Int8Type
-    | Int16Type  -> IAst.Int16Type
-    | Int32Type  -> IAst.Int32Type
-    | Int64Type  -> IAst.Int64Type
-    | UInt8Type  -> IAst.UInt8Type
-    | UInt16Type -> IAst.UInt16Type
-    | UInt32Type -> IAst.UInt32Type
-    | UInt64Type -> IAst.UInt64Type
-    | BoolType   -> IAst.BoolType
+  | Int8Type   -> IAst.Int8Type
+  | Int16Type  -> IAst.Int16Type
+  | Int32Type  -> IAst.Int32Type
+  | Int64Type  -> IAst.Int64Type
+  | UInt8Type  -> IAst.UInt8Type
+  | UInt16Type -> IAst.UInt16Type
+  | UInt32Type -> IAst.UInt32Type
+  | UInt64Type -> IAst.UInt64Type
+  | BoolType   -> IAst.BoolType
 
 let compile_arith_type = function
   | I t   -> IAst.I (compile_int_type t)
@@ -214,12 +214,10 @@ and compile_rvalue vmap vindex rv =
   | NthRvalue (v, i) -> IAst.NthRvalue (compile_rvalue vmap vindex v,
                                         compile_rvalue vmap vindex i)
   | VdupRvalue (v, il) ->
-     match rvalue_type vmap v, il.node with
-     | A vt, Int32Const ic -> let i = Int32Ex.to_int ic in
-                               if is_power_of_2 i then VecType (vt, i)
-                               else raise (CompileError1 ("Size in VDUP must be power of 2. Got: " ^ (string_of_int i), Some il.loc))
-     | t,_ -> raise (CompileError1 (Format.asprintf "Invalid value type %a in VDUP" pr_itype t, Some v.rloc))
-
+     match il.node with
+     | Int32Const ic -> IAst.VdupRvalue (compile_rvalue vmap vindex v,
+                                         compile_iconst_z il)
+     | t -> raise (CompileError1 ("Int32 constant expected as type in VDUP" , Some v.rloc))
 
 
 let pass1 valist body =
@@ -262,9 +260,9 @@ let pass1 valist body =
        let lt = lvalue_type vmap l in
        if not (check_coercion rt lt) then
          raise (CompileError1 (Format.asprintf "Incompatible types in assignment %a=[%a]."
-                                           pr_itype lt
-                                           pr_itype rt
-               , Some x.loc));
+                                               pr_itype lt
+                                               pr_itype rt
+                              , Some x.loc));
        check_vars_in_lvalue u l;
        check_vars_in_rvalue u r;
        u
