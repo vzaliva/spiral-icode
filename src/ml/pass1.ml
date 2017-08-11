@@ -29,20 +29,23 @@ let build_var_map l =
   | `Duplicate_key k -> raise_CompileError1 ("duplicate variable '" ^ k ^ "' in 'let'" )
   | `Ok m -> m
 
-let rec compile_itype t : IAst.itype =
-  let compile_arith_type = function
-    | I Int8Type   -> IAst.I IAst.Int8Type
-    | I Int16Type  -> IAst.I IAst.Int16Type
-    | I Int32Type  -> IAst.I IAst.Int32Type
-    | I Int64Type  -> IAst.I IAst.Int64Type
-    | I UInt8Type  -> IAst.I IAst.UInt8Type
-    | I UInt16Type -> IAst.I IAst.UInt16Type
-    | I UInt32Type -> IAst.I IAst.UInt32Type
-    | I UInt64Type -> IAst.I IAst.UInt64Type
-    | I BoolType   -> IAst.I IAst.BoolType
-    | F FloatType  -> IAst.F IAst.FloatType
-    | F DoubleType -> IAst.F IAst.DoubleType in
-  match t with
+let compile_int_type = function
+    | Int8Type   -> IAst.Int8Type
+    | Int16Type  -> IAst.Int16Type
+    | Int32Type  -> IAst.Int32Type
+    | Int64Type  -> IAst.Int64Type
+    | UInt8Type  -> IAst.UInt8Type
+    | UInt16Type -> IAst.UInt16Type
+    | UInt32Type -> IAst.UInt32Type
+    | UInt64Type -> IAst.UInt64Type
+    | BoolType   -> IAst.BoolType
+
+let compile_arith_type = function
+  | I t   -> IAst.I (compile_int_type t)
+  | F FloatType  -> IAst.F IAst.FloatType
+  | F DoubleType -> IAst.F IAst.DoubleType
+
+let rec compile_itype = function
   | A at          -> IAst.A (compile_arith_type at)
   | VoidType      -> IAst.VoidType
   | ArrType (t,l) -> IAst.ArrType (compile_itype t, z_of_int l)
@@ -82,17 +85,17 @@ and compile_rvalue vmap vindex rv =
     | FPLiteral (DoubleType, x) -> IAst.DConst (IAst.DLiteral x)
     | FloatEPS -> IAst.FConst IAst.FEPS
     | DoubleEPS -> IAst.DConst IAst.DEPS in
-  let compile_iconst (x:iconst) =
+  let compile_iconst_z (x:iconst) =
     match x.node with
-    | Int8Const   v -> IAst.IConst (IAst.Int8Type  , z_of_Int8   v)
-    | Int16Const  v -> IAst.IConst (IAst.Int16Type , z_of_Int16  v)
-    | Int32Const  v -> IAst.IConst (IAst.Int32Type , z_of_Int32  v)
-    | Int64Const  v -> IAst.IConst (IAst.Int64Type , z_of_Int64  v)
-    | UInt8Const  v -> IAst.IConst (IAst.UInt8Type , z_of_UInt8  v)
-    | UInt16Const v -> IAst.IConst (IAst.UInt16Type, z_of_UInt16 v)
-    | UInt32Const v -> IAst.IConst (IAst.UInt32Type, z_of_UInt32 v)
-    | UInt64Const v -> IAst.IConst (IAst.UInt64Type, z_of_UInt64 v)
-    | BoolConst   v -> IAst.IConst (IAst.BoolType  , z_of_Bool   v) in
+    | Int8Const   v -> z_of_Int8   v
+    | Int16Const  v -> z_of_Int16  v
+    | Int32Const  v -> z_of_Int32  v
+    | Int64Const  v -> z_of_Int64  v
+    | UInt8Const  v -> z_of_UInt8  v
+    | UInt16Const v -> z_of_UInt16 v
+    | UInt32Const v -> z_of_UInt32 v
+    | UInt64Const v -> z_of_UInt64 v
+    | BoolConst   v -> z_of_Bool   v in
   let fconst_type (f:fconst) =
     match f.node with
     | FPLiteral (t,_) -> t
@@ -114,7 +117,7 @@ and compile_rvalue vmap vindex rv =
      let al = (List.map ~f:(compile_rvalue vmap vindex) a) in
      compile_func n al
   | FConst x -> compile_fconst x
-  | IConst x -> compile_iconst x
+  | IConst x -> IAst.IConst (compile_int_type (iconst_type x), compile_iconst_z x)
   | FConstArr (at, fl) ->
      let flt = List.map ~f:fconst_type fl in
      if List.for_all flt (eq_float_type at) then
@@ -135,13 +138,15 @@ and compile_rvalue vmap vindex rv =
           IAst.DConstArr flc
      else
        raise (CompileError1 ("Mismatch between float array type and its value types", Some rv.rloc))
-
   | IConstArr (at, il) ->
      let ilt = List.map ~f:iconst_type il in
      if List.for_all ilt (eq_int_type at) then
-       ArrType (A (I at) , List.length il)
+       let ilc = List.map ~f:compile_iconst_z il in
+       let t = compile_int_type (List.hd_exn ilt) in
+       IAst.IConstArr (t, ilc)
      else
        raise (CompileError1 ("Mismatch between int array type and its value types\n", Some rv.rloc))
+
   | FConstVec (at, fl) ->
      let flt = List.map ~f:fconst_type fl in
      if List.for_all flt (eq_float_type at) then
