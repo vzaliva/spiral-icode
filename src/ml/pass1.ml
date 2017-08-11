@@ -76,7 +76,13 @@ let rec compile_lvalue vmap vindex (x:lvalue) =
   | NthLvalue (v, i) -> IAst.NthLvalue (compile_lvalue vmap vindex v,
                                         compile_rvalue vmap vindex i)
 and compile_rvalue vmap vindex rv =
-  (let fconst_type (f:fconst) =
+  let compile_fconst (x:fconst) =
+    (match x.node with
+     | FPLiteral (FloatType, x) -> IAst.FConst (IAst.FLiteral x)
+     | FPLiteral (DoubleType, x) -> IAst.DConst (IAst.DLiteral x)
+     | FloatEPS -> IAst.FConst IAst.FEPS
+     | DoubleEPS -> IAst.DConst IAst.DEPS) in
+  let fconst_type (f:fconst) =
      match f.node with
      | FPLiteral (t,_) -> t
      | FloatEPS -> FloatType
@@ -96,10 +102,7 @@ and compile_rvalue vmap vindex rv =
   | FunCallValue (n,a) ->
      let al = (List.map ~f:(compile_rvalue vmap vindex) a) in
      compile_func n al
-  | FConst {node = (FPLiteral (FloatType, x))} -> IAst.FConst (IAst.FLiteral x)
-  | FConst {node = (FPLiteral (DoubleType, x))} -> IAst.DConst (IAst.DLiteral x)
-  | FConst {node = FloatEPS} -> IAst.FConst IAst.FEPS
-  | FConst {node = DoubleEPS} -> IAst.DConst IAst.DEPS
+  | FConst x -> compile_fconst x
 
   | IConst {node = (Int8Const   v) } -> IAst.IConst (IAst.Int8Type  , z_of_Int8   v)
   | IConst {node = (Int16Const  v) } -> IAst.IConst (IAst.Int16Type , z_of_Int16  v)
@@ -111,33 +114,44 @@ and compile_rvalue vmap vindex rv =
   | IConst {node = (UInt64Const v) } -> IAst.IConst (IAst.UInt64Type, z_of_UInt64 v)
   | IConst {node = (BoolConst   v) } -> IAst.IConst (IAst.BoolType  , z_of_Bool   v)
 
-
-
-
   | FConstArr (at, fl) ->
      let flt = List.map ~f:fconst_type fl in
      if List.for_all flt (eq_float_type at) then
-       ArrType (A (F at) , List.length fl)
+       match List.hd_exn flt with
+       | FloatType ->
+          let compile_fconst_f x =
+            (match compile_fconst x with
+             | IAst.FConst x -> x
+             | _ -> raise (CompileError1 ("Mix of float and double values in array", Some rv.rloc))) in
+          let flc = List.map ~f:(compile_fconst_f) fl in
+          IAst.FConstArr flc
+       | DoubleType ->
+          let compile_fconst_d x =
+            (match compile_fconst x with
+             | IAst.DConst x -> x
+             | _ -> raise (CompileError1 ("Mix of float and double values in array", Some rv.rloc))) in
+          let flc = List.map ~f:(compile_fconst_d) fl in
+          IAst.DConstArr flc
      else
-       raise (TypeError ("Mismatch between float array type and its value types", Some rv.rloc))
+       raise (CompileError1 ("Mismatch between float array type and its value types", Some rv.rloc))
   | IConstArr (at, il) ->
      let ilt = List.map ~f:iconst_type il in
      if List.for_all ilt (eq_int_type at) then
        ArrType (A (I at) , List.length il)
      else
-       raise (TypeError ("Mismatch between int array type and its value types\n", Some rv.rloc))
+       raise (CompileError1 ("Mismatch between int array type and its value types\n", Some rv.rloc))
   | FConstVec (at, fl) ->
      let flt = List.map ~f:fconst_type fl in
      if List.for_all flt (eq_float_type at) then
        VecType (F at , List.length fl)
      else
-       raise (TypeError ("Mismatch between float vector type and its value types\n", Some rv.rloc))
+       raise (CompileError1 ("Mismatch between float vector type and its value types\n", Some rv.rloc))
   | IConstVec (at, il) ->
      let ilt = List.map ~f:iconst_type il in
      if List.for_all ilt (eq_int_type at) then
        VecType (I at , List.length il)
      else
-       raise (TypeError ("Mismatch between int vector type and its value types\n", Some rv.rloc))
+       raise (CompileError1 ("Mismatch between int vector type and its value types\n", Some rv.rloc))
   | VHex sl ->
      let consts = List.map ~f:(iconst_of_hex rv.rloc) sl in
      let it = type_of_const (List.hd_exn consts).node in
@@ -145,26 +159,26 @@ and compile_rvalue vmap vindex rv =
   | RCast (t,rv) ->
      let rt = rvalue_type vmap rv in
      if check_cast rt t then t
-     else raise (TypeError (Format.asprintf "Illegal rvalue cast from %a to %a."
+     else raise (CompileError1 (Format.asprintf "Illegal rvalue cast from %a to %a."
                                             pr_itype rt
                                             pr_itype t, Some rv.rloc));
   | RDeref v -> (match rvalue_type vmap v with
                  | PtrType (t,_) -> t
-                 | t -> raise (TypeError (Format.asprintf "Dereferencing non-pointer type %a" pr_itype t, Some rv.rloc)))
+                 | t -> raise (CompileError1 (Format.asprintf "Dereferencing non-pointer type %a" pr_itype t, Some rv.rloc)))
   | NthRvalue (v, i) ->
      let it = rvalue_type vmap i in
      if not (is_integer it) then
-       raise (TypeError (Format.asprintf "Invalid index type %a in NTH" pr_itype it, Some rv.rloc))
+       raise (CompileError1 (Format.asprintf "Invalid index type %a in NTH" pr_itype it, Some rv.rloc))
      else
        (match rvalue_type vmap v with
         | ArrType (t,_) | PtrType (t,_) -> t
-        | t -> raise (TypeError (Format.asprintf "Invalid value type %a in NTH" pr_itype t, Some rv.rloc)))
+        | t -> raise (CompileError1 (Format.asprintf "Invalid value type %a in NTH" pr_itype t, Some rv.rloc)))
   | VdupRvalue (v, il) ->
      match rvalue_type vmap v, il.node with
      | A vt, Int32Const ic -> let i = Int32Ex.to_int ic in
                                if is_power_of_2 i then VecType (vt, i)
-                               else raise (TypeError ("Size in VDUP must be power of 2. Got: " ^ (string_of_int i), Some il.loc))
-     | t,_ -> raise (TypeError (Format.asprintf "Invalid value type %a in VDUP" pr_itype t, Some v.rloc)))
+                               else raise (CompileError1 ("Size in VDUP must be power of 2. Got: " ^ (string_of_int i), Some il.loc))
+     | t,_ -> raise (CompileError1 (Format.asprintf "Invalid value type %a in VDUP" pr_itype t, Some v.rloc))
 
 
 
