@@ -67,6 +67,36 @@ let z_of_UInt32 (v:Uint32Ex.t) = z_of_int 1
 let z_of_UInt64 (v:Uint64Ex.t) = z_of_int 1
 let z_of_Bool   (v:bool      ) = z_of_int 1
 
+(* Generally follows C99 §6.4.4.1 *)
+let type_and_value_of_hex l s : (IAst.inttype * BinNums.coq_Z) =
+  if String.is_empty s then
+    raise (CompileError1 ("Empty hex string in 'vhex'", Some l))
+  else
+    try
+      let v = Uint64Ex.of_string s in
+      let z = z in
+      if String.suffix s 1 = "ul" then
+        (IAst.UInt64Type, z)
+      else if String.suffix s 1 = "l" then
+        begin
+          if in_int64_range v then (IAst.UInt64Type, z)
+          else (IAst.UInt64Type, z) (* always fits *)
+        end
+      else if String.suffix s 1 = "u" then
+        begin
+          if in_uint32_range v then (IAst.UInt32Type, z)
+          else (IAst.UInt64Type, z) (* always fits *)
+        end
+      else
+        begin
+          if in_int32_range v then (IAst.Int32Type, z)
+          else if in_uint32_range v then (IAst.UInt32Type, z)
+          else if in_int64_range v then (IAst.UInt64Type, z)
+          else (IAst.UInt64Type, z) (* always fits *)
+        end
+    with
+    | Failure _ -> raise (CompileError1 (Format.asprintf "Invalid hex string \"%s\" in 'vhex'" s, Some l))
+
 
 let rec compile_lvalue vmap vindex (x:lvalue) =
   match x.lnode with
@@ -174,11 +204,11 @@ and compile_rvalue vmap vindex rv =
        IAst.IConstVec (t, ilc)
      else
        raise (CompileError1 ("Mismatch between int vector type and its value types\n", Some rv.rloc))
-
   | VHex sl ->
-     let consts = List.map ~f:(iconst_of_hex rv.rloc) sl in
-     let it = type_of_const (List.hd_exn consts).node in
-     IAst.IConstArr (compile_int_type it, consts)
+     let consts = List.map ~f:(type_and_value_of_hex rv.rloc) sl in
+     (* TODO: unify types of all vhex constants *)
+     let it,_ = List.hd_exn consts in
+     IAst.IConstArr (it, List.map ~f:snd consts)
   | RCast (t,rv) ->
      let rt = rvalue_type vmap rv in
      if check_cast rt t then t
