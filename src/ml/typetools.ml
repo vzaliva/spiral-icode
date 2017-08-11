@@ -137,3 +137,4 @@ let pr_err_loc ppf (l:Loc.t) =
   fprintf ppf "%a: error:" Utils.pr_pos l.Loc.loc_start
 
 let is_power_of_2 n =  n <> 0 && (n land (n - 1) = 0)
+

@@ -31,7 +31,7 @@ Inductive itype :=
 | A (value:arithtype)
 | VoidType
 | ArrType (t:itype) (len:Z)
-| VecType (t:arithtype) (sqrt_len:Z)
+| VecType (t:arithtype) (len:Z)
 | PtrType (t:itype) (alignment:Z).
 
 (* Types for function and vairable names. For simplicity we will index them by integers *)
@@ -130,7 +130,6 @@ Inductive lvalue :=
 Inductive istmt :=
 | IFunction (name: funcname) (type:itype) (param: list varname) (body:istmt)
 | Skip
-| Decl (vars: list varname) (body:istmt)
 | Chain (body: list istmt)
 | Data (var: varname) (values: list rvalue) (body:istmt)
 | Assign (l:lvalue) (r:rvalue)

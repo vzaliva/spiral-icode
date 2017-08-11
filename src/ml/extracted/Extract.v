@@ -8,8 +8,7 @@ Extraction Language Ocaml.
 Extraction Blacklist String List.
 
 (* OCaml pervasive types ---------------------------------------------------- *)
-(* Extract Inlined Constant Ollvm_ast.int => "int". *)
-Extract Inlined Constant IAst.float => "float".
+Extract Inlined Constant IAst.float => "string".
 
 Set Extraction AccessOpaque.
 

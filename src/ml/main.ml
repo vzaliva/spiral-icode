@@ -51,7 +51,7 @@ let _ =
       Typechecker.typecheck valist body ;
       msg "*** %s Typecheck OK\n" filename;
       msg "*** %s Pass1 ...\n" filename;
-      let vindex = Pass1.build_var_index valist in
+      let _ = Pass1.pass1 valist in
       msg "*** %s Pass1 OK\n" filename;
       exitOK
     with

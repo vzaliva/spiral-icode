@@ -110,7 +110,7 @@ and iconst_node =
     | UInt16Const of Uint16Ex.t
     | UInt32Const of Uint32Ex.t
     | UInt64Const of Uint64Ex.t
-    | BoolConst of bool [@@deriving compare, sexp]
+    | BoolConst   of bool       [@@deriving compare, sexp]
 
 type rvalue = {
     rnode: rvalue_node;
