@@ -146,23 +146,39 @@ and compile_rvalue vmap vindex rv =
        IAst.IConstArr (t, ilc)
      else
        raise (CompileError1 ("Mismatch between int array type and its value types\n", Some rv.rloc))
-
   | FConstVec (at, fl) ->
      let flt = List.map ~f:fconst_type fl in
      if List.for_all flt (eq_float_type at) then
-       VecType (F at , List.length fl)
+       match List.hd_exn flt with
+       | FloatType ->
+          let compile_fconst_f x =
+            (match compile_fconst x with
+             | IAst.FConst x -> x
+             | _ -> raise (CompileError1 ("Mix of float and double values in vector", Some rv.rloc))) in
+          let flc = List.map ~f:(compile_fconst_f) fl in
+          IAst.FConstVec flc
+       | DoubleType ->
+          let compile_fconst_d x =
+            (match compile_fconst x with
+             | IAst.DConst x -> x
+             | _ -> raise (CompileError1 ("Mix of float and double values in vector", Some rv.rloc))) in
+          let flc = List.map ~f:(compile_fconst_d) fl in
+          IAst.DConstVec flc
      else
-       raise (CompileError1 ("Mismatch between float vector type and its value types\n", Some rv.rloc))
+       raise (CompileError1 ("Mismatch between vector array type and its value types", Some rv.rloc))
   | IConstVec (at, il) ->
      let ilt = List.map ~f:iconst_type il in
      if List.for_all ilt (eq_int_type at) then
-       VecType (I at , List.length il)
+       let ilc = List.map ~f:compile_iconst_z il in
+       let t = compile_int_type (List.hd_exn ilt) in
+       IAst.IConstVec (t, ilc)
      else
        raise (CompileError1 ("Mismatch between int vector type and its value types\n", Some rv.rloc))
+
   | VHex sl ->
      let consts = List.map ~f:(iconst_of_hex rv.rloc) sl in
      let it = type_of_const (List.hd_exn consts).node in
-     VecType (I it, List.length consts)
+     IAst.IConstArr (compile_int_type it, consts)
   | RCast (t,rv) ->
      let rt = rvalue_type vmap rv in
      if check_cast rt t then t
