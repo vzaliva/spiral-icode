@@ -22,7 +22,7 @@ let build_var_map l =
   | `Ok m -> m
 
 let build_var_index l =
-  let il = List.mapi l ~f:(fun i (n,_) -> (n, i)) in
+  let il = List.mapi l ~f:(fun i (n,_) -> (n, z_of_int i)) in
   match String.Map.of_alist il with
   | `Duplicate_key k -> raise_CompileError1 ("duplicate variable name '" ^ k ^ "' in 'let'" )
   | `Ok m -> m
@@ -98,7 +98,7 @@ let type_and_value_of_hex l s : (IAst.inttype * BinNums.coq_Z) =
 
 let rec compile_lvalue vmap vindex (x:lvalue) =
   match x.lnode with
-  | VarLValue v -> IAst.VarLValue (z_of_int (Map.find_exn vindex v))
+  | VarLValue v -> IAst.VarLValue (Map.find_exn vindex v)
   | LCast (t,lv) ->
      let lv = compile_lvalue vmap vindex lv in
      let t = compile_itype t in
@@ -140,7 +140,7 @@ and compile_rvalue vmap vindex rv =
     | UInt64Const _ -> UInt64Type
     | BoolConst   _ -> BoolType in
   match rv.rnode with
-  | VarRValue v -> IAst.VarRValue (z_of_int (Map.find_exn vindex v))
+  | VarRValue v -> IAst.VarRValue (Map.find_exn vindex v)
   | FunCallValue (n,a) ->
      let al = (List.map ~f:(compile_rvalue vmap vindex) a) in
      IAst.FunCallValue (compile_func n al)
@@ -232,12 +232,10 @@ let pass1 valist body =
     | FunCallStmt (n,a) ->
        IAst.FunCallStmt (compile_func n (List.map ~f:(compile_rvalue vmap vindex) a))
     | Function (fn,fr,params,body) ->
-       IAst.IFunction
-         (fn,
-         compile_itype fr,
-         List.map ~f:(Map.find_exn vindex) params,
-         pass1 (add_vars u params) body)
-
+       IAst.IFunction (fn,
+                       compile_itype fr,
+                       List.map ~f:(Map.find_exn vindex) params,
+                       pass1 (add_vars u params) body)
     | Decl (params,body) ->
        pass1 (add_vars u params) body
     | Chain lbody ->
