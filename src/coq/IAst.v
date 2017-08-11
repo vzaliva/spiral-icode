@@ -36,7 +36,7 @@ Inductive itype :=
 
 (* Types for function and vairable names. For simplicity we will index them by integers *)
 Definition varname := Z.
-Definition funcname := Z.
+Definition funcname := string.
 
 Definition float := string.
 

@@ -18,7 +18,8 @@
 
 * check_cast in RCast
 * check for pointer type 1st paramter of deref
-* in nthrvalue check fist param to be int type and 2nd to be Arr or Ptr
+* in NthRvalue check fist param to be int type and 2nd to be Arr or Ptr
+* check for Return to occur only inside IFunction
   
 ## Backend: ##
 

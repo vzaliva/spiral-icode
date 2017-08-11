@@ -52,7 +52,7 @@ let rec compile_itype = function
 
 (* TODO: placeholder!!! *)
 let compile_func (n:string) (al:IAst.rvalue list) =
-  IAst.FunCallValue (IAst.F_neg (IAst.IConst (IAst.Int8Type, z_of_int 1)))
+  IAst.F_neg (IAst.IConst (IAst.Int8Type, z_of_int 1))
 
 (* TODO: placeholders *)
 let z_of_Int8   (v:Int8Ex.t  ) = z_of_int 1
@@ -143,7 +143,7 @@ and compile_rvalue vmap vindex rv =
   | VarRValue v -> IAst.VarRValue (z_of_int (Map.find_exn vindex v))
   | FunCallValue (n,a) ->
      let al = (List.map ~f:(compile_rvalue vmap vindex) a) in
-     compile_func n al
+     IAst.FunCallValue (compile_func n al)
   | FConst x -> compile_fconst x
   | IConst x -> IAst.IConst (compile_int_type (iconst_type x), compile_iconst_z x)
   | FConstArr (at, fl) ->
@@ -227,29 +227,34 @@ let pass1 valist body =
   in
   let add_vars s vl = List.fold ~init:s ~f:add_var vl in
 
-  let rec pass1 (fstack:(int * Ast.IType.t) list) u x =
+  let rec pass1 u x =
     match x.node with
     | FunCallStmt (n,a) ->
-       compile_func n (List.map ~f:(compile_rvalue vmap vindex) a)
+       IAst.FunCallStmt (compile_func n (List.map ~f:(compile_rvalue vmap vindex) a))
     | Function (fn,fr,params,body) ->
-       pass1 ((fn,fr)::fstack) (add_vars u params) body
+       IAst.IFunction
+         (fn,
+         compile_itype fr,
+         List.map ~f:(Map.find_exn vindex) params,
+         pass1 (add_vars u params) body)
+
     | Decl (params,body) ->
-       pass1 fstack (add_vars u params) body
+       pass1 (add_vars u params) body
     | Chain lbody ->
-       List.fold ~f:(pass1 fstack) ~init:u lbody
+       List.fold ~f:(pass1) ~init:u lbody
     | Data (v,rl,body) ->
        ignore (List.map ~f:(check_vars_in_rvalue u) rl) ;
-       pass1 fstack (add_var u v) body
+       pass1 (add_var u v) body
     | Loop (v,f,t,body) ->
        if f>t then
          raise (CompileError1 (Printf.sprintf "Invalid loop index range: %s .. %s  " (Int64Ex.to_string f) (Int64Ex.to_string t), Some x.loc))
        else
-         pass1 fstack (add_var u v) body
+         pass1 (add_var u v) body
     | If (r,bt,bf) ->
        check_vars_in_rvalue u r ;
        union
-         (pass1 fstack u bt)
-         (pass1 fstack u bf)
+         (pass1 u bt)
+         (pass1 u bf)
     | Skip -> u
     | Assign (l,r) ->
        let rt = rvalue_type vmap r in

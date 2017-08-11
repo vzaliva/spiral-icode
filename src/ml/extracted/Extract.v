@@ -9,6 +9,7 @@ Extraction Blacklist String List.
 
 (* OCaml pervasive types ---------------------------------------------------- *)
 Extract Inlined Constant IAst.float => "string".
+Extract Inlined Constant IAst.funcname => "string".
 
 Set Extraction AccessOpaque.
 
