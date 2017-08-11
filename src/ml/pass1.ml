@@ -210,9 +210,7 @@ and compile_rvalue vmap vindex rv =
      let it,_ = List.hd_exn consts in
      IAst.IConstArr (it, List.map ~f:snd consts)
   | RCast (t,rv) -> IAst.RCast (compile_itype t, compile_rvalue vmap vindex rv)
-  | RDeref v -> (match rvalue_type vmap v with
-                 | PtrType (t,_) -> t
-                 | t -> raise (CompileError1 (Format.asprintf "Dereferencing non-pointer type %a" pr_itype t, Some rv.rloc)))
+  | RDeref v -> IAst.RDeref (compile_rvalue vmap vindex v)
   | NthRvalue (v, i) ->
      let it = rvalue_type vmap i in
      if not (is_integer it) then

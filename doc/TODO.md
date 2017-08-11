@@ -18,6 +18,7 @@
 
 * Coq-level typechecks
   * check_cast in RCast
+  * check for pointer type 1st paramter of deref
 
 ## Backend: ##
 
