@@ -48,8 +48,7 @@ let _ =
     try
       let Ast.Program (valist, body) = Parser.i_program Lexer.main lineBuffer in
       msg "*** %s Typecheck ...\n" filename;
-      let vmap = Typechecker.build_var_map valist in
-      Typechecker.typecheck vmap body ;
+      Typechecker.typecheck valist body ;
       msg "*** %s Typecheck OK\n" filename;
       msg "*** %s Pass1 ...\n" filename;
       let vindex = Pass1.build_var_index valist in

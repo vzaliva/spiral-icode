@@ -608,7 +608,8 @@ and rvalue_type vmap rv =
 
    9. Checking vdup size to be positive power of 2
  *)
-let typecheck vmap prog =
+let typecheck valist prog =
+  let vmap = build_var_map valist in
   let open String.Set.Tree in
   let add_var s v =
     if mem s v then raise_TypeError ("duplicate declaration of '" ^ v ^ "'")

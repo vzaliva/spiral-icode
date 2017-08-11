@@ -22,3 +22,4 @@ let build_var_index l =
   match Int.Map.Tree.of_alist il with
   | `Duplicate_key k -> raise_CompileError1 ("duplicate variable index '" ^ string_of_int k ^ "' in 'let'" )
   | `Ok m -> m
+
