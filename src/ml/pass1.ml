@@ -16,12 +16,12 @@ open ExtrOcamlIntConv
 exception CompileError1 of (string * Loc.t option)
 let raise_CompileError1 msg = raise (CompileError1 (msg,None))
 
-let build_var_map (l:(ivar*IType.t) list) =
+let build_var_map l =
   match String.Map.of_alist l with
   | `Duplicate_key k -> raise_CompileError1 ("duplicate variable '" ^ k ^ "' in 'let'" )
   | `Ok m -> m
 
-let build_var_index (l:(ivar*IType.t) list) =
+let build_var_index l =
   let il = List.mapi l ~f:(fun i (n,_) -> (n, i)) in
   match String.Map.of_alist il with
   | `Duplicate_key k -> raise_CompileError1 ("duplicate variable name '" ^ k ^ "' in 'let'" )
