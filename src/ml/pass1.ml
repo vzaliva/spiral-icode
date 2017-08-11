@@ -77,17 +77,28 @@ let rec compile_lvalue vmap vindex (x:lvalue) =
                                         compile_rvalue vmap vindex i)
 and compile_rvalue vmap vindex rv =
   let compile_fconst (x:fconst) =
-    (match x.node with
-     | FPLiteral (FloatType, x) -> IAst.FConst (IAst.FLiteral x)
-     | FPLiteral (DoubleType, x) -> IAst.DConst (IAst.DLiteral x)
-     | FloatEPS -> IAst.FConst IAst.FEPS
-     | DoubleEPS -> IAst.DConst IAst.DEPS) in
+    match x.node with
+    | FPLiteral (FloatType, x) -> IAst.FConst (IAst.FLiteral x)
+    | FPLiteral (DoubleType, x) -> IAst.DConst (IAst.DLiteral x)
+    | FloatEPS -> IAst.FConst IAst.FEPS
+    | DoubleEPS -> IAst.DConst IAst.DEPS in
+  let compile_iconst (x:iconst) =
+    match x.node with
+    | Int8Const   v -> IAst.IConst (IAst.Int8Type  , z_of_Int8   v)
+    | Int16Const  v -> IAst.IConst (IAst.Int16Type , z_of_Int16  v)
+    | Int32Const  v -> IAst.IConst (IAst.Int32Type , z_of_Int32  v)
+    | Int64Const  v -> IAst.IConst (IAst.Int64Type , z_of_Int64  v)
+    | UInt8Const  v -> IAst.IConst (IAst.UInt8Type , z_of_UInt8  v)
+    | UInt16Const v -> IAst.IConst (IAst.UInt16Type, z_of_UInt16 v)
+    | UInt32Const v -> IAst.IConst (IAst.UInt32Type, z_of_UInt32 v)
+    | UInt64Const v -> IAst.IConst (IAst.UInt64Type, z_of_UInt64 v)
+    | BoolConst   v -> IAst.IConst (IAst.BoolType  , z_of_Bool   v) in
   let fconst_type (f:fconst) =
-     match f.node with
-     | FPLiteral (t,_) -> t
-     | FloatEPS -> FloatType
-     | DoubleEPS -> DoubleType  in
-   let iconst_type (c:iconst) = match c.node with
+    match f.node with
+    | FPLiteral (t,_) -> t
+    | FloatEPS -> FloatType
+    | DoubleEPS -> DoubleType in
+  let iconst_type (c:iconst) = match c.node with
     | Int8Const   _ -> Int8Type
     | Int16Const  _ -> Int16Type
     | Int32Const  _ -> Int32Type
@@ -103,17 +114,7 @@ and compile_rvalue vmap vindex rv =
      let al = (List.map ~f:(compile_rvalue vmap vindex) a) in
      compile_func n al
   | FConst x -> compile_fconst x
-
-  | IConst {node = (Int8Const   v) } -> IAst.IConst (IAst.Int8Type  , z_of_Int8   v)
-  | IConst {node = (Int16Const  v) } -> IAst.IConst (IAst.Int16Type , z_of_Int16  v)
-  | IConst {node = (Int32Const  v) } -> IAst.IConst (IAst.Int32Type , z_of_Int32  v)
-  | IConst {node = (Int64Const  v) } -> IAst.IConst (IAst.Int64Type , z_of_Int64  v)
-  | IConst {node = (UInt8Const  v) } -> IAst.IConst (IAst.UInt8Type , z_of_UInt8  v)
-  | IConst {node = (UInt16Const v) } -> IAst.IConst (IAst.UInt16Type, z_of_UInt16 v)
-  | IConst {node = (UInt32Const v) } -> IAst.IConst (IAst.UInt32Type, z_of_UInt32 v)
-  | IConst {node = (UInt64Const v) } -> IAst.IConst (IAst.UInt64Type, z_of_UInt64 v)
-  | IConst {node = (BoolConst   v) } -> IAst.IConst (IAst.BoolType  , z_of_Bool   v)
-
+  | IConst x -> compile_iconst x
   | FConstArr (at, fl) ->
      let flt = List.map ~f:fconst_type fl in
      if List.for_all flt (eq_float_type at) then
@@ -134,6 +135,7 @@ and compile_rvalue vmap vindex rv =
           IAst.DConstArr flc
      else
        raise (CompileError1 ("Mismatch between float array type and its value types", Some rv.rloc))
+
   | IConstArr (at, il) ->
      let ilt = List.map ~f:iconst_type il in
      if List.for_all ilt (eq_int_type at) then
