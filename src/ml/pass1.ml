@@ -209,12 +209,7 @@ and compile_rvalue vmap vindex rv =
      (* TODO: unify types of all vhex constants *)
      let it,_ = List.hd_exn consts in
      IAst.IConstArr (it, List.map ~f:snd consts)
-  | RCast (t,rv) ->
-     let rt = rvalue_type vmap rv in
-     if check_cast rt t then t
-     else raise (CompileError1 (Format.asprintf "Illegal rvalue cast from %a to %a."
-                                            pr_itype rt
-                                            pr_itype t, Some rv.rloc));
+  | RCast (t,rv) -> IAst.RCast (compile_itype t, compile_rvalue vmap vindex rv)
   | RDeref v -> (match rvalue_type vmap v with
                  | PtrType (t,_) -> t
                  | t -> raise (CompileError1 (Format.asprintf "Dereferencing non-pointer type %a" pr_itype t, Some rv.rloc)))

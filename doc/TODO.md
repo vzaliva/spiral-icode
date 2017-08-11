@@ -17,6 +17,7 @@
 ## COQ Integration: ##
 
 * Coq-level typechecks
+  * check_cast in RCast
 
 ## Backend: ##
 
