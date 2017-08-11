@@ -62,7 +62,7 @@ print-ocaml-includes:
 
 OCAMLPACKAGES := core,stdint,ppx_jane,sexplib,ppx_sexp_conv,ppx_compare,getopt
 
-main.native: 
+main.native: ml/*.ml ml/extracted/*.ml
 	@echo "Compiling $(EXE)"
 	ocamlbuild -tag thread -r -use-menhir -yaccflag --explain $(OCAMLINCLUDES) -use-ocamlfind -pkg $(OCAMLPACKAGES) main.native
 

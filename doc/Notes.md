@@ -19,7 +19,8 @@
 
 ## Passes ##
 
-* typecheck convers "native" AST to IAst. Also:
+* Pass 0: typecheck checks icode correctness (TODO: to be removed *)
+* Pass 1: convers "native" AST to IAst. Also:
   1. detecting some errors. 
   1. some type inference is performed (e.g. for integer constants)
   1. All type promotion rules are applied

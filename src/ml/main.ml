@@ -1,4 +1,6 @@
 open Typechecker
+open Pass1
+
 open Config
 open Utils
 open Typetools
@@ -45,15 +47,25 @@ let _ =
     lineBuffer.Lexing.lex_curr_p <- { lineBuffer.Lexing.lex_curr_p with Lexing.pos_fname = filename };
     try
       let Ast.Program (valist, body) = Parser.i_program Lexer.main lineBuffer in
+      msg "*** %s Typecheck ...\n" filename;
       let vmap = Typechecker.build_var_map valist in
       Typechecker.typecheck vmap body ;
-      msg "*** %s compiled OK\n" filename;
+      msg "*** %s Typecheck OK\n" filename;
+      msg "*** %s Pass1 ...\n" filename;
+      let vindex = Pass1.build_var_index valist in
+      msg "*** %s Pass1 OK\n" filename;
       exitOK
     with
     | Typechecker.TypeError (msg, l) ->
        (match l with
        | None ->  eprintf "Type check failed: %s%!\n" msg
        | Some loc -> Format.eprintf "%a Type check failed: %s%!\n" pr_err_loc loc msg
+       ) ;
+       exitErr
+    | Pass1.CompileError1 (msg, l) ->
+       (match l with
+       | None ->  eprintf "Compilation error at pass 1: %s%!\n" msg
+       | Some loc -> Format.eprintf "%a Compilation error at pass : %s%!\n" pr_err_loc loc msg
        ) ;
        exitErr
     | Lexer.Error msg ->
