@@ -244,10 +244,10 @@ let pass1 valist body =
                   List.map ~f:(compile_rvalue vmap vindex) rl,
                   pass1 (add_var scope v) body)
     | Loop (v,f,t,body) ->
-       if f>t then
-         raise (CompileError1 (Printf.sprintf "Invalid loop index range: %s .. %s  " (Int64Ex.to_string f) (Int64Ex.to_string t), Some x.loc))
-       else
-         pass1 (add_var scope v) body
+       IAst.Loop (Map.find_exn vindex v,
+                  z_of_Int64 f,
+                  z_of_Int64 t,
+                  pass1 (add_var scope v) body)
     | If (r,bt,bf) ->
        check_vars_in_rvalue u r ;
        union
