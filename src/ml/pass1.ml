@@ -240,8 +240,9 @@ let pass1 valist body =
        pass1 (add_vars scope params) body
     | Chain lbody -> IAst.Chain (List.map ~f:(pass1 scope) lbody)
     | Data (v,rl,body) ->
-       ignore (List.map ~f:(check_vars_in_rvalue u) rl) ;
-       pass1 (add_var scope v) body
+       IAst.Data (Map.find_exn vindex v,
+                  List.map ~f:(compile_rvalue vmap vindex) rl,
+                  pass1 (add_var scope v) body)
     | Loop (v,f,t,body) ->
        if f>t then
          raise (CompileError1 (Printf.sprintf "Invalid loop index range: %s .. %s  " (Int64Ex.to_string f) (Int64Ex.to_string t), Some x.loc))
