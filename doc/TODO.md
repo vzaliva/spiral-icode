@@ -22,6 +22,7 @@
 * check for Return to occur only inside IFunction
 * Check Loop index range 
 * In Assign `check_coercion rt lt`
+* Check that 'Program' contains only function definitions
   
 ## Backend: ##
 

@@ -16,15 +16,17 @@ open ExtrOcamlIntConv
 exception CompileError1 of (string * Loc.t option)
 let raise_CompileError1 msg = raise (CompileError1 (msg,None))
 
+(* var_string -> type *)
 let build_var_map l =
   match String.Map.of_alist l with
-  | `Duplicate_key k -> raise_CompileError1 ("duplicate variable '" ^ k ^ "' in 'let'" )
+  | `Duplicate_key k -> raise_CompileError1 ("Duplicate variable '" ^ k ^ "' in 'let'" )
   | `Ok m -> m
 
+(* var_string -> var_index *)
 let build_var_index l =
   let il = List.mapi l ~f:(fun i (n,_) -> (n, z_of_int i)) in
   match String.Map.of_alist il with
-  | `Duplicate_key k -> raise_CompileError1 ("duplicate variable name '" ^ k ^ "' in 'let'" )
+  | `Duplicate_key k -> raise_CompileError1 ("Duplicate variable name '" ^ k ^ "' in 'let'" )
   | `Ok m -> m
 
 let compile_int_type = function
@@ -257,22 +259,11 @@ let pass1 valist body =
                                    compile_rvalue vmap vindex r)
     | Return r -> IAst.Return (compile_rvalue vmap vindex r)
   in
-  (* check top-level program structure *)
-  ignore(
-      let rec is_func x =
-        match x.node with
-        | Function _ -> ()
-        | Chain x -> is_all_func x
-        | _ -> raise (CompileError1 ("'program' must contain only function definitions", Some x.loc))
-      and is_all_func = function
-        | [] -> ()
-        | (x::xs) -> is_func x ; is_all_func xs in
-      match prog.node with
-      | Chain body -> is_all_func body
-
-      | Function _ -> ()
-      | _ -> raise (CompileError1 ("'program' must contain only function definitions", Some prog.loc))
-    );
-  (* build list of used variables *)
-  let used = pass1 [] String.Set.Tree.empty prog in
-  ignore (check_never_decl vmap used)
+  (* TODO: this lookup function is terribly inefficient. Re-implement using Map *)
+  let rec var_index_find l v =
+    match l with
+    | [] -> None
+    | (n,t)::ls -> if Map.find_exn vindex n = v
+                   then Some (compile_itype t)
+                   else var_index_find ls v in
+  IAst.Program (var_index_find valist, pass1 String.Set.Tree.empty body)
