@@ -252,7 +252,7 @@ let pass1 valist body =
        IAst.If (compile_rvalue vmap vindex r,
                 pass1 scope bt,
                 pass1 scope bf)
-    | Skip -> u
+    | Skip -> IAst.Skip
     | Assign (l,r) ->
        let rt = rvalue_type vmap r in
        let lt = lvalue_type vmap l in
