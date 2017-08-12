@@ -249,10 +249,9 @@ let pass1 valist body =
                   z_of_Int64 t,
                   pass1 (add_var scope v) body)
     | If (r,bt,bf) ->
-       check_vars_in_rvalue u r ;
-       union
-         (pass1 u bt)
-         (pass1 u bf)
+       IAst.If (compile_rvalue vmap vindex r,
+                pass1 scope bt,
+                pass1 scope bf)
     | Skip -> u
     | Assign (l,r) ->
        let rt = rvalue_type vmap r in
