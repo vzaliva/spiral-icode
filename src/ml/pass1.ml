@@ -253,25 +253,9 @@ let pass1 valist body =
                 pass1 scope bt,
                 pass1 scope bf)
     | Skip -> IAst.Skip
-    | Assign (l,r) ->
-       let rt = rvalue_type vmap r in
-       let lt = lvalue_type vmap l in
-       if not (check_coercion rt lt) then
-         raise (CompileError1 (Format.asprintf "Incompatible types in assignment %a=[%a]."
-                                               pr_itype lt
-                                               pr_itype rt
-                              , Some x.loc));
-       check_vars_in_lvalue u l;
-       check_vars_in_rvalue u r;
-       u
-    | Return r -> check_vars_in_rvalue u r ;
-                  (match List.hd fstack with
-                   | None -> raise (CompileError1 ("Return outsude of function", Some x.loc))
-                   | Some (fn,ft) ->
-                      let at = rvalue_type vmap r in
-                      if not (check_coercion at ft) then
-                        raise (CompileError1 (Format.asprintf "Incompatible types in return from functon '%s'. Actual: %a. Expected: %a." fn  pr_itype at pr_itype ft, Some r.rloc))
-                      else u)
+    | Assign (l,r) -> IAst.Assign (compile_lvalue vmap vindex l,
+                                   compile_rvalue vmap vindex r)
+    | Return r -> IAst.Return (compile_rvalue vmap vindex r)
   in
   (* check top-level program structure *)
   ignore(

@@ -21,6 +21,7 @@
 * in NthRvalue check fist param to be int type and 2nd to be Arr or Ptr
 * check for Return to occur only inside IFunction
 * Check Loop index range 
+* In Assign `check_coercion rt lt`
   
 ## Backend: ##
 
