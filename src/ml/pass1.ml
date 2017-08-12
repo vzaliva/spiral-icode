@@ -227,7 +227,7 @@ let pass1 valist body =
   in
   let add_vars s vl = List.fold ~init:s ~f:add_var vl in
 
-  let rec pass1 u x =
+  let rec pass1 scope x =
     match x.node with
     | FunCallStmt (n,a) ->
        IAst.FunCallStmt (compile_func n (List.map ~f:(compile_rvalue vmap vindex) a))
@@ -235,19 +235,18 @@ let pass1 valist body =
        IAst.IFunction (fn,
                        compile_itype fr,
                        List.map ~f:(Map.find_exn vindex) params,
-                       pass1 (add_vars u params) body)
+                       pass1 (add_vars scope params) body)
     | Decl (params,body) ->
-       pass1 (add_vars u params) body
-    | Chain lbody ->
-       List.fold ~f:(pass1) ~init:u lbody
+       pass1 (add_vars scope params) body
+    | Chain lbody -> IAst.Chain (List.map ~f:(pass1 scope) lbody)
     | Data (v,rl,body) ->
        ignore (List.map ~f:(check_vars_in_rvalue u) rl) ;
-       pass1 (add_var u v) body
+       pass1 (add_var scope v) body
     | Loop (v,f,t,body) ->
        if f>t then
          raise (CompileError1 (Printf.sprintf "Invalid loop index range: %s .. %s  " (Int64Ex.to_string f) (Int64Ex.to_string t), Some x.loc))
        else
-         pass1 (add_var u v) body
+         pass1 (add_var scope v) body
     | If (r,bt,bf) ->
        check_vars_in_rvalue u r ;
        union
