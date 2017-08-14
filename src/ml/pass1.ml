@@ -63,7 +63,7 @@ let type_and_value_of_hex l s : (IAst.inttype * BinNums.coq_Z) =
   else
     try
       let v = Uint64Ex.of_string s in
-      let z = z_of_UInt64 v in
+      let z = Uint64Ex.to_z v in
       if String.suffix s 1 = "ul" then
         (IAst.UInt64Type, z)
       else if String.suffix s 1 = "l" then
@@ -106,15 +106,15 @@ and compile_rvalue vmap vindex rv =
     | DoubleEPS -> IAst.DConst IAst.DEPS in
   let compile_iconst_z (x:iconst) =
     match x.node with
-    | Int8Const   v -> z_of_Int8   v
-    | Int16Const  v -> z_of_Int16  v
-    | Int32Const  v -> z_of_Int32  v
-    | Int64Const  v -> z_of_Int64  v
-    | UInt8Const  v -> z_of_UInt8  v
-    | UInt16Const v -> z_of_UInt16 v
-    | UInt32Const v -> z_of_UInt32 v
-    | UInt64Const v -> z_of_UInt64 v
-    | BoolConst   v -> z_of_Bool   v in
+    | Int8Const   v -> Int8Ex.to_z   v
+    | Int16Const  v -> Int16Ex.to_z  v
+    | Int32Const  v -> Int32Ex.to_z  v
+    | Int64Const  v -> Int64Ex.to_z  v
+    | UInt8Const  v -> Uint8Ex.to_z  v
+    | UInt16Const v -> Uint16Ex.to_z v
+    | UInt32Const v -> Uint32Ex.to_z v
+    | UInt64Const v -> Uint64Ex.to_z v
+    | BoolConst   v -> z_of_bool v in
   let fconst_type (f:fconst) =
     match f.node with
     | FPLiteral (t,_) -> t
@@ -236,8 +236,8 @@ let pass1 valist body =
                   pass1 (add_var scope v) body)
     | Loop (v,f,t,body) ->
        IAst.Loop (Map.find_exn vindex v,
-                  z_of_Int64 f,
-                  z_of_Int64 t,
+                  Int64Ex.to_z f,
+                  Int64Ex.to_z t,
                   pass1 (add_var scope v) body)
     | If (r,bt,bf) ->
        IAst.If (compile_rvalue vmap vindex r,
