@@ -38,9 +38,25 @@ let in_int32_range x = in_range Uint64Ex.zero (Int32Ex.to_uint64 Int32Ex.max_int
 let in_uint32_range x = in_range (Uint32Ex.to_uint64 Uint32Ex.min_int) (Uint32Ex.to_uint64 Uint32Ex.max_int) x
 let in_int64_range x = in_range Uint64Ex.zero (Int64Ex.to_uint64 Int64Ex.max_int) x
 
-let z_of_binstr (s:string) = z_of_int 1 (* TODO: Implement *)
+let z_of_binstr (s:string) =
+  let open BinNums in
+  let rec pos_of_binstr v s =
+    if String.is_empty s then v
+    else pos_of_binstr
+           (match String.prefix s 1 with
+            | "0" -> Coq_xO v
+            | "1" -> Coq_xI v
+            | c -> raise (Invalid_argument ("binary number contains unexpected character '" ^ c ^"'")))
+           (String.drop_prefix s 1)
+  in
+  match String.lsplit2 ~on:'1' s with
+  | None -> Z0
+  | Some (_,b) ->
+     let x = pos_of_binstr Coq_xH b in
+     if String.prefix s 1 = "-"
+     then (BinNums.Zneg x)
+     else (Zpos x)
 
-(* TODO: placeholders *)
 let z_of_Int8   (v:Int8Ex.t  ) = z_of_int (Int8Ex.to_int v)
 let z_of_Int16  (v:Int16Ex.t ) = z_of_int (Int16Ex.to_int v)
 let z_of_Int32  (v:Int32Ex.t ) = z_of_binstr (Int32Ex.to_string_bin v)
