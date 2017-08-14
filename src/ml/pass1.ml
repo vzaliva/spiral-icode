@@ -56,16 +56,20 @@ let rec compile_itype = function
 let compile_func (n:string) (al:IAst.rvalue list) =
   IAst.F_neg (IAst.IConst (IAst.Int8Type, z_of_int 1))
 
+let z_of_binstr (s:string) = z_of_int 1 (* TODO: Implement *)
+
 (* TODO: placeholders *)
-let z_of_Int8   (v:Int8Ex.t  ) = z_of_int 1
-let z_of_Int16  (v:Int16Ex.t ) = z_of_int 1
-let z_of_Int32  (v:Int32Ex.t ) = z_of_int 1
-let z_of_Int64  (v:Int64Ex.t ) = z_of_int 1
-let z_of_UInt8  (v:Uint8Ex.t ) = z_of_int 1
-let z_of_UInt16 (v:Uint16Ex.t) = z_of_int 1
-let z_of_UInt32 (v:Uint32Ex.t) = z_of_int 1
-let z_of_UInt64 (v:Uint64Ex.t) = z_of_int 1
-let z_of_Bool   (v:bool      ) = z_of_int 1
+let z_of_Int8   (v:Int8Ex.t  ) = z_of_int (Int8Ex.to_int v)
+let z_of_Int16  (v:Int16Ex.t ) = z_of_int (Int16Ex.to_int v)
+let z_of_Int32  (v:Int32Ex.t ) = z_of_binstr (Int32Ex.to_string_bin v)
+let z_of_Int64  (v:Int64Ex.t ) = z_of_binstr (Int64Ex.to_string_bin v)
+let z_of_UInt8  (v:Uint8Ex.t ) = z_of_int (Uint8Ex.to_int v)
+let z_of_UInt16 (v:Uint16Ex.t) = z_of_int (Uint16Ex.to_int v)
+let z_of_UInt32 (v:Uint32Ex.t) = z_of_binstr (Uint32Ex.to_string_bin v)
+let z_of_UInt64 (v:Uint64Ex.t) = z_of_binstr (Uint64Ex.to_string_bin v)
+let z_of_Bool   (v:bool      ) =
+  let open BinNums in
+  if v then Zpos (Coq_xH) else Z0
 
 (* Generally follows C99 §6.4.4.1 *)
 let type_and_value_of_hex l s : (IAst.inttype * BinNums.coq_Z) =
