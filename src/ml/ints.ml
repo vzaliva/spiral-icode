@@ -1,6 +1,7 @@
 open Core
 open Sexplib
 open Stdint
+open ExtrOcamlIntConv
 
 module IntEx (T:Int) = struct
   include T
@@ -36,3 +37,18 @@ let in_range f t x = Uint64Ex.compare x f >= 0 && Uint64Ex.compare x t <= 0
 let in_int32_range x = in_range Uint64Ex.zero (Int32Ex.to_uint64 Int32Ex.max_int) x
 let in_uint32_range x = in_range (Uint32Ex.to_uint64 Uint32Ex.min_int) (Uint32Ex.to_uint64 Uint32Ex.max_int) x
 let in_int64_range x = in_range Uint64Ex.zero (Int64Ex.to_uint64 Int64Ex.max_int) x
+
+let z_of_binstr (s:string) = z_of_int 1 (* TODO: Implement *)
+
+(* TODO: placeholders *)
+let z_of_Int8   (v:Int8Ex.t  ) = z_of_int (Int8Ex.to_int v)
+let z_of_Int16  (v:Int16Ex.t ) = z_of_int (Int16Ex.to_int v)
+let z_of_Int32  (v:Int32Ex.t ) = z_of_binstr (Int32Ex.to_string_bin v)
+let z_of_Int64  (v:Int64Ex.t ) = z_of_binstr (Int64Ex.to_string_bin v)
+let z_of_UInt8  (v:Uint8Ex.t ) = z_of_int (Uint8Ex.to_int v)
+let z_of_UInt16 (v:Uint16Ex.t) = z_of_int (Uint16Ex.to_int v)
+let z_of_UInt32 (v:Uint32Ex.t) = z_of_binstr (Uint32Ex.to_string_bin v)
+let z_of_UInt64 (v:Uint64Ex.t) = z_of_binstr (Uint64Ex.to_string_bin v)
+let z_of_Bool   (v:bool      ) =
+  let open BinNums in
+  if v then Zpos (Coq_xH) else Z0
