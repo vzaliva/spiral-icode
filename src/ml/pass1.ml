@@ -52,9 +52,45 @@ let rec compile_itype = function
   | VecType (t,l) -> IAst.VecType  (compile_arith_type t, z_of_int l)
   | PtrType (t,l) -> IAst.ArrType (compile_itype t, z_of_int l)
 
-(* TODO: placeholder!!! *)
 let compile_func (n:string) (al:IAst.rvalue list) =
-  IAst.F_neg (IAst.IConst (IAst.Int8Type, z_of_int 1))
+  match n, al with
+  | "cond",[a;b;c]             -> IAst.F_cond (a,b,c)
+  | "min", a::b::c             -> IAst.F_min (a,b,c)
+  | "max", a::b::c             -> IAst.F_max (a,b,c)
+  | "add", [a;b]               -> IAst.F_add (a,b)
+  | "sub", [a;b]               -> IAst.F_sub (a,b)
+  | "mul", [a;b]               -> IAst.F_mul (a,b)
+  | "div", [a;b]               -> IAst.F_div (a,b)
+  | "geq", [a;b]               -> IAst.F_geq (a,b)
+  | "abs", [a]                 -> IAst.F_abs a
+  | "neg", [a]                 -> IAst.F_neg a
+  | "vcvt_64f32f", [a;b]       -> IAst.F_vcvt_64f32f (a,b)
+  | "addsub_4x32f", [a;b]      -> IAst.F_addsub_4x32f (a,b)
+  | "addsub_2x64f", [a;b]      -> IAst.F_addsub_2x64f (a,b)
+  | "vushuffle_2x64f", [a;b]   -> IAst.F_vushuffle_2x64f (a,b)
+  | "vshuffle_2x64f" , [a;b;c] -> IAst.F_vshuffle_2x64f (a,b,c)
+  | "vshuffle_4x32f" , [a;b;c] -> IAst.F_vshuffle_4x32f (a,b,c)
+  | "vshuffle_8x32f" , [a;b;c] -> IAst.F_vshuffle_8x32f (a,b,c)
+  | "vunpacklo_4x32f", [a;b]   -> IAst.F_vunpacklo_4x32f (a,b)
+  | "vunpacklo_8x32f", [a;b]   -> IAst.F_vunpacklo_8x32f (a,b)
+  | "vunpacklo_4x64f", [a;b]   -> IAst.F_vunpacklo_4x64f (a,b)
+  | "vunpackhi_4x32f", [a;b]   -> IAst.F_vunpackhi_4x32f (a,b)
+  | "vunpackhi_4x64f", [a;b]   -> IAst.F_vunpackhi_4x64f (a,b)
+  | "vunpackhi_8x32f", [a;b]   -> IAst.F_vunpackhi_8x32f (a,b)
+  | "cmpge_2x64f", [a;b]       -> IAst.F_cmpge_2x64f (a,b)
+  | "testc_4x32i", [a;b]       -> IAst.F_testc_4x32i (a,b)
+  | "testnzc_4x32i", [a;b]     -> IAst.F_testnzc_4x32i (a,b)
+  | "vpermf128_4x64f", [a;b;c] -> IAst.F_vpermf128_4x64f (a,b,c)
+  | "vpermf128_8x32f", [a;b;c] -> IAst.F_vpermf128_8x32f (a,b,c)
+  | "vload_2l_4x32f", [a;b]    -> IAst.F_vload_2l_4x32f (a,b)
+  | "vload_2h_4x32f", [a;b]    -> IAst.F_vload_2h_4x32f (a,b)
+  | "vloadu_4x32f", [a]        -> IAst.F_vloadu_4x32f (a)
+  | "vstore_2l_4x32f", [a;b]   -> IAst.F_vstore_2l_4x32f (a,b)
+  | "vstore_2h_4x32f", [a;b]   -> IAst.F_vstore_2h_4x32f (a,b)
+  | "vstoreu_4x32f", [a;b]     -> IAst.F_vstoreu_4x32f (a,b)
+  | _,_ -> raise_CompileError1 (
+               Format.asprintf "Unknonw function %s with %d arguments"
+                               n (List.length al))
 
 (* Generally follows C99 §6.4.4.1 *)
 let type_and_value_of_hex l s : (IAst.inttype * BinNums.coq_Z) =
