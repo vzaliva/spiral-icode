@@ -1,4 +1,8 @@
 
+# Language Notes #
+
+* VHEX constants can have 'l' or 'u' suffixes and be positive or negative
+
 # Implementation Notes #
 
 ## Representation ##

@@ -4,6 +4,9 @@ open Stdint
 open ExtrOcamlIntConv
 open BinNums
 
+let z_compare (a:coq_Z) (b:coq_Z) : int = 0 (* TODO *)
+
+(* Convert binary string with optiona '0b' or '0B' prefix and sign to Z *)
 let z_of_binstr (s:string) =
   let rec pos_of_binstr v s =
     if String.is_empty s then v
@@ -22,6 +25,28 @@ let z_of_binstr (s:string) =
      then (Zneg x)
      else (Zpos x)
 
+(* Convert hex string with optiona '0x' or '0X' prefix and sign to Z *)
+let z_of_hexstr (s:string) =
+  (String.concat_map s (fun x -> match Char.lowercase x with
+                                 | '0' -> "0000"
+                                 | '1' -> "0001"
+                                 | '2' -> "0010"
+                                 | '3' -> "0011"
+                                 | '4' -> "0100"
+                                 | '5' -> "0101"
+                                 | '6' -> "0110"
+                                 | '7' -> "0111"
+                                 | '8' -> "1000"
+                                 | '9' -> "1001"
+                                 | 'a' -> "1010"
+                                 | 'b' -> "1011"
+                                 | 'c' -> "1100"
+                                 | 'd' -> "1101"
+                                 | 'e' -> "1110"
+                                 | 'f' -> "1111"
+                                 | c -> raise (Invalid_argument ("hex number contains unexpected character '" ^ (Char.to_string c) ^"'"))
+  )) |> z_of_binstr
+
 module IntEx (T:Int) = struct
   include T
   let tname = (if (T.compare T.min_int T.zero) = 0 then "U" else "I") ^
@@ -34,6 +59,18 @@ module IntEx (T:Int) = struct
     | x  -> of_sexp_error "Must be List" x
 
   let to_z (v:T.t) = z_of_binstr (to_string_bin v)
+
+  let in_range z =
+    z_compare z (to_z T.min_int) >= 0 &&
+      z_compare z (to_z T.max_int) <= 0
+
+  let in_range_u x =
+    Uint64.compare x (T.to_uint64 T.max_int) <= 0
+
+  let in_range_s x =
+    Int64.compare x (T.to_int64 T.min_int) >= 0 &&
+      Int64.compare x (T.to_int64 T.max_int) <= 0
+
 end
 
 module Int8Ex = IntEx(Int8)
@@ -53,11 +90,6 @@ module Uint32Ex = IntEx(Uint32)
 open Uint32Ex
 module Uint64Ex = IntEx(Uint64)
 open Uint64Ex
-
-let in_range f t x = Uint64Ex.compare x f >= 0 && Uint64Ex.compare x t <= 0
-let in_int32_range x = in_range Uint64Ex.zero (Int32Ex.to_uint64 Int32Ex.max_int) x
-let in_uint32_range x = in_range (Uint32Ex.to_uint64 Uint32Ex.min_int) (Uint32Ex.to_uint64 Uint32Ex.max_int) x
-let in_int64_range x = in_range Uint64Ex.zero (Int64Ex.to_uint64 Int64Ex.max_int) x
 
 let z_of_bool (v:bool) =
   if v then Zpos (Coq_xH) else Z0

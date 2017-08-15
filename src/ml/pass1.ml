@@ -92,33 +92,42 @@ let compile_func (n:string) (al:IAst.rvalue list) =
                Format.asprintf "Unknonw function %s with %d arguments"
                                n (List.length al))
 
-(* Generally follows C99 §6.4.4.1 *)
+(* Generally follows C99 §6.4.4.1. Constants always unsigned *)
 let type_and_value_of_hex l s : (IAst.inttype * BinNums.coq_Z) =
-  if String.is_empty s then
-    raise (CompileError1 ("Empty hex string in 'vhex'", Some l))
+  let p = String.prefix s 2 in
+  if p<>"0x" && p<>"0X" && p<>"-0x" && p<>"-0X" then
+    raise (CompileError1 ("Hex value is expected with '0x' prefix in 'vhex'", Some l))
   else
     try
-      let v = Uint64Ex.of_string s in
-      let z = Uint64Ex.to_z v in
-      if String.suffix s 1 = "ul" then
-        (IAst.UInt64Type, z)
+      let open BinNums in
+      if String.suffix s 2 = "ul" then
+        let z = z_of_hexstr (String.drop_suffix s 2) in
+        match z with
+        | Zpos _ | Z0 ->  (IAst.UInt64Type,z)
+        | Zneg _ -> raise (CompileError1 (Format.asprintf "Invalid hex string \"%s\" in 'vhex'" s, Some l))
       else if String.suffix s 1 = "l" then
-        begin
-          if in_int64_range v then (IAst.UInt64Type, z)
-          else (IAst.UInt64Type, z) (* always fits *)
-        end
+        let z = z_of_hexstr (String.drop_suffix s 1) in
+        let t =
+          if Int64Ex.in_range z then IAst.Int64Type
+          else if Uint64Ex.in_range z then IAst.UInt64Type
+          else raise (CompileError1 (Format.asprintf "Hex constant value does not fit biggest integer type \"%s\" in 'vhex'" s, Some l))
+        in (t,z)
       else if String.suffix s 1 = "u" then
-        begin
-          if in_uint32_range v then (IAst.UInt32Type, z)
-          else (IAst.UInt64Type, z) (* always fits *)
-        end
+        let z = z_of_hexstr (String.drop_suffix s 1) in
+        let t =
+          if Uint32Ex.in_range z then IAst.UInt32Type
+          else if Uint64Ex.in_range z then IAst.UInt64Type
+          else raise (CompileError1 (Format.asprintf "Hex constant value does not fit biggest integer type \"%s\" in 'vhex'" s, Some l))
+        in (t,z)
       else
-        begin
-          if in_int32_range v then (IAst.Int32Type, z)
-          else if in_uint32_range v then (IAst.UInt32Type, z)
-          else if in_int64_range v then (IAst.UInt64Type, z)
-          else (IAst.UInt64Type, z) (* always fits *)
-        end
+        let z = z_of_hexstr s in
+        let t =
+          if Int32Ex.in_range z then IAst.Int32Type
+          else if Uint32Ex.in_range z then IAst.UInt32Type
+          else if Int64Ex.in_range z then IAst.Int64Type
+          else if Uint64Ex.in_range z then IAst.UInt64Type
+          else raise (CompileError1 (Format.asprintf "Hex constant value does not fit biggest integer type \"%s\" in 'vhex'" s, Some l))
+        in (t,z)
     with
     | Failure _ -> raise (CompileError1 (Format.asprintf "Invalid hex string \"%s\" in 'vhex'" s, Some l))
 

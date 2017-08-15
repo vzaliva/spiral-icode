@@ -445,7 +445,7 @@ let func_type n a =
                  msg "\t'%s' return type: %a\n" n pr_itype res
                  ; res
 
-(* Generally follows C99 §6.4.4.1 *)
+(* Generally follows C99 §6.4.4.1, but only unsigned values are allowed *)
 let iconst_of_hex l s : iconst =
   let (c:iconst_node) =
     if String.is_empty s then
@@ -457,19 +457,19 @@ let iconst_of_hex l s : iconst =
           UInt64Const v
         else if String.suffix s 1 = "l" then
           begin
-            if in_int64_range v then Int64Const (Int64Ex.of_uint64 v)
+            if Int64Ex.in_range_u v then Int64Const (Int64Ex.of_uint64 v)
             else UInt64Const v (* always fits *)
           end
         else if String.suffix s 1 = "u" then
           begin
-            if in_uint32_range v then UInt32Const (Uint32Ex.of_uint64 v)
+            if Uint32Ex.in_range_u v then UInt32Const (Uint32Ex.of_uint64 v)
             else UInt64Const v (* always fits *)
           end
         else
           begin
-            if in_int32_range v then Int32Const (Int32Ex.of_uint64 v)
-            else if in_uint32_range v then UInt32Const (Uint32Ex.of_uint64 v)
-            else if in_int64_range v then Int64Const (Int64Ex.of_uint64 v)
+            if Int32Ex.in_range_u v then Int32Const (Int32Ex.of_uint64 v)
+            else if Uint32Ex.in_range_u v then UInt32Const (Uint32Ex.of_uint64 v)
+            else if Int64Ex.in_range_u v then Int64Const (Int64Ex.of_uint64 v)
             else UInt64Const v (* always fits *)
           end
       with
