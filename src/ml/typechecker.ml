@@ -445,37 +445,19 @@ let func_type n a =
                  msg "\t'%s' return type: %a\n" n pr_itype res
                  ; res
 
-(* Generally follows C99 §6.4.4.1, but only unsigned values are allowed *)
-let iconst_of_hex l s : iconst =
-  let (c:iconst_node) =
-    if String.is_empty s then
-      raise (TypeError ("Empty hex string in 'vhex'", Some l))
-    else
-      try
-        let v = Uint64Ex.of_string s in
-        if String.suffix s 1 = "ul" then
-          UInt64Const v
-        else if String.suffix s 1 = "l" then
-          begin
-            if Int64Ex.in_range_u v then Int64Const (Int64Ex.of_uint64 v)
-            else UInt64Const v (* always fits *)
-          end
-        else if String.suffix s 1 = "u" then
-          begin
-            if Uint32Ex.in_range_u v then UInt32Const (Uint32Ex.of_uint64 v)
-            else UInt64Const v (* always fits *)
-          end
-        else
-          begin
-            if Int32Ex.in_range_u v then Int32Const (Int32Ex.of_uint64 v)
-            else if Uint32Ex.in_range_u v then UInt32Const (Uint32Ex.of_uint64 v)
-            else if Int64Ex.in_range_u v then Int64Const (Int64Ex.of_uint64 v)
-            else UInt64Const v (* always fits *)
-          end
-      with
-      | Failure _ -> raise (TypeError (Format.asprintf "Invalid hex string \"%s\" in 'vhex'" s, Some l))
-  in {node = c; loc = l }
-
+let iconst_of_hex bits l s : iconst =
+  let v = Uint64Ex.of_string s in
+  let c =
+    match bits with
+    | 8 -> if Uint8Ex.in_range_u v then UInt8Const (Uint8Ex.of_uint64 v)
+           else raise (TypeError (Format.asprintf "Hex constant \"%s\" does not fit 8 bit" s, Some l))
+    | 16 -> if Uint16Ex.in_range_u v then UInt16Const (Uint16Ex.of_uint64 v)
+            else raise (TypeError (Format.asprintf "Hex constant \"%s\" does not fit 16 bit" s, Some l))
+    | 32 -> if Uint32Ex.in_range_u v then UInt32Const (Uint32Ex.of_uint64 v)
+            else raise (TypeError (Format.asprintf "Hex constant \"%s\" does not fit 32 bit" s, Some l))
+    | 64 -> UInt64Const v
+    | _ -> raise (TypeError (Format.asprintf "Unexpected bit size %d for hex constant \"%s\" does not fit 32 bit" bits s, Some l))
+  in  {node = c; loc = l }
 
 let rec lvalue_type vmap (x:lvalue) =
   match x.lnode with
@@ -554,7 +536,7 @@ and rvalue_type vmap rv =
      else
        raise (TypeError ("Mismatch between int vector type and its value types\n", Some rv.rloc))
   | VHex sl ->
-     let consts = List.map ~f:(iconst_of_hex rv.rloc) sl in
+     let consts = List.map ~f:(iconst_of_hex (!Config.vecLen/(List.length sl)) rv.rloc) sl in
      let it = type_of_const (List.hd_exn consts).node in
      VecType (I it, List.length consts)
   | RCast (t,rv) ->
