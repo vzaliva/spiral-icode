@@ -32,6 +32,7 @@ let specs =
     ( 'd', "double", (set Config.isDouble true), None, "64-bit (8-byte) floating point mode mode");
     ( '4', "32", (set Config.is64bit false), None,  "32-bit (4-byte) addressing");
     ( '8', "64", (set Config.is64bit true), None,   "64-bit (8-byte) addressing");
+    ( 'l', "veclen", None, Some (fun x -> ignore (set Config.vecLen (int_of_string x))),   "default length in bits of vector registers");
   ]
 
 let parse_cmdline () =
