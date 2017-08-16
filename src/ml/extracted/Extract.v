@@ -1,4 +1,5 @@
 Require Icode.IAst.
+Require Icode.ITypes.
 
 Require ExtrOcamlBasic.
 Require ExtrOcamlString.
@@ -19,3 +20,4 @@ Cd "ml/extracted".
 Extraction Library ExtrOcamlIntConv.
 Extraction Library BinInt.
 Recursive Extraction Library IAst.
+Recursive Extraction Library ITypes.

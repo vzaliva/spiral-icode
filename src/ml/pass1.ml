@@ -8,6 +8,7 @@ open IType
 open IIntType
 open IFloatType
 open IArithType
+open ITypes
 open Ints
 open Utils
 open Option

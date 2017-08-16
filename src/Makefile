@@ -14,7 +14,7 @@ COQEXEC="$(COQBIN)coqtop" -q -w none $(COQINCLUDES) -batch -load-vernac-source
 MENHIR=menhir
 CP=cp
 
-COQFILES := IAst
+COQFILES := IAst ITypes
 OLLVMFILES := 
 
 VFILES := $(COQFILES:%=coq/%.v)
