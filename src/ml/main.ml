@@ -21,6 +21,13 @@ let exitOK     = 0
 let exitBadArg = 1
 let exitErr    = 2
 
+let set_vec_len x =
+  let n = int_of_string x in
+  if n=64 || n=128 then
+    ignore (set Config.vecLen n)
+  else
+    raise (Getopt.Error "unsupported value for 'veclen'. Currently only 64 and 128 are supported")
+
 let specs =
   [
     ( 'v', "version", Some (fun _ -> Printf.printf "%s %s\n" prograname version ; exit 0), None,
@@ -32,7 +39,7 @@ let specs =
     ( 'd', "double", (set Config.isDouble true), None, "64-bit (8-byte) floating point mode mode");
     ( '4', "32", (set Config.is64bit false), None,  "32-bit (4-byte) addressing");
     ( '8', "64", (set Config.is64bit true), None,   "64-bit (8-byte) addressing");
-    ( 'l', "veclen", None, Some (fun x -> ignore (set Config.vecLen (int_of_string x))),   "default length in bits of vector registers");
+    ( 'l', "veclen", None, Some set_vec_len, "default length in bits of vector registers (64/128)");
   ]
 
 let parse_cmdline () =
