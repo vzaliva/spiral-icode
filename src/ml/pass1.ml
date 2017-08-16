@@ -132,6 +132,25 @@ let type_and_value_of_hex l s : (IAst.inttype * BinNums.coq_Z) =
     with
     | Failure _ -> raise (CompileError1 (Format.asprintf "Invalid hex string \"%s\" in 'vhex'" s, Some l))
 
+let el_type_of_vhex l = function
+  | 8  -> IAst.UInt8Type
+  | 16 -> IAst.UInt16Type
+  | 32 -> IAst.UInt32Type
+  | 64 -> IAst.UInt64Type
+  | bits -> raise (CompileError1 (Format.asprintf "Unexpected bit size %d for vhex" bits, Some l))
+
+let typed_z_of_hex l t s =
+  let v = z_of_hexstr s in
+  match t with
+  | IAst.UInt8Type -> if Uint8Ex.in_range v then v
+                      else raise (CompileError1 (Format.asprintf "Hex constant \"%s\" does not fit 8 bit" s, Some l))
+  | IAst.UInt16Type -> if Uint16Ex.in_range v then v
+                       else raise (CompileError1 (Format.asprintf "Hex constant \"%s\" does not fit 16 bit" s, Some l))
+  | IAst.UInt32Type -> if Uint32Ex.in_range v then v
+                       else raise (CompileError1 (Format.asprintf "Hex constant \"%s\" does not fit 32 bit" s, Some l))
+  | IAst.UInt64Type -> if Uint64Ex.in_range v then v
+                       else raise (CompileError1 (Format.asprintf "Hex constant \"%s\" does not fit 64 bit" s, Some l))
+  | _ -> raise (CompileError1 (Format.asprintf "Unsupported type for hex constant \"%s\" does not fit 32 bit" s, Some l))
 
 let rec compile_lvalue vmap vindex (x:lvalue) =
   match x.lnode with
@@ -240,10 +259,9 @@ and compile_rvalue vmap vindex rv =
      else
        raise (CompileError1 ("Mismatch between int vector type and its value types\n", Some rv.rloc))
   | VHex sl ->
-     let consts = List.map ~f:(type_and_value_of_hex rv.rloc) sl in
-     (* TODO: unify types of all vhex constants *)
-     let it,_ = List.hd_exn consts in
-     IAst.IConstArr (it, List.map ~f:snd consts)
+     let it = el_type_of_vhex rv.rloc (!Config.vecLen/(List.length sl)) in
+     let consts = List.map ~f:(typed_z_of_hex rv.rloc it) sl in
+     IAst.IConstArr (it, consts)
   | RCast (t,rv) -> IAst.RCast (compile_itype t, compile_rvalue vmap vindex rv)
   | RDeref v -> IAst.RDeref (compile_rvalue vmap vindex v)
   | NthRvalue (v, i) -> IAst.NthRvalue (compile_rvalue vmap vindex v,

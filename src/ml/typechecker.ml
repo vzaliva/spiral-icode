@@ -96,8 +96,8 @@ let rec func_type_arith_binop name al =
          VecType (usual_arithmetic_conversion true vt1 vt2, l1)
        else
          raise_TypeError
-                  (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
-                                   pr_itype a0 pr_itype a1 name)
+           (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
+                            pr_itype a0 pr_itype a1 name)
 
     | ArrType (A vt1, l1), ArrType (A vt2, l2) ->
        let va0 = VecType (vt1, l1) in
@@ -106,10 +106,10 @@ let rec func_type_arith_binop name al =
          func_type_arith_binop name [va0; va1]
        else
          raise_TypeError (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
-                                           pr_itype a0 pr_itype a1 name)
+                                          pr_itype a0 pr_itype a1 name)
     | _ , _ -> raise_TypeError
-                        (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
-                                         pr_itype a0 pr_itype a1 name)
+                 (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
+                                  pr_itype a0 pr_itype a1 name)
 
 let rec func_type_add name al =
   let open List in
@@ -123,8 +123,8 @@ let rec func_type_add name al =
     | PtrType _, A (I _) -> a0
     | A (I _), PtrType _ -> a1
     | _ , _ -> raise_TypeError
-                        (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
-                                         pr_itype a0 pr_itype a1 name)
+                 (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
+                                  pr_itype a0 pr_itype a1 name)
 
 let func_type_arith_nop name al =
   let open List in
@@ -172,9 +172,9 @@ let type_conditional ty1 ty2 =
   | PtrType (_,_), A (I _) -> ty1
   | A (I _), PtrType (_,_) -> ty2
   | _, _ -> match type_combine ty1 ty2 with
-              | Some t -> t
-              | None -> raise_TypeError
-                                 (Format.asprintf "Incompatible arguments for conditional operator:  %a and %a" pr_itype ty1 pr_itype ty2)
+            | Some t -> t
+            | None -> raise_TypeError
+                        (Format.asprintf "Incompatible arguments for conditional operator:  %a and %a" pr_itype ty1 pr_itype ty2)
 
 let func_type_cond name a =
   let open List in
@@ -243,8 +243,8 @@ let func_type_vbinop t name a =
     let a1 = nth_exn a 1 in
     if check_coercion a0 t && check_coercion a1 t then t
     else raise_TypeError
-                  (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
-                                   pr_itype a0 pr_itype a1 name)
+           (Format.asprintf "Incompatible arguments types %a, %a for '%s'"
+                            pr_itype a0 pr_itype a1 name)
 
 let func_type_vbinop_with_vparam t name a =
   let open List in
@@ -338,10 +338,10 @@ let builtins_map =
       ("vunpackhi_8x32f", func_type_vbinop (VecType (F FloatType, 8))) ;
 
       ("cmpge_2x64f", a_func_type [VecType (F DoubleType, 2); VecType (F DoubleType, 2)]
-                                (VecType (F DoubleType, 2)));
+                                  (VecType (F DoubleType, 2)));
 
       ("testc_4x32i", a_func_type [VecType (I Int32Type, 4); VecType (I Int32Type, 4)]
-                                (A (I Int32Type)));
+                                  (A (I Int32Type)));
       ("testnzc_4x32i", a_func_type [VecType (I Int32Type, 4); VecType (I Int32Type, 4)]
                                     (A (I Int32Type)));
 
@@ -437,7 +437,7 @@ let var_type vmap v =
 let func_type n a =
   let open Format in
   msg "Resolving function: @[<h>%s(%a)@]@\n" n
-          (pp_print_list ~pp_sep:(fun x _ -> pp_print_text x ", ") pr_itype) a
+      (pp_print_list ~pp_sep:(fun x _ -> pp_print_text x ", ") pr_itype) a
   ;
     match (String.Map.Tree.find builtins_map n) with
     | None -> raise_TypeError ("Unknown function '" ^ n ^ "'" )
@@ -484,84 +484,84 @@ let rec lvalue_type vmap (x:lvalue) =
        | _ -> raise (TypeError (Format.asprintf "Invalid type %a in NTH" pr_itype vt, Some x.lloc))
 and rvalue_type vmap rv =
   (let fconst_type (f:fconst) =
-    match f.node with
-    | FPLiteral (t,_) -> t
-    | FloatEPS -> FloatType
-    | DoubleEPS -> DoubleType  in
+     match f.node with
+     | FPLiteral (t,_) -> t
+     | FloatEPS -> FloatType
+     | DoubleEPS -> DoubleType  in
    let iconst_type (c:iconst) = match c.node with
-    | Int8Const   _ -> Int8Type
-    | Int16Const  _ -> Int16Type
-    | Int32Const  _ -> Int32Type
-    | Int64Const  _ -> Int64Type
-    | UInt8Const  _ -> UInt8Type
-    | UInt16Const _ -> UInt16Type
-    | UInt32Const _ -> UInt32Type
-    | UInt64Const _ -> UInt64Type
-    | BoolConst   _ -> BoolType in
-  match rv.rnode with
-  | VarRValue v -> var_type vmap v
-  | FunCallValue (n,a) ->
-     let al = (List.map ~f:(rvalue_type vmap) a) in
-     let ft =
-       (try
-         func_type n al
-       with
-       | TypeError (msg, None) -> raise (TypeError (msg, Some rv.rloc))
-       ) in
-     ft
-  | FConst fc -> A (F (fconst_type fc))
-  | IConst ic -> A (I (iconst_type ic))
-  | FConstArr (at, fl) ->
-     let flt = List.map ~f:fconst_type fl in
-     if List.for_all flt (eq_float_type at) then
-       ArrType (A (F at) , List.length fl)
-     else
-       raise (TypeError ("Mismatch between float array type and its value types", Some rv.rloc))
-  | IConstArr (at, il) ->
-     let ilt = List.map ~f:iconst_type il in
-     if List.for_all ilt (eq_int_type at) then
-       ArrType (A (I at) , List.length il)
-     else
-       raise (TypeError ("Mismatch between int array type and its value types\n", Some rv.rloc))
-  | FConstVec (at, fl) ->
-     let flt = List.map ~f:fconst_type fl in
-     if List.for_all flt (eq_float_type at) then
-       VecType (F at , List.length fl)
-     else
-       raise (TypeError ("Mismatch between float vector type and its value types\n", Some rv.rloc))
-  | IConstVec (at, il) ->
-     let ilt = List.map ~f:iconst_type il in
-     if List.for_all ilt (eq_int_type at) then
-       VecType (I at , List.length il)
-     else
-       raise (TypeError ("Mismatch between int vector type and its value types\n", Some rv.rloc))
-  | VHex sl ->
-     let consts = List.map ~f:(iconst_of_hex (!Config.vecLen/(List.length sl)) rv.rloc) sl in
-     let it = type_of_const (List.hd_exn consts).node in
-     VecType (I it, List.length consts)
-  | RCast (t,rv) ->
-     let rt = rvalue_type vmap rv in
-     if check_cast rt t then t
-     else raise (TypeError (Format.asprintf "Illegal rvalue cast from %a to %a."
-                                            pr_itype rt
-                                            pr_itype t, Some rv.rloc));
-  | RDeref v -> (match rvalue_type vmap v with
-                 | PtrType (t,_) -> t
-                 | t -> raise (TypeError (Format.asprintf "Dereferencing non-pointer type %a" pr_itype t, Some rv.rloc)))
-  | NthRvalue (v, i) ->
-     let it = rvalue_type vmap i in
-     if not (is_integer it) then
-       raise (TypeError (Format.asprintf "Invalid index type %a in NTH" pr_itype it, Some rv.rloc))
-     else
-       (match rvalue_type vmap v with
-        | ArrType (t,_) | PtrType (t,_) -> t
-        | t -> raise (TypeError (Format.asprintf "Invalid value type %a in NTH" pr_itype t, Some rv.rloc)))
-  | VdupRvalue (v, il) ->
-     match rvalue_type vmap v, il.node with
-     | A vt, Int32Const ic -> let i = Int32Ex.to_int ic in
+     | Int8Const   _ -> Int8Type
+     | Int16Const  _ -> Int16Type
+     | Int32Const  _ -> Int32Type
+     | Int64Const  _ -> Int64Type
+     | UInt8Const  _ -> UInt8Type
+     | UInt16Const _ -> UInt16Type
+     | UInt32Const _ -> UInt32Type
+     | UInt64Const _ -> UInt64Type
+     | BoolConst   _ -> BoolType in
+   match rv.rnode with
+   | VarRValue v -> var_type vmap v
+   | FunCallValue (n,a) ->
+      let al = (List.map ~f:(rvalue_type vmap) a) in
+      let ft =
+        (try
+           func_type n al
+         with
+         | TypeError (msg, None) -> raise (TypeError (msg, Some rv.rloc))
+        ) in
+      ft
+   | FConst fc -> A (F (fconst_type fc))
+   | IConst ic -> A (I (iconst_type ic))
+   | FConstArr (at, fl) ->
+      let flt = List.map ~f:fconst_type fl in
+      if List.for_all flt (eq_float_type at) then
+        ArrType (A (F at) , List.length fl)
+      else
+        raise (TypeError ("Mismatch between float array type and its value types", Some rv.rloc))
+   | IConstArr (at, il) ->
+      let ilt = List.map ~f:iconst_type il in
+      if List.for_all ilt (eq_int_type at) then
+        ArrType (A (I at) , List.length il)
+      else
+        raise (TypeError ("Mismatch between int array type and its value types\n", Some rv.rloc))
+   | FConstVec (at, fl) ->
+      let flt = List.map ~f:fconst_type fl in
+      if List.for_all flt (eq_float_type at) then
+        VecType (F at , List.length fl)
+      else
+        raise (TypeError ("Mismatch between float vector type and its value types\n", Some rv.rloc))
+   | IConstVec (at, il) ->
+      let ilt = List.map ~f:iconst_type il in
+      if List.for_all ilt (eq_int_type at) then
+        VecType (I at , List.length il)
+      else
+        raise (TypeError ("Mismatch between int vector type and its value types\n", Some rv.rloc))
+   | VHex sl ->
+      let consts = List.map ~f:(iconst_of_hex (!Config.vecLen/(List.length sl)) rv.rloc) sl in
+      let it = type_of_const (List.hd_exn consts).node in
+      VecType (I it, List.length consts)
+   | RCast (t,rv) ->
+      let rt = rvalue_type vmap rv in
+      if check_cast rt t then t
+      else raise (TypeError (Format.asprintf "Illegal rvalue cast from %a to %a."
+                                             pr_itype rt
+                                             pr_itype t, Some rv.rloc));
+   | RDeref v -> (match rvalue_type vmap v with
+                  | PtrType (t,_) -> t
+                  | t -> raise (TypeError (Format.asprintf "Dereferencing non-pointer type %a" pr_itype t, Some rv.rloc)))
+   | NthRvalue (v, i) ->
+      let it = rvalue_type vmap i in
+      if not (is_integer it) then
+        raise (TypeError (Format.asprintf "Invalid index type %a in NTH" pr_itype it, Some rv.rloc))
+      else
+        (match rvalue_type vmap v with
+         | ArrType (t,_) | PtrType (t,_) -> t
+         | t -> raise (TypeError (Format.asprintf "Invalid value type %a in NTH" pr_itype t, Some rv.rloc)))
+   | VdupRvalue (v, il) ->
+      match rvalue_type vmap v, il.node with
+      | A vt, Int32Const ic -> let i = Int32Ex.to_int ic in
                                if is_power_of_2 i then VecType (vt, i)
                                else raise (TypeError ("Size in VDUP must be power of 2. Got: " ^ (string_of_int i), Some il.loc))
-     | t,_ -> raise (TypeError (Format.asprintf "Invalid value type %a in VDUP" pr_itype t, Some v.rloc)))
+      | t,_ -> raise (TypeError (Format.asprintf "Invalid value type %a in VDUP" pr_itype t, Some v.rloc)))
 
 (*
    Peforms various type and strcutural correctness checks:
@@ -615,8 +615,8 @@ let typecheck valist prog =
              ; raise (TypeError msg)
          ) in
        (match ft with
-       | VoidType -> u
-       | _ ->  raise (TypeError (Format.asprintf "Calling function %s which returns %a instead of void " n pr_itype ft, Some x.loc)))
+        | VoidType -> u
+        | _ ->  raise (TypeError (Format.asprintf "Calling function %s which returns %a instead of void " n pr_itype ft, Some x.loc)))
     | Function (fn,fr,params,body) ->
        typecheck ((fn,fr)::fstack) (add_vars u params) body
     | Decl (params,body) ->
@@ -644,7 +644,7 @@ let typecheck valist prog =
          raise (TypeError (Format.asprintf "Incompatible types in assignment %a=[%a]."
                                            pr_itype lt
                                            pr_itype rt
-               , Some x.loc));
+                          , Some x.loc));
        check_vars_in_lvalue u l;
        check_vars_in_rvalue u r;
        u

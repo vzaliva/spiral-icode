@@ -12,7 +12,7 @@
 
 ## Pass1 ###
 
-* in `vhex` find type based on all elements (now takes 1st)
+* ?
 
 ## COQ Integration: ##
 
