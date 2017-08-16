@@ -3,8 +3,11 @@ open Sexplib
 open Stdint
 open ExtrOcamlIntConv
 open BinNums
+open BinInt
+open Datatypes
 
-let z_compare (a:coq_Z) (b:coq_Z) : int = 0 (* TODO *)
+let z_compare (x:coq_Z) (y:coq_Z) =
+  match Z.compare x y with Lt -> -1 | Eq -> 0 | Gt -> 1
 
 (* Convert binary string with optiona '0b' or '0B' prefix and sign to Z *)
 let z_of_binstr (s:string) =

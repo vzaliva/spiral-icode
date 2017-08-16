@@ -140,3 +140,4 @@ Inductive istmt :=
 
 Inductive iprogram :=
 | Program (bindings: varname -> option itype) (body:istmt). (* TODO: map? *)
+

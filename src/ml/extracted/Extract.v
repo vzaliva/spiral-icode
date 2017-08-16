@@ -5,7 +5,7 @@ Require ExtrOcamlString.
 Require ExtrOcamlIntConv.
 
 Extraction Language Ocaml.
-Extraction Blacklist String List.
+Extraction Blacklist String List Nat.
 
 (* OCaml pervasive types ---------------------------------------------------- *)
 Extract Inlined Constant IAst.float => "string".
@@ -17,5 +17,5 @@ Set Extraction AccessOpaque.
 Cd "ml/extracted".
 
 Extraction Library ExtrOcamlIntConv.
-
+Extraction Library BinInt.
 Recursive Extraction Library IAst.
