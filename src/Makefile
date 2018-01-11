@@ -60,7 +60,7 @@ OCAMLINCLUDES=$(patsubst %,-I %, $(OCAMLDIRS))
 print-ocaml-includes:
 	@echo $(OCAMLINCLUDES)
 
-OCAMLPACKAGES := core,stdint,ppx_jane,sexplib,ppx_sexp_conv,ppx_compare,getopt
+OCAMLPACKAGES := core,stdint,ppx_jane,sexplib,ppx_sexp_conv,ppx_compare,ppx_enumerate,getopt
 
 main.native: ml/*.ml ml/extracted/*.ml
 	@echo "Compiling $(EXE)"
