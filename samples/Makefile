@@ -14,7 +14,7 @@ dft16.s.txt: dft16.c Makefile
 	gcc -I $(SPIRAL_HOME) -Wa,-adhln -g -c -O0 -m64 dft16.c > dft16.s.txt
 
 dft16.ll: dft16.c Makefile
-	clang -I $(SPIRAL_HOME) -c -S -O0 -emit-llvm dft16.c
+	clang -I $(SPIRAL_HOME) -c -S -O0 -g0 -emit-llvm dft16.c
 
 dft16.o: dft16.c Makefile
 	 clang -I $(SPIRAL_HOME) -c -m64 dft16.c 
