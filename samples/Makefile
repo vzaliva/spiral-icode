@@ -7,7 +7,7 @@ clean: .PHONY
 	rm -f dft16.o dft16.s dft16.s.txt dwmonitor.s dwmonitor.o
 
 dft16.s: dft16.c Makefile
-	gcc -I $(SPIRAL_HOME) -c -S -O0 -m64 dft16.c 
+	gcc -I $(SPIRAL_HOME) -c -S -O0 -m64 -Wextra -fverbose-asm dft16.c 
 
 dft16.s.txt: dft16.c Makefile
 	rm -f dft16.s.txt
