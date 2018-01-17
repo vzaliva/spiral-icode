@@ -33,7 +33,7 @@ int dwmonitor(float  *X, double  *D) {
     int w1;
     {
         unsigned _xm = _mm_getcsr();
-        _mm_setcsr(_xm & 0xffff0000 | 0x0000dfc0);
+        _mm_setcsr((_xm & 0xffff0000) | 0x0000dfc0);
         u5 = _mm_set1_pd(0.0);
         u2 = _mm_cvtps_pd(_mm_addsub_ps(_mm_set1_ps(FLT_MIN), _mm_set1_ps(X[0])));
         u1 = _mm_set_pd(1.0, (-1.0));
