@@ -1,9 +1,8 @@
 SPIRAL_HOME=~/src/spiral
 
-all: dft16.o dft16.ll dft16.s dft16.s.txt
-#dwmonitor.o
+all: dft16.o dft16.ll dft16.s dft16.s.txt dwmonitor.o
 
-clean: .PHONY
+clean:
 	rm -f dft16.o dft16.s dft16.s.txt dwmonitor.s dwmonitor.o
 
 dft16.s: dft16.c Makefile
@@ -14,13 +13,13 @@ dft16.s.txt: dft16.c Makefile
 	gcc -I $(SPIRAL_HOME) -Wa,-adhln -g -c -O0 -m64 dft16.c > dft16.s.txt
 
 dft16.ll: dft16.c Makefile
-	clang -I $(SPIRAL_HOME) -c -S -O0 -g0 -emit-llvm dft16.c
+	clang -I $(SPIRAL_HOME) -c -S -O0 -g0 -msse4 -emit-llvm dft16.c
 
 dft16.o: dft16.c Makefile
-	 clang -I $(SPIRAL_HOME) -c -m64 dft16.c 
+	 clang -I $(SPIRAL_HOME) -c -m64 -msse4 dft16.c 
 
 dwmonitor.o: dwmonitor.c Makefile
-	 gcc -I $(SPIRAL_HOME) -c -m64 dwmonitor.c 
+	 gcc -I $(SPIRAL_HOME) -c -m64 -msse4 dwmonitor.c 
 
 
 
