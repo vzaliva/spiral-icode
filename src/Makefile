@@ -64,7 +64,7 @@ OCAMLPACKAGES := core,stdint,ppx_jane,sexplib,ppx_sexp_conv,ppx_compare,ppx_enum
 
 main.native: ml/*.ml ml/extracted/*.ml
 	@echo "Compiling $(EXE)"
-	ocamlbuild -tag thread -r -use-menhir -yaccflag --explain $(OCAMLINCLUDES) -use-ocamlfind -pkg $(OCAMLPACKAGES) main.native
+	ocamlbuild -tags bin_annot,annot,thread -r -use-menhir -yaccflag --explain $(OCAMLINCLUDES) -use-ocamlfind -pkg $(OCAMLPACKAGES) main.native
 
 $(EXE): main.native
 	cp main.native $(EXE)
