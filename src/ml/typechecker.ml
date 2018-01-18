@@ -536,7 +536,7 @@ and rvalue_type vmap rv =
       else
         raise (TypeError ("Mismatch between int vector type and its value types\n", Some rv.rloc))
    | VHex sl ->
-      let consts = List.map ~f:(iconst_of_hex (!Config.vecLen/(List.length sl)) rv.rloc) sl in
+      let consts = List.map ~f:(iconst_of_hex (!Constants.vecLen/(List.length sl)) rv.rloc) sl in
       let it = type_of_const (List.hd_exn consts).node in
       VecType (I it, List.length consts)
    | RCast (t,rv) ->

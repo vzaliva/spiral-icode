@@ -1,7 +1,7 @@
 open Typechecker
 open Pass1
 
-open Config
+open Constants
 open Utils
 open Typetools
 
@@ -24,7 +24,7 @@ let exitErr    = 2
 let set_vec_len x =
   let n = int_of_string x in
   if n=64 || n=128 then
-    ignore (set Config.vecLen n)
+    ignore (set Constants.vecLen n)
   else
     raise (Getopt.Error "unsupported value for 'veclen'. Currently only 64 and 128 are supported")
 
@@ -33,12 +33,12 @@ let specs =
     ( 'v', "version", Some (fun _ -> Printf.printf "%s %s\n" prograname version ; exit 0), None,
       "Show program version");
     ( 'h', "help", Some usage_action, None,         "Show this help");
-    ( 'd', "debug", (set Config.debug true), None,  "Debug");
-    ( 'e', "stop",  (set Config.stop_on_err true), None,  "Stop on first error");
-    ( 'f', "float", (set Config.isDouble false), None,  "32-bit (4-byte) floating point mode");
-    ( 'd', "double", (set Config.isDouble true), None, "64-bit (8-byte) floating point mode mode");
-    ( '4', "32", (set Config.is64bit false), None,  "32-bit (4-byte) addressing");
-    ( '8', "64", (set Config.is64bit true), None,   "64-bit (8-byte) addressing");
+    ( 'd', "debug", (set Constants.debug true), None,  "Debug");
+    ( 'e', "stop",  (set Constants.stop_on_err true), None,  "Stop on first error");
+    ( 'f', "float", (set Constants.isDouble false), None,  "32-bit (4-byte) floating point mode");
+    ( 'd', "double", (set Constants.isDouble true), None, "64-bit (8-byte) floating point mode mode");
+    ( '4', "32", (set Constants.is64bit false), None,  "32-bit (4-byte) addressing");
+    ( '8', "64", (set Constants.is64bit true), None,   "64-bit (8-byte) addressing");
     ( 'l', "veclen", None, Some set_vec_len, "default length in bits of vector registers (64/128)");
   ]
 
@@ -81,7 +81,7 @@ let _ =
     | Parser.Error ->
        Format.eprintf "%a Syntax error (parsing error)\n" pr_pos (Lexing.lexeme_start_p lineBuffer);
        exitErr
-    | Syntaxerr.Error msg ->
+    | Syntaxerror.Error msg ->
        Format.eprintf "%a %s\n" pr_pos (Lexing.lexeme_start_p lineBuffer) msg ;
        exitErr
   in
@@ -90,7 +90,7 @@ let _ =
     match l with
     | [] -> lastErr
     | f::l' -> let rc = process_file f in
-               if rc <> exitOK && !Config.stop_on_err then
+               if rc <> exitOK && !Constants.stop_on_err then
                  let rls = List.length l' in
                  (if rls <> 0 then
                    msg "*** Compilation of file %s exited with code %d. The remaining %d will not be processed\n" f rc rls) ;

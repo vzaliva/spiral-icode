@@ -1,0 +1,8 @@
+(jbuild_version 1)
+
+(library
+ ((name extracted)
+  (wrapped false)
+  (synopsis "ML code extracted from Coq")
+  ))
+

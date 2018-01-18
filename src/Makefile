@@ -20,9 +20,7 @@ OLLVMFILES :=
 VFILES := $(COQFILES:%=coq/%.v)
 VOFILES := $(COQFILES:%=coq/%.vo)
 
-EXE=icodec
-
-.PHONY: clean test run print-includes print-ocaml-includes coq extracted depend
+.PHONY: clean test run print-includes coq extracted depend
 
 all:
 	@test -f .depend || $(MAKE) depend
@@ -51,23 +49,14 @@ depend: $(VFILES)
 	@echo "Analyzing Coq dependencies"
 	@$(COQDEP) $^ > .depend
 
-# Directories containing plain Caml code
-OCAMLDIRS= $(EXTRACTDIR) $(MLDIR) 
-
 COMMA=,
-OCAMLINCLUDES=$(patsubst %,-I %, $(OCAMLDIRS))
 
-print-ocaml-includes:
-	@echo $(OCAMLINCLUDES)
+EXE=ml/_build/default/main.exe
 
-OCAMLPACKAGES := core,stdint,ppx_jane,sexplib,ppx_sexp_conv,ppx_compare,ppx_enumerate,getopt
-
-main.native: ml/*.ml ml/extracted/*.ml
+$(EXE): ml/*.ml ml/extracted/*.ml
 	@echo "Compiling $(EXE)"
-	ocamlbuild -tags bin_annot,annot,thread -r -use-menhir -yaccflag --explain $(OCAMLINCLUDES) -use-ocamlfind -pkg $(OCAMLPACKAGES) main.native
+	(cd ml; jbuilder build main.exe)
 
-$(EXE): main.native
-	cp main.native $(EXE)
 
 # these are supposed to work only on floats
 SCRIPTSF = dft16.g dft48.g dft16-SSE_4x32f.g dft32-SSE_4x32f.g dft48-SSE_4x32f.g dft64-SSE_4x32f.g dft128-AVX_4x64f.g dft128-AVX_4x64f.g
@@ -87,7 +76,7 @@ clean:
 	rm -f $(VOFILES)
 	rm -rf doc/*.glob
 	rm -f $(TSTAMP) $(EXTRACTDIR)/*.ml $(EXTRACTDIR)/*.mli
-	ocamlbuild -clean
+	(cd ml; jbuilder clean)
 	rm -rf output
 	rm -f $(EXE)
 

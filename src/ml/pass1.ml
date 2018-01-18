@@ -259,7 +259,7 @@ and compile_rvalue vmap vindex rv =
      else
        raise (CompileError1 ("Mismatch between int vector type and its value types\n", Some rv.rloc))
   | VHex sl ->
-     let it = el_type_of_vhex rv.rloc (!Config.vecLen/(List.length sl)) in
+     let it = el_type_of_vhex rv.rloc (!Constants.vecLen/(List.length sl)) in
      let consts = List.map ~f:(typed_z_of_hex rv.rloc it) sl in
      IAst.IConstArr (it, consts)
   | RCast (t,rv) -> IAst.RCast (compile_itype t, compile_rvalue vmap vindex rv)

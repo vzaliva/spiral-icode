@@ -1,0 +1,13 @@
+(jbuild_version 1)
+
+(menhir
+ ((flags (--explain))
+  (modules (parser))))
+
+(ocamllex (lexer))
+
+(executables
+ ((names (main))
+  (libraries (extracted core stdint sexplib getopt))
+  (preprocess (pps (ppx_jane ppx_sexp_conv ppx_compare ppx_enumerate))))
+)

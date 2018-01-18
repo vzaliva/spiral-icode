@@ -5,7 +5,7 @@
     open IArithType
     open IFloatType
     open IType
-    open Config
+    open Constants
     open Ints
 %}
 
@@ -84,7 +84,7 @@ i_type:
                 {
                     let n = int_of_string s in
                     if is_power_of_2 n then VecType (t, n) 
-                        else raise (Syntaxerr.Error ("Size of vector must be power of 2. Got: " ^ s))
+                        else raise (Syntaxerror.Error ("Size of vector must be power of 2. Got: " ^ s))
                 }
   ;
 
@@ -114,7 +114,7 @@ i_iconst:
                     | UInt16Type -> mkiconst $symbolstartpos $endpos (UInt16Const (Uint16Ex.of_string i))
                     | UInt32Type -> mkiconst $symbolstartpos $endpos (UInt32Const (Uint32Ex.of_string i))
                     | UInt64Type -> mkiconst $symbolstartpos $endpos (UInt64Const (Uint64Ex.of_string i))
-                    | _ -> raise (Syntaxerr.Error "Internal error")
+                    | _ -> raise (Syntaxerror.Error "Internal error")
                 }
   | VALUE LPAREN t=i_signed_itype COMMA i=i_int RPAREN
                 {
@@ -123,7 +123,7 @@ i_iconst:
                     | Int16Type -> mkiconst $symbolstartpos $endpos (Int16Const (Int16Ex.of_string i))
                     | Int32Type -> mkiconst $symbolstartpos $endpos (Int32Const (Int32Ex.of_string i))
                     | Int64Type -> mkiconst $symbolstartpos $endpos (Int64Const (Int64Ex.of_string i))
-                    | _ -> raise (Syntaxerr.Error "Internal error")
+                    | _ -> raise (Syntaxerror.Error "Internal error")
                 }
   ;
 
@@ -143,7 +143,7 @@ i_rvalue:
                 LBRACKET l=separated_nonempty_list(COMMA, i_fconst) RBRACKET RPAREN
                 {
                     if (int_of_string s) <> (List.length l) then
-                        raise (Syntaxerr.Error "list size mismatch")
+                        raise (Syntaxerror.Error "list size mismatch")
                     else
                         mkrvalue $symbolstartpos $endpos (FConstArr (t,l))
                 }
@@ -152,7 +152,7 @@ i_rvalue:
                 LBRACKET l=separated_nonempty_list(COMMA, i_iconst) RBRACKET RPAREN
                 {
                     if (int_of_string s) <> (List.length l) then
-                        raise (Syntaxerr.Error "list size mismatch")
+                        raise (Syntaxerror.Error "list size mismatch")
                     else
                         mkrvalue $symbolstartpos $endpos (IConstArr (t,l))
                 }
@@ -161,7 +161,7 @@ i_rvalue:
                 LBRACKET l=separated_nonempty_list(COMMA, i_fconst) RBRACKET RPAREN
                 {
                     if (int_of_string s) <> (List.length l) then
-                        raise (Syntaxerr.Error "list size mismatch")
+                        raise (Syntaxerror.Error "list size mismatch")
                     else
                         mkrvalue $symbolstartpos $endpos (FConstVec (t,l))
                 }
@@ -170,7 +170,7 @@ i_rvalue:
                 LBRACKET l=separated_nonempty_list(COMMA, i_iconst) RBRACKET RPAREN
                 {
                     if (int_of_string s) <> (List.length l) then
-                        raise (Syntaxerr.Error "list size mismatch")
+                        raise (Syntaxerror.Error "list size mismatch")
                     else
                         mkrvalue $symbolstartpos $endpos (IConstVec (t,l))
                 }

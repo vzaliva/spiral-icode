@@ -6,6 +6,8 @@ SPIRAL_C_FLAGS=-O3 -g0 -c -m64 -msse4
 SPIRAL_C_S_FLAGS=-S -Wextra -fverbose-asm
 SPIRAL_C_LL_FLAGS=-c -S -O3 -g0 -msse4 -emit-llvm
 
+.PHONY: clean
+
 clean:
 	rm -f dft16.o dft16.s dft16.s.txt dwmonitor.s dwmonitor.o
 

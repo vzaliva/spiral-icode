@@ -1,4 +1,2 @@
 src/ml/.merlin
-src/ml/jbuild
 src/ml/extracted/.merlin
-src/ml/extracted/jbuild

@@ -6,9 +6,9 @@ open IArithType
 open Ints
 open Utils
 
-let realFType () = if !Config.isDouble then DoubleType else FloatType
+let realFType () = if !Constants.isDouble then DoubleType else FloatType
 let realAType () = F (realFType ())
-let ptrSizeOf () = if !Config.is64bit then 8 else 4
+let ptrSizeOf () = if !Constants.is64bit then 8 else 4
 
 (* --- helper functoin, in IArithType *)
 let realType () = A (realAType ())

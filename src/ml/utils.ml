@@ -1,5 +1,5 @@
 open Lexing
-open Config
+open Constants
 
 let msg x =
   let open Format in
