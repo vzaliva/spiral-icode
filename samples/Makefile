@@ -1,23 +1,26 @@
 SPIRAL_HOME=~/src/spiral
 
-all: dft16.o dft16.ll dft16.s dwmonitor.o dwmonitor.ll dwmonitor.s
+all: dft16.o dft16.ll dft16.s dwmonitor.o dwmonitor.ll dwmonitor.s dft16test.ll dft16test 
 
-SPIRAL_C_FLAGS=-O3 -g0 -c -m64 -msse4
+SPIRAL_C_FLAGS=-O3 -g0 -m64 -msse4
 SPIRAL_C_S_FLAGS=-S -Wextra -fverbose-asm
 SPIRAL_C_LL_FLAGS=-c -S -O3 -g0 -msse4 -emit-llvm
 
 .PHONY: clean
 
 clean:
-	rm -f dft16.o dft16.s dft16.s.txt dwmonitor.s dwmonitor.o
+	rm -f dft16.o dft16.ll dft16.s dwmonitor.o dwmonitor.ll dwmonitor.s dft16test.ll dft16test
 
-.c.s: $@ Makefile
-	gcc -I $(SPIRAL_HOME) $(SPIRAL_C_FLAGS) $(SPIRAL_C_S_FLAGS) $<
+dft16test: Makefile dft16test.o dft16.o dft16.h
+	 gcc -I $(SPIRAL_HOME) $(SPIRAL_C_FLAGS) -o $@ dft16test.o dft16.o 
 
-.c.o: $@ Makefile
-	 gcc -I $(SPIRAL_HOME) $(SPIRAL_C_FLAGS) $<
+%.s: %.c Makefile
+	gcc -c -I $(SPIRAL_HOME) $(SPIRAL_C_FLAGS) $(SPIRAL_C_S_FLAGS) $<
 
-.c.ll: $@ Makefile
+%.o: %.c Makefile
+	 gcc -c -I $(SPIRAL_HOME) $(SPIRAL_C_FLAGS) $<
+
+%.ll: %.c Makefile
 	clang -I $(SPIRAL_HOME) $(SPIRAL_C_LL_FLAGS) $<
 
 #dft16.s.txt: dft16.c Makefile
