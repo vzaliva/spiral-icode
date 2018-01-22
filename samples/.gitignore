@@ -4,3 +4,6 @@ dft16.s
 dft16.s.txt
 dwmonitor.ll
 dwmonitor.s
+dft16test
+dft16test-cl
+dft16test.ll
