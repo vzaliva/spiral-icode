@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <math.h>
 
 /* We inline SPIRAL-generated-code to have singe IR file for VELLVM testing */
@@ -8,6 +7,10 @@
 /* #define N 500000000 */
 #define N 1
 #undef CMP_VEROBSE
+
+#ifdef CMP_VEROBSE
+# include <stdio.h>
+#endif /* CMP_VEROBSE */
 
 int main()
 {

@@ -1,6 +1,6 @@
 SPIRAL_HOME=~/src/spiral
 
-all: dft16.o dft16.ll dft16.s dwmonitor.o dwmonitor.ll dwmonitor.s dft16test.ll dft16test dft16test-cl
+all: dft16.o dft16.ll dft16.s dwmonitor.o dwmonitor.ll dwmonitor.s dft16test.ll dft16test dft16test-cl dwmonitortest dwmonitortest-cl dwmonitortest.ll
 
 SPIRAL_C_FLAGS=-O3 -g0 -m64 -msse4
 SPIRAL_C_S_FLAGS=-S -Wextra -fverbose-asm
@@ -16,6 +16,12 @@ dft16test: Makefile dft16test.o dft16.c
 
 dft16test-cl: Makefile dft16.c
 	 clang -I $(SPIRAL_HOME) $(SPIRAL_C_FLAGS) -o $@ dft16test.c
+
+dwmonitortest: Makefile dwmonitortest.o dwmonitortest.c
+	 gcc -I $(SPIRAL_HOME) $(SPIRAL_C_FLAGS) -o $@ dwmonitortest.o
+
+dwmonitortest-cl: Makefile dwmonitortest.o dwmonitortest.c
+	 clang -I $(SPIRAL_HOME) $(SPIRAL_C_FLAGS) -o $@ dwmonitortest.o
 
 %.s: %.c Makefile
 	gcc -c -I $(SPIRAL_HOME) $(SPIRAL_C_FLAGS) $(SPIRAL_C_S_FLAGS) $<
