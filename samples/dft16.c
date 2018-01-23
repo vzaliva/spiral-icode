@@ -1,5 +1,4 @@
 #include <math.h>
-#include <include/omega32.h>
 #include <nmmintrin.h>
 #include <smmintrin.h>
 #include <tmmintrin.h>
