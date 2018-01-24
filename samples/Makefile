@@ -7,7 +7,7 @@ all: $(GCC_TARGETS) $(CL_TARGES)
 
 SPIRAL_C_FLAGS    = -O3 -g0 -m64 -msse4
 SPIRAL_C_S_FLAGS  = -S -Wextra -fverbose-asm
-SPIRAL_C_LL_FLAGS = -c -S -O0 -g0 -msse4 -emit-llvm
+SPIRAL_C_LL_FLAGS = -c -S -O3 -g0 -msse4 -emit-llvm
 
 .PHONY: clean
 
